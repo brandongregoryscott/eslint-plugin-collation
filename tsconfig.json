@@ -3,6 +3,7 @@
         "esModuleInterop": true,
         "lib": ["es6"],
         "forceConsistentCasingInFileNames": true,
+        "jsx": "react",
         "module": "commonjs",
         "outDir": "dist",
         "skipLibCheck": true,

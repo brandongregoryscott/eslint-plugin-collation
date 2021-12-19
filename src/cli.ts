@@ -5,6 +5,7 @@ import { Project } from "ts-morph";
 import shell from "shelljs";
 import { alphabetizeInterfaces } from "./rules/alphabetize-interfaces";
 import { isEmpty } from "lodash";
+import { alphabetizeJsxProps } from "./rules/alphabetize-jsx-props";
 
 const main = async () => {
     const program = new Command();
@@ -20,6 +21,7 @@ const main = async () => {
         const files = project.getSourceFiles();
         files.forEach((file) => {
             alphabetizeInterfaces(file);
+            alphabetizeJsxProps(file);
         });
     }
 
@@ -31,6 +33,7 @@ const main = async () => {
 
     if (file != null) {
         alphabetizeInterfaces(file);
+        alphabetizeJsxProps(file);
     }
 
     await project.save();

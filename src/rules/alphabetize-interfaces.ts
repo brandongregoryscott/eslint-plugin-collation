@@ -12,8 +12,10 @@ const alphabetizeInterface = (_interface: InterfaceDeclaration) => {
     const sorted = sortBy(properties, (e) => e.getName());
 
     if (isEqual(properties, sorted)) {
+        const fileName = _interface.getSourceFile().getBaseName();
+        const lineNumber = _interface.getStartLinePos();
         shell.echo(
-            `Properties of interface ${_interface.getName()} are already sorted.`
+            `Properties of interface ${_interface.getName()} on line ${lineNumber} of ${fileName} are already sorted.`
         );
         return;
     }
