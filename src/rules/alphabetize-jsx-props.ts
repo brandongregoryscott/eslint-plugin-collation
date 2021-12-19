@@ -10,10 +10,10 @@ import { isEqual, sortBy } from "lodash";
 
 const supportedExtensions = [".jsx", ".tsx"];
 
-const alphabetizeJsxProps = (file: SourceFile) => {
+const alphabetizeJsxProps = (file: SourceFile): SourceFile => {
     if (!supportedExtensions.includes(file.getExtension())) {
         shell.echo(`File extension not supported: ${file.getExtension()}`);
-        return;
+        return file;
     }
 
     const jsxElements = file.getDescendantsOfKind(SyntaxKind.JsxElement);
@@ -38,6 +38,8 @@ const alphabetizeJsxProps = (file: SourceFile) => {
         props.forEach((prop) => prop.remove());
         openingElement.addAttributes(propStructures);
     });
+
+    return file;
 };
 
 export { alphabetizeJsxProps };

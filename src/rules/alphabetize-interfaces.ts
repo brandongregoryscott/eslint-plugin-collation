@@ -2,9 +2,11 @@ import { isEqual, sortBy } from "lodash";
 import { InterfaceDeclaration, SourceFile } from "ts-morph";
 import shell from "shelljs";
 
-const alphabetizeInterfaces = (file: SourceFile) => {
+const alphabetizeInterfaces = (file: SourceFile): SourceFile => {
     const interfaces = file.getInterfaces();
     interfaces.forEach(alphabetizeInterface);
+
+    return file;
 };
 
 const alphabetizeInterface = (_interface: InterfaceDeclaration) => {
