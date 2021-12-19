@@ -1,15 +1,15 @@
 {
-  "compilerOptions": {
-    "esModuleInterop": true,
-    "lib": ["es6"],
-    "forceConsistentCasingInFileNames": true,
-    "module": "commonjs",
-    "outDir": "dist",
-    "skipLibCheck": true,
-    "removeComments": true,
-    "resolveJsonModule": true,
-    "strict": true,
-    "target": "es2021"
-  },
-  "include": ["src"]
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "lib": ["es6"],
+        "forceConsistentCasingInFileNames": true,
+        "module": "commonjs",
+        "outDir": "dist",
+        "skipLibCheck": true,
+        "removeComments": true,
+        "resolveJsonModule": true,
+        "strict": true,
+        "target": "es2021"
+    },
+    "include": ["src"]
 }
