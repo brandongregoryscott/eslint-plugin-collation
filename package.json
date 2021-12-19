@@ -1,0 +1,35 @@
+{
+  "author": {
+    "name": "Brandon Scott",
+    "url": "https://github.com/brandongregoryscott"
+  },
+  "bin": {
+    "ez2readts": "dist/cli.js"
+  },
+  "dependencies": {
+    "commander": "8.3.0",
+    "ts-morph": "13.0.2"
+  },
+  "description": "Code linting/manipulation tools to make your TypeScript code easier to read",
+  "devDependencies": {
+    "@types/node": "14.18.1",
+    "esbuild": "0.14.5",
+    "rimraf": "3.0.2",
+    "typescript": "4.5.4"
+  },
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "name": "ez2readts",
+  "scripts": {
+    "build": "npm run esbuild -- --sourcemap",
+    "build:dist": "npm run esbuild -- --minify",
+    "build:watch": "npm run esbuild -- --sourcemap --watch",
+    "clean": "rimraf dist",
+    "esbuild": "esbuild src/cli.ts --bundle --outfile=dist/cli.js --platform=node --external:commander",
+    "prebuild": "npm run clean",
+    "prebuild:dist": "npm run clean",
+    "prebuild:watch": "npm run clean",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "0.0.0"
+}
