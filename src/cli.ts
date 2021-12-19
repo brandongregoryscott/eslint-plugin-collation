@@ -1,11 +1,39 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { isEmpty } from "lodash";
 import { version } from "../package.json";
+import { Project } from "ts-morph";
+import shell from "shelljs";
+import { alphabetizeInterfaces } from "./rules/alphabetize-interfaces";
+import { isEmpty } from "lodash";
 
-const program = new Command();
-program.version(version).parse();
+const main = async () => {
+    const program = new Command();
+    program
+        .version(version)
+        .option("-f, --file <fileNameOrPath>", "Run on specific file")
+        .parse();
 
-if (isEmpty(program.opts())) {
-  program.help();
-}
+    const project = new Project({ tsConfigFilePath: "tsconfig.json" });
+
+    const { file: filePath } = program.opts();
+    if (isEmpty(filePath)) {
+        const files = project.getSourceFiles();
+        files.forEach((file) => {
+            alphabetizeInterfaces(file);
+        });
+    }
+
+    const file = project.getSourceFile(filePath);
+    if (file == null) {
+        shell.echo(`File ${filePath} not found in project.`);
+        shell.exit(1);
+    }
+
+    if (file != null) {
+        alphabetizeInterfaces(file);
+    }
+
+    await project.save();
+};
+
+main();
