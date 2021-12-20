@@ -1,6 +1,5 @@
 import { isEqual, sortBy } from "lodash";
 import { InterfaceDeclaration, SourceFile } from "ts-morph";
-import shell from "shelljs";
 
 const alphabetizeInterfaces = (file: SourceFile): SourceFile => {
     const interfaces = file.getInterfaces();
@@ -15,8 +14,8 @@ const alphabetizeInterface = (_interface: InterfaceDeclaration) => {
 
     if (isEqual(properties, sorted)) {
         const fileName = _interface.getSourceFile().getBaseName();
-        const lineNumber = _interface.getStartLinePos();
-        shell.echo(
+        const lineNumber = _interface.getStartLineNumber();
+        console.log(
             `Properties of interface ${_interface.getName()} on line ${lineNumber} of ${fileName} are already sorted.`
         );
         return;

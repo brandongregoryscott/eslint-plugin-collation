@@ -2,7 +2,6 @@
 import { Command } from "commander";
 import { version } from "../package.json";
 import { Project } from "ts-morph";
-import shell from "shelljs";
 import { alphabetizeInterfaces } from "./rules/alphabetize-interfaces";
 import { compact, flatMap, isEmpty } from "lodash";
 import { alphabetizeJsxProps } from "./rules/alphabetize-jsx-props";
@@ -52,10 +51,10 @@ const main = async () => {
                         : filePath
                 )
             );
-            shell.echo(
+            console.log(
                 `Warning: Some of the specified files could not be found in the project.`
             );
-            shell.echo(JSON.stringify(missingFiles, undefined, 4));
+            console.log(JSON.stringify(missingFiles, undefined, 4));
         }
 
         files.forEach((file) => {
@@ -79,13 +78,13 @@ const main = async () => {
         const similarResults = fuzzyFindFile(filePath, project);
         const notFoundError = `File ${filePath} not found in project.`;
         if (isEmpty(similarResults)) {
-            shell.echo(notFoundError);
-            shell.exit(1);
+            console.log(notFoundError);
+            process.exit(1);
         }
 
-        shell.echo(`${notFoundError} Did you mean one of these?`);
-        shell.echo(JSON.stringify(similarResults, undefined, 4));
-        shell.exit(1);
+        console.log(`${notFoundError} Did you mean one of these?`);
+        console.log(JSON.stringify(similarResults, undefined, 4));
+        process.exit(1);
     }
 
     if (file != null) {

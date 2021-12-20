@@ -12,3 +12,134 @@
 </p>
 
 Code linting/manipulation tools to make your TypeScript code easier to read
+
+## Usage
+
+Currently, `ez2readts` ships with a CLI that can be run manually or plugged into your git hooks to
+run when files are changed. Internally, `ts-morph` is used for reading and manipulating the AST and must be installed alongside.
+
+```sh
+npm install --save-dev ez2readts ts-morph
+
+# Verify installation and show help menu
+ez2readts --help
+
+# Run on specific file
+ez2readts --file button.tsx
+
+# Run on list of files
+ez2readts --files button.tsx dialog.tsx
+```
+
+In a `pre-commit` hook:
+
+```sh
+#!/bin/sh
+
+# Run on modified files ending in .ts or .tsx
+ez2readts --files $(git diff --cached --name-only --diff-filter=ACMR | grep -e .ts -e .tsx | sed 's| |\\ |g')
+
+# Re-add the files to be staged before committing
+git add -A
+```
+
+## Rules
+
+This project implements various different rules to make your code more consistent and easier to read - similar to tools like `ESLint`, with the idea that **all rules should be fixable without intervention**. Eventually, rules will be be "à la carte" via flags or a configuration file with the ability to opt in to specific rules (and whether or not to auto-fix them).
+
+Current rules:
+
+1. `alphabetize-interfaces`
+    - Alphabetizes properties in an interface, i.e.
+    ```ts
+    interface Example {
+        zeta?: string;
+        beta: Record<string, string>;
+        alpha: number;
+        omicron: () => void;
+    }
+    ```
+    will be transformed to:
+    ```ts
+    interface Example {
+        alpha: number;
+        beta: Record<string, string>;
+        omicron: () => void;
+        zeta?: string;
+    }
+    ```
+1. `alphabetize-jsx-props`
+    - Alphabetizes props for components/JSX elements, i.e.
+    ```tsx
+    return (
+        <Button onClick={() => {}} type="submit" disabled={isLoading}>
+            Example
+        </Button>
+    );
+    ```
+    will be transformed to:
+    ```tsx
+    return (
+        <Button disabled={isLoading} onClick={() => {}} type="submit">
+            Example
+        </Button>
+    );
+    ```
+
+## Debugging
+
+If you aren't sure what files/project is being picked up, you can run the CLI with the `--print-project` (or `-p`) flag to print some additional information.
+
+```sh
+ez2readts --print-project
+
+Compiler options:
+--------------------------------------------------------------------------------
+
+{
+    "_defaultSettings": {},
+    "_settings": {
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": "/Users/Brandon/example/src",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+        "jsx": 4,
+        "lib": [
+            "lib.dom.d.ts",
+            "lib.dom.iterable.d.ts",
+            "lib.esnext.d.ts"
+        ],
+        "module": 99,
+        "moduleResolution": 2,
+        "noEmit": true,
+        "noFallthroughCasesInSwitch": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "target": 1,
+        "configFilePath": "/Users/Brandon/example/tsconfig.json"
+    },
+    "_modifiedEventContainer": {
+        "subscriptions": [
+            null
+        ]
+    }
+}
+
+--------------------------------------------------------------------------------
+Source files:
+--------------------------------------------------------------------------------
+
+[
+    "/Users/Brandon/beets/src/app.tsx",
+    "/Users/Brandon/beets/src/index.tsx",
+    "/Users/Brandon/beets/src/react-app-env.d.ts",
+    # ...
+]
+```
+
+## Notes
+
+-   This package does not do any additional formatting/processing on the code that's emitted from the TS compiler. For example, multi-line props for a component may be lifted up to a single line once they are alphabetized with `alphabetize-jsx-props`. It is recommended that you use a tool like `prettier` after your code has been transformed from `ez2readts`.

@@ -7,7 +7,6 @@ import {
     SourceFile,
     SyntaxKind,
 } from "ts-morph";
-import shell from "shelljs";
 import { first, isEqual, last, range, sortBy } from "lodash";
 import _ from "lodash";
 
@@ -39,8 +38,8 @@ const alphabetizeJsxProps = (file: SourceFile): SourceFile => {
         if (isEqual(props, sortedProps)) {
             const jsxTag = `<${openingElement.getTagNameNode().getText()} />`;
             const fileName = openingElement.getSourceFile().getBaseName();
-            const lineNumber = openingElement.getStartLinePos();
-            shell.echo(
+            const lineNumber = openingElement.getStartLineNumber();
+            console.log(
                 `Props for ${jsxTag} on line ${lineNumber} of ${fileName} are already sorted.`
             );
             return;

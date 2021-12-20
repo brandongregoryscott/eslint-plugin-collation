@@ -8,9 +8,9 @@
     },
     "dependencies": {
         "commander": "8.3.0",
+        "ez2readts": "file:.yalc/ez2readts",
         "fuzzaldrin": "2.1.0",
         "lodash": "4.17.21",
-        "shelljs": "0.8.4",
         "ts-morph": "13.0.2"
     },
     "description": "Code linting/manipulation tools to make your TypeScript code easier to read",
@@ -20,7 +20,6 @@
         "@types/jest": "27.0.3",
         "@types/lodash": "4.14.178",
         "@types/react": "17.0.37",
-        "@types/shelljs": "0.8.10",
         "common-tags": "1.8.2",
         "esbuild": "0.14.5",
         "jest": "27.4.5",
@@ -32,6 +31,9 @@
     "engines": {
         "node": ">=14"
     },
+    "files": [
+        "dist"
+    ],
     "keywords": [
         "code-style",
         "codegen",
@@ -49,7 +51,7 @@
         "build:dist": "npm run esbuild -- --minify",
         "build:watch": "npm run esbuild -- --sourcemap --watch",
         "clean": "rimraf dist",
-        "esbuild": "esbuild src/ez2readts.ts --bundle --outfile=dist/ez2readts.js --platform=node",
+        "esbuild": "esbuild src/ez2readts.ts --bundle --outfile=dist/ez2readts.js --platform=node --external:ts-morph",
         "prebuild": "npm run clean",
         "prebuild:dist": "npm run clean",
         "prebuild:watch": "npm run clean",
