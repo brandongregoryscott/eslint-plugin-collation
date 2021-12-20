@@ -30,6 +30,15 @@
     "engines": {
         "node": ">=14"
     },
+    "keywords": [
+        "code-style",
+        "codegen",
+        "codemod",
+        "format",
+        "lint",
+        "react",
+        "typescript"
+    ],
     "license": "Apache-2.0",
     "main": "dist/cli.js",
     "name": "ez2readts",
@@ -42,6 +51,7 @@
         "prebuild": "npm run clean",
         "prebuild:dist": "npm run clean",
         "prebuild:watch": "npm run clean",
+        "prestart": "npm run build",
         "start": "./dist/cli.js",
         "test": "jest",
         "test:watch": "jest --watch"
