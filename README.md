@@ -1,7 +1,7 @@
-<h1 align="center">ez2readts</h1>
+<h1 align="center">collation</h1>
 <p align="center">
-    <a href="https://github.com/brandongregoryscott/ez2readts/actions/workflows/build.yaml">
-        <img alt="build status" src="https://github.com/brandongregoryscott/ez2readts/actions/workflows/build.yaml/badge.svg"/>
+    <a href="https://github.com/brandongregoryscott/collation/actions/workflows/build.yaml">
+        <img alt="build status" src="https://github.com/brandongregoryscott/collation/actions/workflows/build.yaml/badge.svg"/>
     </a>
     <a href="https://github.com/prettier/prettier">
         <img alt="code style: prettier" src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square"/>
@@ -11,24 +11,26 @@
     </a>
 </p>
 
+> **Collation** is the assembly of written information into a standard order.
+
 Code linting/manipulation tools to make your TypeScript code easier to read
 
 ## Usage
 
-Currently, `ez2readts` ships with a CLI that can be run manually or plugged into your git hooks to
+Currently, `collation` ships with a CLI that can be run manually or plugged into your git hooks to
 run when files are changed. Internally, `ts-morph` is used for reading and manipulating the AST and must be installed alongside.
 
 ```sh
-npm install --save-dev ez2readts ts-morph
+npm install --save-dev collation ts-morph
 
 # Verify installation and show help menu
-ez2readts --help
+collation --help
 
 # Run on specific file
-ez2readts --file button.tsx
+collation --file button.tsx
 
 # Run on list of files
-ez2readts --files button.tsx dialog.tsx
+collation --files button.tsx dialog.tsx
 ```
 
 In a `pre-commit` hook:
@@ -37,7 +39,7 @@ In a `pre-commit` hook:
 #!/bin/sh
 
 # Run on modified files ending in .ts or .tsx
-ez2readts --files $(git diff --cached --name-only --diff-filter=ACMR | grep -e .ts -e .tsx | sed 's| |\\ |g')
+collation --files $(git diff --cached --name-only --diff-filter=ACMR | grep -e .ts -e .tsx | sed 's| |\\ |g')
 
 # Re-add the files to be staged before committing
 git add -A
@@ -91,7 +93,7 @@ Current rules:
 If you aren't sure what files/project is being picked up, you can run the CLI with the `--print-project` (or `-p`) flag to print some additional information.
 
 ```sh
-ez2readts --print-project
+collation --print-project
 
 Compiler options:
 --------------------------------------------------------------------------------
@@ -142,4 +144,4 @@ Source files:
 
 ## Notes
 
--   This package does not do any additional formatting/processing on the code that's emitted from the TS compiler. For example, multi-line props for a component may be lifted up to a single line once they are alphabetized with `alphabetize-jsx-props`. It is recommended that you use a tool like `prettier` after your code has been transformed from `ez2readts`.
+-   This package does not do any additional formatting/processing on the code that's emitted from the TS compiler. For example, multi-line props for a component may be lifted up to a single line once they are alphabetized with `alphabetize-jsx-props`. It is recommended that you use a tool like `prettier` after your code has been transformed from `collation`.

@@ -4,7 +4,7 @@
         "url": "https://github.com/brandongregoryscott"
     },
     "bin": {
-        "ez2readts": "dist/ez2readts.js"
+        "collation": "dist/collation.js"
     },
     "dependencies": {
         "commander": "8.3.0",
@@ -43,24 +43,24 @@
         "typescript"
     ],
     "license": "Apache-2.0",
-    "main": "dist/ez2readts.js",
-    "name": "ez2readts",
+    "main": "dist/collation.js",
+    "name": "collation",
     "repository": {
         "type": "git",
-        "url": "git@github.com:brandongregoryscott/ez2readts.git"
+        "url": "git@github.com:brandongregoryscott/collation.git"
     },
     "scripts": {
         "build": "npm run esbuild -- --sourcemap --external:commander --external:lodash --external:shelljs --external:ts-morph --external:fuzzaldrin",
         "build:dist": "npm run esbuild -- --minify",
         "build:watch": "npm run esbuild -- --sourcemap --watch",
         "clean": "rimraf dist",
-        "esbuild": "esbuild src/ez2readts.ts --bundle --outfile=dist/ez2readts.js --platform=node --external:ts-morph",
+        "esbuild": "esbuild src/collation.ts --bundle --outfile=dist/collation.js --platform=node --external:ts-morph",
         "prebuild": "npm run clean",
         "prebuild:dist": "npm run clean",
         "prebuild:watch": "npm run clean",
         "prepublishOnly": "npm run build:dist",
         "prestart": "npm run build",
-        "start": "./dist/ez2readts.js",
+        "start": "./dist/collation.js",
         "test": "jest",
         "test:watch": "jest --watch"
     },
