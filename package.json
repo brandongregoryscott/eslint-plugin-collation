@@ -8,7 +8,6 @@
     },
     "dependencies": {
         "commander": "8.3.0",
-        "ez2readts": "file:.yalc/ez2readts",
         "fuzzaldrin": "2.1.0",
         "lodash": "4.17.21",
         "ts-morph": "13.0.2"
@@ -46,6 +45,10 @@
     "license": "Apache-2.0",
     "main": "dist/ez2readts.js",
     "name": "ez2readts",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:brandongregoryscott/ez2readts.git"
+    },
     "scripts": {
         "build": "npm run esbuild -- --sourcemap --external:commander --external:lodash --external:shelljs --external:ts-morph --external:fuzzaldrin",
         "build:dist": "npm run esbuild -- --minify",
@@ -55,10 +58,11 @@
         "prebuild": "npm run clean",
         "prebuild:dist": "npm run clean",
         "prebuild:watch": "npm run clean",
+        "prepublishOnly": "npm run build:dist",
         "prestart": "npm run build",
         "start": "./dist/ez2readts.js",
         "test": "jest",
         "test:watch": "jest --watch"
     },
-    "version": "0.0.0"
+    "version": "0.0.1"
 }
