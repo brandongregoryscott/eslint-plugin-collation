@@ -17,7 +17,7 @@ const main = async () => {
             "Run on specific file (e.g. --file button.tsx)"
         )
         .option(
-            "-F, --files <fileNamesOrPaths...>",
+            "-F, --files [fileNamesOrPaths...]",
             "Run on specific files (e.g. --files button.tsx form.tsx)"
         )
         .option(
@@ -36,6 +36,13 @@ const main = async () => {
     if (shouldPrintProject) {
         printProject(project);
         return;
+    }
+
+    if (filesPaths != null && !Array.isArray(filesPaths)) {
+        console.log(
+            "Warning: --files specified without any file names or paths."
+        );
+        process.exit(0);
     }
 
     if (!isEmpty(filesPaths)) {
@@ -61,7 +68,8 @@ const main = async () => {
             alphabetizeInterfaces(file);
             alphabetizeJsxProps(file);
         });
-        return;
+        await project.save();
+        process.exit(0);
     }
 
     if (isEmpty(filePath)) {
@@ -70,7 +78,9 @@ const main = async () => {
             alphabetizeInterfaces(file);
             alphabetizeJsxProps(file);
         });
-        return;
+
+        await project.save();
+        process.exit(0);
     }
 
     const file = project.getSourceFile(filePath);
