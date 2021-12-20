@@ -4,10 +4,11 @@
         "url": "https://github.com/brandongregoryscott"
     },
     "bin": {
-        "ez2readts": "dist/cli.js"
+        "ez2readts": "dist/ez2readts.js"
     },
     "dependencies": {
         "commander": "8.3.0",
+        "fuzzaldrin": "2.1.0",
         "lodash": "4.17.21",
         "shelljs": "0.8.4",
         "ts-morph": "13.0.2"
@@ -15,6 +16,7 @@
     "description": "Code linting/manipulation tools to make your TypeScript code easier to read",
     "devDependencies": {
         "@types/common-tags": "1.8.1",
+        "@types/fuzzaldrin": "2.1.4",
         "@types/jest": "27.0.3",
         "@types/lodash": "4.14.178",
         "@types/react": "17.0.37",
@@ -40,19 +42,19 @@
         "typescript"
     ],
     "license": "Apache-2.0",
-    "main": "dist/cli.js",
+    "main": "dist/ez2readts.js",
     "name": "ez2readts",
     "scripts": {
-        "build": "npm run esbuild -- --sourcemap",
+        "build": "npm run esbuild -- --sourcemap --external:commander --external:lodash --external:shelljs --external:ts-morph --external:fuzzaldrin",
         "build:dist": "npm run esbuild -- --minify",
         "build:watch": "npm run esbuild -- --sourcemap --watch",
         "clean": "rimraf dist",
-        "esbuild": "esbuild src/cli.ts --bundle --outfile=dist/cli.js --platform=node --external:commander --external:lodash --external:shelljs --external:ts-morph",
+        "esbuild": "esbuild src/ez2readts.ts --bundle --outfile=dist/ez2readts.js --platform=node",
         "prebuild": "npm run clean",
         "prebuild:dist": "npm run clean",
         "prebuild:watch": "npm run clean",
         "prestart": "npm run build",
-        "start": "./dist/cli.js",
+        "start": "./dist/ez2readts.js",
         "test": "jest",
         "test:watch": "jest --watch"
     },

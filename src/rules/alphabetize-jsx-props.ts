@@ -15,7 +15,6 @@ const supportedExtensions = [".jsx", ".tsx"];
 
 const alphabetizeJsxProps = (file: SourceFile): SourceFile => {
     if (!supportedExtensions.includes(file.getExtension())) {
-        shell.echo(`File extension not supported: ${file.getExtension()}`);
         return file;
     }
 
