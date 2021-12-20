@@ -11,11 +11,6 @@ import shell from "shelljs";
 import { first, isEqual, last, range, sortBy } from "lodash";
 import _ from "lodash";
 
-interface JsxSpreadAttributeLocation {
-    index: number;
-    structure: JsxSpreadAttributeStructure;
-}
-
 const supportedExtensions = [".jsx", ".tsx"];
 
 const alphabetizeJsxProps = (file: SourceFile): SourceFile => {
@@ -61,14 +56,13 @@ const alphabetizeJsxProps = (file: SourceFile): SourceFile => {
 };
 
 const alphabetizeJsxPropsWithSpread = (openingElement: JsxOpeningElement) => {
-    // props.length: 9
     const props = openingElement.getAttributes();
 
-    const spreadPropIndexes = _.compact(
-        props.map((prop, index) =>
+    const spreadPropIndexes = props
+        .map((prop, index) =>
             Node.isJsxSpreadAttribute(prop) ? index : undefined
         )
-    );
+        .filter((value) => value != null) as number[];
 
     let startIndex = 0;
     const indexRanges = spreadPropIndexes.map((spreadPropIndex) => {
