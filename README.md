@@ -24,13 +24,13 @@ run when files are changed. Internally, `ts-morph` is used for reading and manip
 npm install --save-dev collation ts-morph
 
 # Verify installation and show help menu
-collation --help
+npx collation --help
 
 # Run on specific file
-collation --file button.tsx
+npx collation --file button.tsx
 
 # Run on list of files
-collation --files button.tsx dialog.tsx
+npx collation --files button.tsx dialog.tsx
 ```
 
 In a `pre-commit` hook:
@@ -39,7 +39,7 @@ In a `pre-commit` hook:
 #!/bin/sh
 
 # Run on modified files ending in .ts or .tsx
-collation --files $(git diff --cached --name-only --diff-filter=ACMR | grep -e .ts -e .tsx | sed 's| |\\ |g')
+npx collation --files $(git diff --cached --name-only --diff-filter=ACMR | grep -e .ts -e .tsx | sed 's| |\\ |g')
 
 # Re-add the files to be staged before committing
 git add -A
@@ -93,7 +93,7 @@ Current rules:
 If you aren't sure what files/project is being picked up, you can run the CLI with the `--print-project` (or `-p`) flag to print some additional information.
 
 ```sh
-collation --print-project
+npx collation --print-project
 
 Compiler options:
 --------------------------------------------------------------------------------
