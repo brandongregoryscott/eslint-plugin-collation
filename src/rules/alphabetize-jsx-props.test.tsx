@@ -26,7 +26,44 @@ describe("alphabetizeJsxProps", () => {
                 );
             };
         `;
-        const file = project.createSourceFile("example.tsx", component);
+        const file = project.createSourceFile("input.tsx", component);
+
+        // Act
+        const result = alphabetizeJsxProps(file);
+
+        // Assert
+        expect(result.getFullText()).toStrictEqual(expected);
+    });
+
+    it("should sort props before and after spread assignment in JsxElement", () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const component = `
+            const Example = (props) => {
+                return (
+                    <button
+                        suppress={true}
+                        onClick={_.noop}
+                        {...buttonProps}
+                        onBeforeInput={() => {}}
+                        about="test"
+                        disabled={true}
+                        {...someOtherButtonProps}
+                        something={true}
+                        readOnly={false}></button>
+                );
+            };
+        `;
+        const expected = `
+            const Example = (props) => {
+                return (
+                    <button onClick={_.noop} suppress={true}
+                        {...buttonProps} about="test" disabled={true} onBeforeInput={() => {}}
+                        {...someOtherButtonProps} readOnly={false} something={true}></button>
+                );
+            };
+        `;
+        const file = project.createSourceFile("input.tsx", component);
 
         // Act
         const result = alphabetizeJsxProps(file);
