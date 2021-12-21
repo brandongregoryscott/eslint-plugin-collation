@@ -1,14 +1,15 @@
 {
     "compilerOptions": {
+        "baseUrl": "src",
         "esModuleInterop": true,
-        "lib": ["es6"],
         "forceConsistentCasingInFileNames": true,
         "jsx": "react",
+        "lib": ["es6"],
         "module": "commonjs",
         "outDir": "dist",
-        "skipLibCheck": true,
         "removeComments": true,
         "resolveJsonModule": true,
+        "skipLibCheck": true,
         "strict": true,
         "target": "es2021"
     },

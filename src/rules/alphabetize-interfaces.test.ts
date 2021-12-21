@@ -1,5 +1,5 @@
+import { alphabetizeInterfaces } from "rules/alphabetize-interfaces";
 import { Project } from "ts-morph";
-import { alphabetizeInterfaces } from "./alphabetize-interfaces";
 
 describe("alphabetizeInterfaces", () => {
     it("should sort properties in interface when there are unsorted properties", () => {

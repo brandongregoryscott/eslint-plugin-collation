@@ -1,6 +1,6 @@
+import { alphabetizeJsxProps } from "rules/alphabetize-jsx-props";
+import { expectSourceFilesToMatch } from "test/matchers";
 import { Project } from "ts-morph";
-import { expectSourceFilesToMatch } from "../test/matchers";
-import { alphabetizeJsxProps } from "./alphabetize-jsx-props";
 
 describe("alphabetizeJsxProps", () => {
     it("should sort props of each JsxElement when there are unsorted props", () => {

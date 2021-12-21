@@ -2,13 +2,17 @@
 import { Command } from "commander";
 import { version } from "../package.json";
 import { Project } from "ts-morph";
-import { alphabetizeInterfaces } from "./rules/alphabetize-interfaces";
-import { compact, flatMap, isEmpty } from "lodash";
-import { alphabetizeJsxProps } from "./rules/alphabetize-jsx-props";
-import { printProject } from "./cli/print-project";
-import { fuzzyFindFile } from "./cli/fuzzy-find-file";
-import { Logger } from "./cli/logger";
-import chalk from "chalk";
+import { printProject } from "cli/handlers/print-project";
+import { runByFiles } from "cli/handlers/run-by-files";
+import { runByFile } from "cli/handlers/run-by-file";
+import { alphabetizeInterfaces } from "rules/alphabetize-interfaces";
+import { alphabetizeJsxProps } from "rules/alphabetize-jsx-props";
+
+interface Options {
+    file?: string;
+    files?: string[];
+    printProject?: boolean;
+}
 
 const main = async () => {
     const program = new Command();
@@ -32,81 +36,32 @@ const main = async () => {
 
     const {
         file: filePath,
-        files: filesPaths,
+        files: filePaths,
         printProject: shouldPrintProject,
-    } = program.opts();
+    } = program.opts<Options>();
+
     if (shouldPrintProject) {
         printProject(project);
         return;
     }
 
-    if (filesPaths != null && !Array.isArray(filesPaths)) {
-        Logger.warn(
-            `${chalk.bold(
-                "--files"
-            )} specified without any file names or paths.`
-        );
-        process.exit(0);
+    if (filePaths != null) {
+        await runByFiles(project, filePaths);
     }
 
-    if (!isEmpty(filesPaths)) {
-        const files = compact(
-            flatMap(filesPaths, (filePath) => project.getSourceFile(filePath))
-        );
-
-        if (files.length !== filesPaths.length) {
-            const missingFiles = compact(
-                flatMap(filesPaths, (filePath) =>
-                    project.getSourceFile(filePath) != null
-                        ? undefined
-                        : filePath
-                )
-            );
-            Logger.warn(
-                "Some of the specified files could not be found in the project."
-            ).json(missingFiles);
-        }
-
-        files.forEach((file) => {
-            alphabetizeInterfaces(file);
-            alphabetizeJsxProps(file);
-        });
-        await project.save();
-        process.exit(0);
+    if (filePath != null) {
+        await runByFile(project, filePath);
     }
 
-    if (isEmpty(filePath)) {
-        const files = project.getSourceFiles();
-        files.forEach((file) => {
-            alphabetizeInterfaces(file);
-            alphabetizeJsxProps(file);
-        });
-
-        await project.save();
-        process.exit(0);
-    }
-
-    const file = project.getSourceFile(filePath);
-    if (file == null) {
-        const similarResults = fuzzyFindFile(filePath, project);
-        const notFoundError = `File ${filePath} not found in project.`;
-        if (isEmpty(similarResults)) {
-            Logger.error(notFoundError);
-            process.exit(1);
-        }
-
-        Logger.error(`${notFoundError} Did you mean one of these?`).json(
-            similarResults
-        );
-        process.exit(1);
-    }
-
-    if (file != null) {
+    // Default case: run for all files
+    const files = project.getSourceFiles();
+    files.forEach((file) => {
         alphabetizeInterfaces(file);
         alphabetizeJsxProps(file);
-    }
+    });
 
     await project.save();
+    process.exit(0);
 };
 
 main();

@@ -8,7 +8,6 @@ import {
     SyntaxKind,
 } from "ts-morph";
 import { first, isEqual, last, range, sortBy } from "lodash";
-import _ from "lodash";
 
 const supportedExtensions = [".jsx", ".tsx"];
 
