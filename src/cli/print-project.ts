@@ -1,23 +1,19 @@
 import { Project } from "ts-morph";
+import { Logger } from "./logger";
 
 const printProject = (project: Project) => {
-    console.log("Compiler options:");
-    console.log("-".repeat(80));
-    console.log();
-    console.log(JSON.stringify(project.compilerOptions, undefined, 4));
+    Logger.divider()
+        .info("Compiler options:")
+        .divider()
+        .newLine()
+        .json(project.compilerOptions)
+        .newLine();
 
-    console.log();
-    console.log("-".repeat(80));
-    console.log("Source files:");
-    console.log("-".repeat(80));
-    console.log();
-    console.log(
-        JSON.stringify(
-            project.getSourceFiles().map((file) => file.getFilePath()),
-            undefined,
-            4
-        )
-    );
+    Logger.divider()
+        .info("Source files:")
+        .divider()
+        .newLine()
+        .json(project.getSourceFiles().map((file) => file.getFilePath()));
 };
 
 export { printProject };

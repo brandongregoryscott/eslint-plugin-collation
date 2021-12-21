@@ -7,6 +7,8 @@ import { compact, flatMap, isEmpty } from "lodash";
 import { alphabetizeJsxProps } from "./rules/alphabetize-jsx-props";
 import { printProject } from "./cli/print-project";
 import { fuzzyFindFile } from "./cli/fuzzy-find-file";
+import { Logger } from "./cli/logger";
+import chalk from "chalk";
 
 const main = async () => {
     const program = new Command();
@@ -39,8 +41,10 @@ const main = async () => {
     }
 
     if (filesPaths != null && !Array.isArray(filesPaths)) {
-        console.log(
-            "Warning: --files specified without any file names or paths."
+        Logger.warn(
+            `${chalk.bold(
+                "--files"
+            )} specified without any file names or paths.`
         );
         process.exit(0);
     }
@@ -58,10 +62,9 @@ const main = async () => {
                         : filePath
                 )
             );
-            console.log(
-                `Warning: Some of the specified files could not be found in the project.`
-            );
-            console.log(JSON.stringify(missingFiles, undefined, 4));
+            Logger.warn(
+                "Some of the specified files could not be found in the project."
+            ).json(missingFiles);
         }
 
         files.forEach((file) => {
@@ -88,12 +91,13 @@ const main = async () => {
         const similarResults = fuzzyFindFile(filePath, project);
         const notFoundError = `File ${filePath} not found in project.`;
         if (isEmpty(similarResults)) {
-            console.log(notFoundError);
+            Logger.error(notFoundError);
             process.exit(1);
         }
 
-        console.log(`${notFoundError} Did you mean one of these?`);
-        console.log(JSON.stringify(similarResults, undefined, 4));
+        Logger.error(`${notFoundError} Did you mean one of these?`).json(
+            similarResults
+        );
         process.exit(1);
     }
 
