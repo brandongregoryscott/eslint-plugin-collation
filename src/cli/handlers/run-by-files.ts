@@ -1,11 +1,14 @@
 import chalk from "chalk";
 import { compact, flatMap, isEmpty } from "lodash";
+import { Context } from "models/context";
 import { alphabetizeInterfaces } from "rules/alphabetize-interfaces";
 import { alphabetizeJsxProps } from "rules/alphabetize-jsx-props";
-import { Project } from "ts-morph";
 import { Logger } from "utils/logger";
 
-const runByFiles = async (project: Project, filePaths?: string[]) => {
+const runByFiles = async (context: Context) => {
+    const { cliOptions, project } = context;
+    const { files: filePaths } = cliOptions;
+
     if (
         (filePaths != null && !Array.isArray(filePaths)) ||
         isEmpty(filePaths)
@@ -38,7 +41,7 @@ const runByFiles = async (project: Project, filePaths?: string[]) => {
         alphabetizeJsxProps(file);
     });
 
-    await project.save();
+    await context.saveIfNotDryRun();
     process.exit(0);
 };
 

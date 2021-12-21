@@ -1,23 +1,21 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { version } from "../package.json";
+import { version, description } from "../package.json";
 import { Project } from "ts-morph";
 import { printProject } from "cli/handlers/print-project";
 import { runByFiles } from "cli/handlers/run-by-files";
 import { runByFile } from "cli/handlers/run-by-file";
 import { alphabetizeInterfaces } from "rules/alphabetize-interfaces";
 import { alphabetizeJsxProps } from "rules/alphabetize-jsx-props";
-
-interface Options {
-    file?: string;
-    files?: string[];
-    printProject?: boolean;
-}
+import { CliOptions } from "interfaces/cli-options";
+import { Context } from "models/context";
 
 const main = async () => {
     const program = new Command();
     program
+        .description(description)
         .version(version)
+        .option("-d, --dry", "Run without saving changes")
         .option(
             "-f, --file <fileNameOrPath>",
             "Run on specific file (e.g. --file button.tsx)"
@@ -33,12 +31,16 @@ const main = async () => {
         .parse();
 
     const project = new Project({ tsConfigFilePath: "tsconfig.json" });
-
     const {
         file: filePath,
         files: filePaths,
         printProject: shouldPrintProject,
-    } = program.opts<Options>();
+    } = program.opts<CliOptions>();
+
+    const context = new Context({
+        project,
+        cliOptions: program.opts<CliOptions>(),
+    });
 
     if (shouldPrintProject) {
         printProject(project);
@@ -46,11 +48,11 @@ const main = async () => {
     }
 
     if (filePaths != null) {
-        await runByFiles(project, filePaths);
+        await runByFiles(context);
     }
 
     if (filePath != null) {
-        await runByFile(project, filePath);
+        await runByFile(context);
     }
 
     // Default case: run for all files
@@ -60,7 +62,7 @@ const main = async () => {
         alphabetizeJsxProps(file);
     });
 
-    await project.save();
+    await context.saveIfNotDryRun();
     process.exit(0);
 };
 

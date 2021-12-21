@@ -33,6 +33,10 @@ class Logger {
         return this.log("");
     }
 
+    public rawLine(message: string, ...values: any[]): Logger {
+        return this.log(message, ...values);
+    }
+
     public warn(message: string, ...values: any[]): Logger {
         return this.log(
             `${chalk.yellowBright(`${prefix} WARN`)} ${message}`,
