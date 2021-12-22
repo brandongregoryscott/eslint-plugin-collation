@@ -1,11 +1,11 @@
 import { Change } from "diff";
 import { SourceFile } from "ts-morph";
-import { RuleError } from "../models/rule-error";
+import { RuleViolation } from "../models/rule-violation";
 
 interface RuleResult {
     diff: Change[];
     file: SourceFile;
-    errors: RuleError[];
+    errors: RuleViolation[];
 }
 
 export type { RuleResult };

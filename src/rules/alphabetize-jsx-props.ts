@@ -9,7 +9,7 @@ import {
 import { compact, first, flatten, isEqual, last, range, sortBy } from "lodash";
 import { diffLines } from "diff";
 import { RuleResult } from "../interfaces/rule-result";
-import { RuleError } from "../models/rule-error";
+import { RuleViolation } from "../models/rule-violation";
 import { Logger } from "../utils/logger";
 
 const alphabetizeJsxProps = (file: SourceFile): RuleResult => {
@@ -22,7 +22,6 @@ const alphabetizeJsxProps = (file: SourceFile): RuleResult => {
     );
     const endingFileContent = file.getText();
 
-    Logger.error("Errors:", errors);
     return {
         errors,
         diff: diffLines(originalFileContent, endingFileContent),
@@ -32,7 +31,7 @@ const alphabetizeJsxProps = (file: SourceFile): RuleResult => {
 
 const alphabetizeJsxPropsJsxElement = (
     openingElement: JsxOpeningElement
-): RuleError[] => {
+): RuleViolation[] => {
     const hasSpreadAssignments = openingElement
         .getAttributes()
         .some((prop) => Node.isJsxSpreadAttribute(prop));
@@ -60,12 +59,12 @@ const alphabetizeJsxPropsJsxElement = (
     const sortedPropStructures = sortedProps.map((prop) => prop.getStructure());
 
     const errors = openingElement.getAttributes().map((prop, index) => {
-        const expectedIndex = sortedPropStructures.findIndex(
-            (sortedPropStructure) =>
-                sortedPropStructure.name === (prop as JsxAttribute).getName()
+        const expectedIndex = findPropertyStructureIndexByName(
+            prop as JsxAttribute,
+            sortedPropStructures
         );
 
-        const error = getRuleError(
+        const error = getRuleViolation(
             prop as JsxAttribute,
             props,
             sortedPropStructures
@@ -85,7 +84,7 @@ const alphabetizeJsxPropsJsxElement = (
 
 const alphabetizeJsxPropsWithSpread = (
     openingElement: JsxOpeningElement
-): RuleError[] => {
+): RuleViolation[] => {
     const props = openingElement.getAttributes();
 
     const spreadPropIndexes = props
@@ -109,19 +108,42 @@ const alphabetizeJsxPropsWithSpread = (
         indexRanges.push(range(last(spreadPropIndexes)! + 1, props.length + 1));
     }
 
-    indexRanges.forEach((indexRange) => {
+    const errors = indexRanges.map((indexRange) => {
         const subsetProps = props.slice(
             first(indexRange),
             last(indexRange)
         ) as JsxAttribute[];
-        const propStrutures = sortBy(subsetProps, (prop) => prop.getName()).map(
-            (prop) => prop.getStructure()
+        const sortedPropStructures = sortBy(subsetProps, (prop) =>
+            prop.getName()
+        ).map((prop) => prop.getStructure());
+        const errors = subsetProps.map((prop, index) => {
+            const expectedIndex = findPropertyStructureIndexByName(
+                prop as JsxAttribute,
+                sortedPropStructures
+            );
+            const error = getRuleViolation(
+                prop as JsxAttribute,
+                subsetProps,
+                sortedPropStructures
+            );
+
+            prop.remove();
+
+            if (index === expectedIndex) {
+                return;
+            }
+
+            return error;
+        });
+        openingElement.insertAttributes(
+            first(indexRange)!,
+            sortedPropStructures
         );
-        subsetProps.forEach((prop) => prop.remove());
-        openingElement.insertAttributes(first(indexRange)!, propStrutures);
+
+        return errors;
     });
 
-    return [];
+    return compact(flatten(errors));
 };
 
 const findPropertyStructureIndexByName = (
@@ -132,11 +154,11 @@ const findPropertyStructureIndexByName = (
         (propertyStructure) => propertyStructure.name === prop.getName()
     );
 
-const getRuleError = (
+const getRuleViolation = (
     prop: JsxAttribute,
     props: JsxAttribute[],
     sorted: JsxAttributeStructure[]
-): RuleError | undefined => {
+): RuleViolation | undefined => {
     const propertyName = prop.getName();
     const originalIndex = props.indexOf(prop);
     const expectedIndex = findPropertyStructureIndexByName(prop, sorted);
@@ -149,7 +171,7 @@ const getRuleError = (
     const hint = `'${propertyName}' should appear alphabetically ${relativePosition} '${relativePropertyName}'.`;
 
     const message = `Expected prop '${propertyName}' (index ${originalIndex}) to be at index ${expectedIndex}.`;
-    return new RuleError({
+    return new RuleViolation({
         hint,
         file: prop.getSourceFile(),
         message,

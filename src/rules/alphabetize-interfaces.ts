@@ -2,7 +2,7 @@ import { diffLines } from "diff";
 import _, { isEqual, sortBy, flatten, compact } from "lodash";
 import { InterfaceDeclaration, PropertySignature, SourceFile } from "ts-morph";
 import { RuleResult } from "../interfaces/rule-result";
-import { RuleError } from "../models/rule-error";
+import { RuleViolation } from "../models/rule-violation";
 import { Logger } from "../utils/logger";
 
 const alphabetizeInterfaces = (file: SourceFile): RuleResult => {
@@ -20,7 +20,7 @@ const alphabetizeInterfaces = (file: SourceFile): RuleResult => {
 
 const alphabetizeInterface = (
     _interface: InterfaceDeclaration
-): RuleError[] => {
+): RuleViolation[] => {
     const properties = _interface.getProperties();
     const sorted = sortBy(properties, (e) => e.getName());
 
@@ -43,18 +43,18 @@ const alphabetizeInterface = (
 
         property.setOrder(sorted.indexOf(property));
 
-        return getRuleError(_interface, property, properties, sorted);
+        return getRuleViolation(_interface, property, properties, sorted);
     });
 
     return compact(errors);
 };
 
-const getRuleError = (
+const getRuleViolation = (
     _interface: InterfaceDeclaration,
     property: PropertySignature,
     properties: PropertySignature[],
     sorted: PropertySignature[]
-): RuleError => {
+): RuleViolation => {
     const propertyName = property.getName();
     const interfaceName = _interface.getName();
     const originalIndex = properties.indexOf(property);
@@ -67,7 +67,7 @@ const getRuleError = (
     const relativePosition = propertyMovedToLastPosition ? "after" : "before";
     const hint = `'${propertyName}' should appear alphabetically ${relativePosition} '${relativePropertyName}'.`;
 
-    return new RuleError({
+    return new RuleViolation({
         file: _interface.getSourceFile(),
         hint,
         lineNumber: property.getStartLineNumber(),

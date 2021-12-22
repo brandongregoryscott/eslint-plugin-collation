@@ -38,6 +38,7 @@ describe("alphabetizeJsxProps", () => {
         const result = alphabetizeJsxProps(input);
 
         // Assert
+        expect(result.errors.length).toBeGreaterThan(0);
         expectSourceFilesToMatch(result.file, expected);
     });
 
@@ -88,6 +89,7 @@ describe("alphabetizeJsxProps", () => {
         const result = alphabetizeJsxProps(input);
 
         // Assert
+        expect(result.errors.length).toBeGreaterThan(0);
         expectSourceFilesToMatch(result.file, expected);
     });
 
@@ -136,6 +138,7 @@ describe("alphabetizeJsxProps", () => {
         const result = alphabetizeJsxProps(input);
 
         // Assert
+        expect(result.errors.length).toBeGreaterThan(0);
         expectSourceFilesToMatch(result.file, expected);
     });
 
@@ -184,6 +187,7 @@ describe("alphabetizeJsxProps", () => {
         const result = alphabetizeJsxProps(input);
 
         // Assert
+        expect(result.errors.length).toBeGreaterThan(0);
         expectSourceFilesToMatch(result.file, expected);
     });
 });

@@ -1,6 +1,6 @@
 import { SourceFile } from "ts-morph";
 
-class RuleError extends Error {
+class RuleViolation extends Error {
     public readonly file: SourceFile;
     public readonly linePosition?: number;
     public readonly lineNumber: number;
@@ -10,7 +10,7 @@ class RuleError extends Error {
 
     constructor(
         error: Pick<
-            RuleError,
+            RuleViolation,
             "file" | "hint" | "message" | "lineNumber" | "linePosition" | "rule"
         >
     ) {
@@ -26,4 +26,4 @@ class RuleError extends Error {
     }
 }
 
-export { RuleError };
+export { RuleViolation };
