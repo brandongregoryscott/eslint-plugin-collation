@@ -7,7 +7,7 @@
         "collation": "dist/collation.js"
     },
     "dependencies": {
-        "chalk": "5.0.0",
+        "chalk": "4.0.0",
         "commander": "8.3.0",
         "diff": "5.0.0",
         "fuzzaldrin": "2.1.0",
