@@ -18,7 +18,7 @@ const alphabetizeJsxProps = (file: SourceFile): RuleResult => {
         SyntaxKind.JsxOpeningElement
     );
     const errors = flatten(
-        jsxOpeningElements.map(alphabetizeJsxPropsJsxElement)
+        jsxOpeningElements.map(alphabetizePropsByJsxElement)
     );
     const endingFileContent = file.getText();
 
@@ -29,7 +29,7 @@ const alphabetizeJsxProps = (file: SourceFile): RuleResult => {
     };
 };
 
-const alphabetizeJsxPropsJsxElement = (
+const alphabetizePropsByJsxElement = (
     openingElement: JsxOpeningElement
 ): RuleViolation[] => {
     const hasSpreadAssignments = openingElement
@@ -57,31 +57,18 @@ const alphabetizeJsxPropsJsxElement = (
     }
 
     const sortedPropStructures = sortedProps.map((prop) => prop.getStructure());
-
-    const errors = openingElement.getAttributes().map((prop, index) => {
-        const expectedIndex = findPropertyStructureIndexByName(
-            prop as JsxAttribute,
-            sortedPropStructures
-        );
-
-        const error = getRuleViolation(
-            prop as JsxAttribute,
-            props,
-            sortedPropStructures
-        );
-        prop.remove();
-
-        if (expectedIndex === index) {
-            return;
-        }
-        return error;
-    });
-
+    const errors = removeProps(props);
     openingElement.addAttributes(sortedPropStructures);
 
     return compact(errors);
 };
 
+/**
+ * Special handling for JsxElements that contain spread props, i.e.
+ * <Button onClick={() => {}} {...buttonProps} />
+ * Because the ordering can change the behavior of the code, we will sort the props before and after
+ * each of the spread assignments
+ */
 const alphabetizeJsxPropsWithSpread = (
     openingElement: JsxOpeningElement
 ): RuleViolation[] => {
@@ -91,7 +78,7 @@ const alphabetizeJsxPropsWithSpread = (
         .map((prop, index) =>
             Node.isJsxSpreadAttribute(prop) ? index : undefined
         )
-        .filter((value) => value != null) as number[];
+        .filter((value) => value != null) as number[]; // Can't use compact here as 0 is falsy
 
     let startIndex = 0;
     const indexRanges = spreadPropIndexes.map((spreadPropIndex) => {
@@ -116,25 +103,8 @@ const alphabetizeJsxPropsWithSpread = (
         const sortedPropStructures = sortBy(subsetProps, (prop) =>
             prop.getName()
         ).map((prop) => prop.getStructure());
-        const errors = subsetProps.map((prop, index) => {
-            const expectedIndex = findPropertyStructureIndexByName(
-                prop as JsxAttribute,
-                sortedPropStructures
-            );
-            const error = getRuleViolation(
-                prop as JsxAttribute,
-                subsetProps,
-                sortedPropStructures
-            );
 
-            prop.remove();
-
-            if (index === expectedIndex) {
-                return;
-            }
-
-            return error;
-        });
+        const errors = removeProps(subsetProps);
         openingElement.insertAttributes(
             first(indexRange)!,
             sortedPropStructures
@@ -178,6 +148,30 @@ const getRuleViolation = (
         lineNumber: prop.getStartLineNumber(),
         rule: "alphabetize-jsx-props",
     });
+};
+
+const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
+    const sortedPropStructures = sortBy(props, (prop) => prop.getName()).map(
+        (prop) => prop.getStructure()
+    );
+    const errors = props.map((prop, index) => {
+        const expectedIndex = findPropertyStructureIndexByName(
+            prop as JsxAttribute,
+            sortedPropStructures
+        );
+        const outOfOrder = expectedIndex !== index;
+        const error = getRuleViolation(
+            prop as JsxAttribute,
+            props,
+            sortedPropStructures
+        );
+
+        prop.remove();
+
+        return outOfOrder ? error : undefined;
+    });
+
+    return compact(errors);
 };
 
 export { alphabetizeJsxProps };
