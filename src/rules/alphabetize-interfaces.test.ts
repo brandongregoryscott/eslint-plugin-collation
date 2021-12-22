@@ -3,7 +3,7 @@ import { expectSourceFilesToMatch } from "../test/matchers";
 import { alphabetizeInterfaces } from "./alphabetize-interfaces";
 
 describe("alphabetizeInterfaces", () => {
-    it("should sort properties in interface when there are unsorted properties", () => {
+    it("should sort properties in interface when there are unsorted properties", async () => {
         // Arrange
         const project = new Project({ useInMemoryFileSystem: true });
         const input = project.createSourceFile(
@@ -31,13 +31,13 @@ describe("alphabetizeInterfaces", () => {
         );
 
         // Act
-        const result = alphabetizeInterfaces(input);
+        const result = await alphabetizeInterfaces(input);
 
         // Assert
         expectSourceFilesToMatch(result.file, expected);
     });
 
-    it("should sort properties in all interfaces when there are multiple unsorted interfaces", () => {
+    it("should sort properties in all interfaces when there are multiple unsorted interfaces", async () => {
         // Arrange
         const project = new Project({ useInMemoryFileSystem: true });
         const input = project.createSourceFile(
@@ -73,7 +73,7 @@ describe("alphabetizeInterfaces", () => {
         );
 
         // Act
-        const result = alphabetizeInterfaces(input);
+        const result = await alphabetizeInterfaces(input);
 
         // Assert
         expectSourceFilesToMatch(result.file, expected);

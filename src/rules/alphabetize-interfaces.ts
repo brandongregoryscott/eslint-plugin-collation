@@ -3,9 +3,12 @@ import _, { isEqual, sortBy, flatten, compact } from "lodash";
 import { InterfaceDeclaration, PropertySignature, SourceFile } from "ts-morph";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
+import { Rule } from "../types/rule";
 import { Logger } from "../utils/logger";
 
-const alphabetizeInterfaces = (file: SourceFile): RuleResult => {
+const alphabetizeInterfaces: Rule = async (
+    file: SourceFile
+): Promise<RuleResult> => {
     const originalFileContent = file.getText();
     const interfaces = file.getInterfaces();
     const errors = flatten(interfaces.map(alphabetizeInterface));

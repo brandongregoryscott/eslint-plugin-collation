@@ -11,8 +11,11 @@ import { diffLines } from "diff";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Logger } from "../utils/logger";
+import { Rule } from "../types/rule";
 
-const alphabetizeJsxProps = (file: SourceFile): RuleResult => {
+const alphabetizeJsxProps: Rule = async (
+    file: SourceFile
+): Promise<RuleResult> => {
     const originalFileContent = file.getText();
     const jsxOpeningElements = file.getDescendantsOfKind(
         SyntaxKind.JsxOpeningElement
@@ -47,7 +50,7 @@ const alphabetizePropsByJsxElement = (
     const sortedProps = sortBy(props, (prop) => prop.getName());
 
     if (isEqual(props, sortedProps)) {
-        const jsxTag = `<${openingElement.getTagNameNode().getText()} />`;
+        const jsxTag = getJsxTag(openingElement);
         const fileName = openingElement.getSourceFile().getBaseName();
         const lineNumber = openingElement.getStartLineNumber();
         Logger.debug(
@@ -124,7 +127,11 @@ const findPropertyStructureIndexByName = (
         (propertyStructure) => propertyStructure.name === prop.getName()
     );
 
+const getJsxTag = (openingElement: JsxOpeningElement): string =>
+    `<${openingElement.getTagNameNode().getText()} />`;
+
 const getRuleViolation = (
+    openingElement: JsxOpeningElement,
     prop: JsxAttribute,
     props: JsxAttribute[],
     sorted: JsxAttributeStructure[]
@@ -139,8 +146,8 @@ const getRuleViolation = (
         ]?.name;
     const relativePosition = propertyMovedToLastPosition ? "after" : "before";
     const hint = `'${propertyName}' should appear alphabetically ${relativePosition} '${relativePropertyName}'.`;
-
-    const message = `Expected prop '${propertyName}' (index ${originalIndex}) to be at index ${expectedIndex}.`;
+    const jsxTag = getJsxTag(openingElement);
+    const message = `Expected prop '${propertyName}' in ${jsxTag} (index ${originalIndex}) to be at index ${expectedIndex}.`;
     return new RuleViolation({
         hint,
         file: prop.getSourceFile(),
@@ -161,6 +168,7 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
         );
         const outOfOrder = expectedIndex !== index;
         const error = getRuleViolation(
+            prop.getFirstAncestorByKindOrThrow(SyntaxKind.JsxOpeningElement),
             prop as JsxAttribute,
             props,
             sortedPropStructures

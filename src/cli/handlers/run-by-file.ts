@@ -4,6 +4,7 @@ import { alphabetizeInterfaces } from "../../rules/alphabetize-interfaces";
 import { alphabetizeJsxProps } from "../../rules/alphabetize-jsx-props";
 import { fuzzyFindFile } from "../../utils/fuzzy-find-file";
 import { Logger } from "../../utils/logger";
+import { printRuleResults } from "../../utils/print-rule-results";
 
 const runByFile = async (context: Context) => {
     const { project } = context;
@@ -28,10 +29,12 @@ const runByFile = async (context: Context) => {
         process.exit(1);
     }
 
-    if (file != null) {
-        alphabetizeInterfaces(file);
-        alphabetizeJsxProps(file);
-    }
+    const results = await Promise.all([
+        alphabetizeInterfaces(file),
+        alphabetizeJsxProps(file),
+    ]);
+
+    printRuleResults(results);
 
     await context.saveIfNotDryRun();
     process.exit(0);
