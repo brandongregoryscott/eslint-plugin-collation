@@ -2,18 +2,11 @@ import { Project } from "ts-morph";
 import { Logger } from "../../utils/logger";
 
 const printProject = (project: Project) => {
-    Logger.divider()
-        .info("Compiler options:")
-        .divider()
-        .newLine()
-        .json(project.compilerOptions)
-        .newLine();
+    Logger.info("Compiler options:").json(project.compilerOptions);
 
-    Logger.divider()
-        .info("Source files:")
-        .divider()
-        .newLine()
-        .json(project.getSourceFiles().map((file) => file.getFilePath()));
+    Logger.info("Source files:").json(
+        project.getSourceFiles().map((file) => file.getFilePath())
+    );
 };
 
 export { printProject };

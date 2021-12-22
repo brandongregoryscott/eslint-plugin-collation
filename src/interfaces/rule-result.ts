@@ -4,8 +4,8 @@ import { RuleViolation } from "../models/rule-violation";
 
 interface RuleResult {
     diff: Change[];
-    file: SourceFile;
     errors: RuleViolation[];
+    file: SourceFile;
 }
 
 export type { RuleResult };
