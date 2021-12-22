@@ -1,9 +1,9 @@
 import { isEmpty } from "lodash";
-import { Context } from "models/context";
-import { alphabetizeInterfaces } from "rules/alphabetize-interfaces";
-import { alphabetizeJsxProps } from "rules/alphabetize-jsx-props";
-import { fuzzyFindFile } from "utils/fuzzy-find-file";
-import { Logger } from "utils/logger";
+import { Context } from "../../models/context";
+import { alphabetizeInterfaces } from "../../rules/alphabetize-interfaces";
+import { alphabetizeJsxProps } from "../../rules/alphabetize-jsx-props";
+import { fuzzyFindFile } from "../../utils/fuzzy-find-file";
+import { Logger } from "../../utils/logger";
 
 const runByFile = async (context: Context) => {
     const { project } = context;

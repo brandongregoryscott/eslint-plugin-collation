@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { Change } from "diff";
-import { Logger } from "utils/logger";
+import { Logger } from "./logger";
 
 const printDiff = (changes: Change[]) => {
     changes.forEach((change) => {

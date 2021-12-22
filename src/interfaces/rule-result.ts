@@ -1,6 +1,6 @@
 import { Change } from "diff";
-import { RuleError } from "models/rule-error";
 import { SourceFile } from "ts-morph";
+import { RuleError } from "../models/rule-error";
 
 interface RuleResult {
     diff: Change[];

@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "baseUrl": "src",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "jsx": "react",

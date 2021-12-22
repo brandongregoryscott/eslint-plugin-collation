@@ -1,5 +1,5 @@
-import { alphabetizeInterfaces } from "rules/alphabetize-interfaces";
 import { Project } from "ts-morph";
+import { alphabetizeInterfaces } from "./alphabetize-interfaces";
 
 describe("alphabetizeInterfaces", () => {
     it("should sort properties in interface when there are unsorted properties", () => {
@@ -28,7 +28,7 @@ describe("alphabetizeInterfaces", () => {
         const result = alphabetizeInterfaces(file);
 
         // Assert
-        expect(result.getFullText()).toStrictEqual(expected);
+        expect(result.file.getFullText()).toStrictEqual(expected);
     });
 
     it("should sort properties in all interfaces when there are multiple unsorted interfaces", () => {
@@ -65,6 +65,6 @@ describe("alphabetizeInterfaces", () => {
         const result = alphabetizeInterfaces(file);
 
         // Assert
-        expect(result.getFullText()).toStrictEqual(expected);
+        expect(result.file.getFullText()).toStrictEqual(expected);
     });
 });

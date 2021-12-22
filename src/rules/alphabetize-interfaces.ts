@@ -1,17 +1,21 @@
 import { diffLines } from "diff";
-import { RuleResult } from "interfaces/rule-result";
 import _, { isEqual, sortBy, flatten, compact } from "lodash";
-import { RuleError } from "models/rule-error";
 import { InterfaceDeclaration, PropertySignature, SourceFile } from "ts-morph";
-import { Logger } from "utils/logger";
+import { RuleResult } from "../interfaces/rule-result";
+import { RuleError } from "../models/rule-error";
+import { Logger } from "../utils/logger";
 
 const alphabetizeInterfaces = (file: SourceFile): RuleResult => {
-    const originalText = file.getText();
+    const originalFileContent = file.getText();
     const interfaces = file.getInterfaces();
     const errors = flatten(interfaces.map(alphabetizeInterface));
-    const updatedText = file.getText();
+    const endingFileContent = file.getText();
 
-    return { file, errors, diff: diffLines(originalText, updatedText) };
+    return {
+        file,
+        errors,
+        diff: diffLines(originalFileContent, endingFileContent),
+    };
 };
 
 const alphabetizeInterface = (

@@ -1,6 +1,6 @@
-import { alphabetizeJsxProps } from "rules/alphabetize-jsx-props";
-import { expectSourceFilesToMatch } from "test/matchers";
 import { Project } from "ts-morph";
+import { expectSourceFilesToMatch } from "../test/matchers";
+import { alphabetizeJsxProps } from "./alphabetize-jsx-props";
 
 describe("alphabetizeJsxProps", () => {
     it("should sort props of each JsxElement when there are unsorted props", () => {
@@ -38,7 +38,7 @@ describe("alphabetizeJsxProps", () => {
         const result = alphabetizeJsxProps(input);
 
         // Assert
-        expectSourceFilesToMatch(result, expected);
+        expectSourceFilesToMatch(result.file, expected);
     });
 
     it("should sort props before and after spread assignment in JsxElement", () => {
@@ -88,7 +88,7 @@ describe("alphabetizeJsxProps", () => {
         const result = alphabetizeJsxProps(input);
 
         // Assert
-        expectSourceFilesToMatch(result, expected);
+        expectSourceFilesToMatch(result.file, expected);
     });
 
     it("should sort props when spread assignment is in beginning of JsxElement", () => {
@@ -136,7 +136,7 @@ describe("alphabetizeJsxProps", () => {
         const result = alphabetizeJsxProps(input);
 
         // Assert
-        expectSourceFilesToMatch(result, expected);
+        expectSourceFilesToMatch(result.file, expected);
     });
 
     it("should sort props when spread assignment is at end of JsxElement", () => {
@@ -184,6 +184,6 @@ describe("alphabetizeJsxProps", () => {
         const result = alphabetizeJsxProps(input);
 
         // Assert
-        expectSourceFilesToMatch(result, expected);
+        expectSourceFilesToMatch(result.file, expected);
     });
 });

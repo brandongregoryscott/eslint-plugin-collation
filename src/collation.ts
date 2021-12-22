@@ -2,13 +2,13 @@
 import { Command } from "commander";
 import { version, description } from "../package.json";
 import { Project } from "ts-morph";
-import { printProject } from "cli/handlers/print-project";
-import { runByFiles } from "cli/handlers/run-by-files";
-import { runByFile } from "cli/handlers/run-by-file";
-import { alphabetizeInterfaces } from "rules/alphabetize-interfaces";
-import { alphabetizeJsxProps } from "rules/alphabetize-jsx-props";
-import { CliOptions } from "interfaces/cli-options";
-import { Context } from "models/context";
+import { Context } from "./models/context";
+import { CliOptions } from "./interfaces/cli-options";
+import { printProject } from "./cli/handlers/print-project";
+import { runByFile } from "./cli/handlers/run-by-file";
+import { runByFiles } from "./cli/handlers/run-by-files";
+import { alphabetizeInterfaces } from "./rules/alphabetize-interfaces";
+import { alphabetizeJsxProps } from "./rules/alphabetize-jsx-props";
 
 const main = async () => {
     const program = new Command();

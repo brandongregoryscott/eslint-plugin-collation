@@ -1,9 +1,9 @@
 import chalk from "chalk";
 import { compact, flatMap, isEmpty } from "lodash";
-import { Context } from "models/context";
-import { alphabetizeInterfaces } from "rules/alphabetize-interfaces";
-import { alphabetizeJsxProps } from "rules/alphabetize-jsx-props";
-import { Logger } from "utils/logger";
+import { Context } from "../../models/context";
+import { alphabetizeInterfaces } from "../../rules/alphabetize-interfaces";
+import { alphabetizeJsxProps } from "../../rules/alphabetize-jsx-props";
+import { Logger } from "../../utils/logger";
 
 const runByFiles = async (context: Context) => {
     const { cliOptions, project } = context;

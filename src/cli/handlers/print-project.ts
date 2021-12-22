@@ -1,5 +1,5 @@
 import { Project } from "ts-morph";
-import { Logger } from "utils/logger";
+import { Logger } from "../../utils/logger";
 
 const printProject = (project: Project) => {
     Logger.divider()

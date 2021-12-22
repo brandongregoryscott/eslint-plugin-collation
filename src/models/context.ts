@@ -1,7 +1,7 @@
 import chalk from "chalk";
-import { CliOptions } from "interfaces/cli-options";
 import { Project } from "ts-morph";
-import { Logger } from "utils/logger";
+import { CliOptions } from "../interfaces/cli-options";
+import { Logger } from "../utils/logger";
 
 interface ContextOptions {
     cliOptions: CliOptions;
