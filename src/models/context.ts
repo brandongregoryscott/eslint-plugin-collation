@@ -4,8 +4,8 @@ import { Project } from "ts-morph";
 import { Logger } from "utils/logger";
 
 interface ContextOptions {
-    project: Project;
     cliOptions: CliOptions;
+    project: Project;
 }
 
 class Context {
