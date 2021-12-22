@@ -7,8 +7,9 @@
         "collation": "dist/collation.js"
     },
     "dependencies": {
-        "chalk": "5.0.0",
+        "chalk": "4.0.0",
         "commander": "8.3.0",
+        "diff": "5.0.0",
         "fuzzaldrin": "2.1.0",
         "lodash": "4.17.21",
         "ts-morph": "13.0.2"
@@ -16,6 +17,7 @@
     "description": "Code linting/manipulation tools to make your TypeScript code easier to read",
     "devDependencies": {
         "@types/common-tags": "1.8.1",
+        "@types/diff": "5.0.1",
         "@types/fuzzaldrin": "2.1.4",
         "@types/jest": "27.0.3",
         "@types/lodash": "4.14.178",

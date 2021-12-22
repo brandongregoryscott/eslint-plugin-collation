@@ -1,19 +1,23 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { version } from "../package.json";
+import { version, description } from "../package.json";
 import { Project } from "ts-morph";
+import { Context } from "./models/context";
+import { CliOptions } from "./interfaces/cli-options";
+import { printProject } from "./cli/handlers/print-project";
+import { runByFile } from "./cli/handlers/run-by-file";
+import { runByFiles } from "./cli/handlers/run-by-files";
 import { alphabetizeInterfaces } from "./rules/alphabetize-interfaces";
-import { compact, flatMap, isEmpty } from "lodash";
 import { alphabetizeJsxProps } from "./rules/alphabetize-jsx-props";
-import { printProject } from "./cli/print-project";
-import { fuzzyFindFile } from "./cli/fuzzy-find-file";
-import { Logger } from "./cli/logger";
-import chalk from "chalk";
+import { flatten } from "lodash";
+import { printRuleResults } from "./utils/print-rule-results";
 
 const main = async () => {
     const program = new Command();
     program
+        .description(description)
         .version(version)
+        .option("-d, --dry", "Run without saving changes")
         .option(
             "-f, --file <fileNameOrPath>",
             "Run on specific file (e.g. --file button.tsx)"
@@ -29,84 +33,45 @@ const main = async () => {
         .parse();
 
     const project = new Project({ tsConfigFilePath: "tsconfig.json" });
-
     const {
         file: filePath,
-        files: filesPaths,
+        files: filePaths,
         printProject: shouldPrintProject,
-    } = program.opts();
+    } = program.opts<CliOptions>();
+
+    Context.initialize({
+        project,
+        cliOptions: program.opts<CliOptions>(),
+    });
+
     if (shouldPrintProject) {
         printProject(project);
         return;
     }
 
-    if (filesPaths != null && !Array.isArray(filesPaths)) {
-        Logger.warn(
-            `${chalk.bold(
-                "--files"
-            )} specified without any file names or paths.`
-        );
-        process.exit(0);
+    if (filePaths != null) {
+        await runByFiles();
     }
 
-    if (!isEmpty(filesPaths)) {
-        const files = compact(
-            flatMap(filesPaths, (filePath) => project.getSourceFile(filePath))
-        );
-
-        if (files.length !== filesPaths.length) {
-            const missingFiles = compact(
-                flatMap(filesPaths, (filePath) =>
-                    project.getSourceFile(filePath) != null
-                        ? undefined
-                        : filePath
-                )
-            );
-            Logger.warn(
-                "Some of the specified files could not be found in the project."
-            ).json(missingFiles);
-        }
-
-        files.forEach((file) => {
-            alphabetizeInterfaces(file);
-            alphabetizeJsxProps(file);
-        });
-        await project.save();
-        process.exit(0);
+    if (filePath != null) {
+        await runByFile();
     }
 
-    if (isEmpty(filePath)) {
-        const files = project.getSourceFiles();
-        files.forEach((file) => {
-            alphabetizeInterfaces(file);
-            alphabetizeJsxProps(file);
-        });
+    // Default case: run for all files
+    const files = project.getSourceFiles();
+    const results = await Promise.all(
+        flatten(
+            files.map((file) => [
+                alphabetizeInterfaces(file),
+                alphabetizeJsxProps(file),
+            ])
+        )
+    );
 
-        await project.save();
-        process.exit(0);
-    }
+    printRuleResults(results);
 
-    const file = project.getSourceFile(filePath);
-    if (file == null) {
-        const similarResults = fuzzyFindFile(filePath, project);
-        const notFoundError = `File ${filePath} not found in project.`;
-        if (isEmpty(similarResults)) {
-            Logger.error(notFoundError);
-            process.exit(1);
-        }
-
-        Logger.error(`${notFoundError} Did you mean one of these?`).json(
-            similarResults
-        );
-        process.exit(1);
-    }
-
-    if (file != null) {
-        alphabetizeInterfaces(file);
-        alphabetizeJsxProps(file);
-    }
-
-    await project.save();
+    await Context.saveIfNotDryRun();
+    process.exit(0);
 };
 
 main();

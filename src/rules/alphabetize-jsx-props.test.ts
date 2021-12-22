@@ -3,7 +3,7 @@ import { expectSourceFilesToMatch } from "../test/matchers";
 import { alphabetizeJsxProps } from "./alphabetize-jsx-props";
 
 describe("alphabetizeJsxProps", () => {
-    it("should sort props of each JsxElement when there are unsorted props", () => {
+    it("should sort props of each JsxElement when there are unsorted props", async () => {
         // Arrange
         const project = new Project({ useInMemoryFileSystem: true });
         const input = project.createSourceFile(
@@ -35,13 +35,14 @@ describe("alphabetizeJsxProps", () => {
         );
 
         // Act
-        const result = alphabetizeJsxProps(input);
+        const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expectSourceFilesToMatch(result, expected);
+        expect(result.errors.length).toBeGreaterThan(0);
+        expectSourceFilesToMatch(result.file, expected);
     });
 
-    it("should sort props before and after spread assignment in JsxElement", () => {
+    it("should sort props before and after spread assignment in JsxElement", async () => {
         // Arrange
         const project = new Project({ useInMemoryFileSystem: true });
         const input = project.createSourceFile(
@@ -85,13 +86,14 @@ describe("alphabetizeJsxProps", () => {
         );
 
         // Act
-        const result = alphabetizeJsxProps(input);
+        const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expectSourceFilesToMatch(result, expected);
+        expect(result.errors.length).toBeGreaterThan(0);
+        expectSourceFilesToMatch(result.file, expected);
     });
 
-    it("should sort props when spread assignment is in beginning of JsxElement", () => {
+    it("should sort props when spread assignment is in beginning of JsxElement", async () => {
         // Arrange
         const project = new Project({ useInMemoryFileSystem: true });
         const input = project.createSourceFile(
@@ -133,13 +135,14 @@ describe("alphabetizeJsxProps", () => {
         );
 
         // Act
-        const result = alphabetizeJsxProps(input);
+        const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expectSourceFilesToMatch(result, expected);
+        expect(result.errors.length).toBeGreaterThan(0);
+        expectSourceFilesToMatch(result.file, expected);
     });
 
-    it("should sort props when spread assignment is at end of JsxElement", () => {
+    it("should sort props when spread assignment is at end of JsxElement", async () => {
         // Arrange
         const project = new Project({ useInMemoryFileSystem: true });
         const input = project.createSourceFile(
@@ -181,9 +184,10 @@ describe("alphabetizeJsxProps", () => {
         );
 
         // Act
-        const result = alphabetizeJsxProps(input);
+        const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expectSourceFilesToMatch(result, expected);
+        expect(result.errors.length).toBeGreaterThan(0);
+        expectSourceFilesToMatch(result.file, expected);
     });
 });
