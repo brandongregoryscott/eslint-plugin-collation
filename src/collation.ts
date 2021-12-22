@@ -9,6 +9,8 @@ import { runByFile } from "./cli/handlers/run-by-file";
 import { runByFiles } from "./cli/handlers/run-by-files";
 import { alphabetizeInterfaces } from "./rules/alphabetize-interfaces";
 import { alphabetizeJsxProps } from "./rules/alphabetize-jsx-props";
+import { flatten } from "lodash";
+import { printRuleResults } from "./utils/print-rule-results";
 
 const main = async () => {
     const program = new Command();
@@ -57,10 +59,16 @@ const main = async () => {
 
     // Default case: run for all files
     const files = project.getSourceFiles();
-    files.forEach((file) => {
-        alphabetizeInterfaces(file);
-        alphabetizeJsxProps(file);
-    });
+    const results = await Promise.all(
+        flatten(
+            files.map((file) => [
+                alphabetizeInterfaces(file),
+                alphabetizeJsxProps(file),
+            ])
+        )
+    );
+
+    printRuleResults(results);
 
     await context.saveIfNotDryRun();
     process.exit(0);
