@@ -6,9 +6,9 @@ import { fuzzyFindFile } from "../../utils/fuzzy-find-file";
 import { Logger } from "../../utils/logger";
 import { printRuleResults } from "../../utils/print-rule-results";
 
-const runByFile = async (context: Context) => {
-    const { project } = context;
-    const { file: filePath } = context.cliOptions;
+const runByFile = async () => {
+    const { project } = Context;
+    const { file: filePath } = Context.cliOptions;
 
     if (filePath == null) {
         return;
@@ -36,7 +36,7 @@ const runByFile = async (context: Context) => {
 
     printRuleResults(results);
 
-    await context.saveIfNotDryRun();
+    await Context.saveIfNotDryRun();
     process.exit(0);
 };
 

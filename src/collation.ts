@@ -39,7 +39,7 @@ const main = async () => {
         printProject: shouldPrintProject,
     } = program.opts<CliOptions>();
 
-    const context = new Context({
+    Context.initialize({
         project,
         cliOptions: program.opts<CliOptions>(),
     });
@@ -50,11 +50,11 @@ const main = async () => {
     }
 
     if (filePaths != null) {
-        await runByFiles(context);
+        await runByFiles();
     }
 
     if (filePath != null) {
-        await runByFile(context);
+        await runByFile();
     }
 
     // Default case: run for all files
@@ -70,7 +70,7 @@ const main = async () => {
 
     printRuleResults(results);
 
-    await context.saveIfNotDryRun();
+    await Context.saveIfNotDryRun();
     process.exit(0);
 };
 

@@ -6,8 +6,8 @@ import { alphabetizeJsxProps } from "../../rules/alphabetize-jsx-props";
 import { Logger } from "../../utils/logger";
 import { printRuleResults } from "../../utils/print-rule-results";
 
-const runByFiles = async (context: Context) => {
-    const { cliOptions, project } = context;
+const runByFiles = async () => {
+    const { cliOptions, project } = Context;
     const { files: filePaths } = cliOptions;
 
     if (
@@ -48,7 +48,7 @@ const runByFiles = async (context: Context) => {
 
     printRuleResults(results);
 
-    await context.saveIfNotDryRun();
+    await Context.saveIfNotDryRun();
     process.exit(0);
 };
 
