@@ -2,6 +2,7 @@ import {
     JsxAttribute,
     JsxAttributeStructure,
     JsxOpeningElement,
+    JsxSelfClosingElement,
     Node,
     SourceFile,
     SyntaxKind,
@@ -17,12 +18,18 @@ const alphabetizeJsxProps: Rule = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
-    const jsxOpeningElements = file.getDescendantsOfKind(
-        SyntaxKind.JsxOpeningElement
-    );
-    const errors = flatten(
-        jsxOpeningElements.map(alphabetizePropsByJsxElement)
-    );
+    const jsxElements: Array<JsxOpeningElement | JsxSelfClosingElement> =
+        sortBy(
+            [
+                ...file.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
+                ...file.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
+            ],
+            // Sort by JsxElements that are children of JsxExpressions, which means they are being
+            // passed as props. This resolves the forgotten node error when traversing & manipulating the AST
+            (element) =>
+                element.getParentIfKind(SyntaxKind.JsxExpression) == null
+        );
+    const errors = flatten(jsxElements.map(alphabetizePropsByJsxElement));
     const endingFileContent = file.getText();
 
     return {
@@ -33,26 +40,26 @@ const alphabetizeJsxProps: Rule = async (
 };
 
 const alphabetizePropsByJsxElement = (
-    openingElement: JsxOpeningElement
+    jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): RuleViolation[] => {
-    const hasSpreadAssignments = openingElement
+    const hasSpreadAssignments = jsxElement
         .getAttributes()
         .some((prop) => Node.isJsxSpreadAttribute(prop));
 
     if (hasSpreadAssignments) {
-        return alphabetizeJsxPropsWithSpread(openingElement);
+        return alphabetizeJsxPropsWithSpread(jsxElement);
     }
 
-    const props = openingElement
+    const props = jsxElement
         .getAttributes()
         .filter((prop) => Node.isJsxAttribute(prop)) as JsxAttribute[];
 
     const sortedProps = sortBy(props, (prop) => prop.getName());
 
     if (isEqual(props, sortedProps)) {
-        const jsxTag = getJsxTag(openingElement);
-        const fileName = openingElement.getSourceFile().getBaseName();
-        const lineNumber = openingElement.getStartLineNumber();
+        const jsxTag = getJsxTag(jsxElement);
+        const fileName = jsxElement.getSourceFile().getBaseName();
+        const lineNumber = jsxElement.getStartLineNumber();
         Logger.debug(
             `Props for ${jsxTag} on line ${lineNumber} of ${fileName} are already sorted.`
         );
@@ -61,7 +68,7 @@ const alphabetizePropsByJsxElement = (
 
     const sortedPropStructures = sortedProps.map((prop) => prop.getStructure());
     const errors = removeProps(props);
-    openingElement.addAttributes(sortedPropStructures);
+    jsxElement.addAttributes(sortedPropStructures);
 
     return compact(errors);
 };
@@ -73,9 +80,9 @@ const alphabetizePropsByJsxElement = (
  * each of the spread assignments
  */
 const alphabetizeJsxPropsWithSpread = (
-    openingElement: JsxOpeningElement
+    jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): RuleViolation[] => {
-    const props = openingElement.getAttributes();
+    const props = jsxElement.getAttributes();
 
     const spreadPropIndexes = props
         .map((prop, index) =>
@@ -108,10 +115,7 @@ const alphabetizeJsxPropsWithSpread = (
         ).map((prop) => prop.getStructure());
 
         const errors = removeProps(subsetProps);
-        openingElement.insertAttributes(
-            first(indexRange)!,
-            sortedPropStructures
-        );
+        jsxElement.insertAttributes(first(indexRange)!, sortedPropStructures);
 
         return errors;
     });
@@ -127,11 +131,12 @@ const findPropertyStructureIndexByName = (
         (propertyStructure) => propertyStructure.name === prop.getName()
     );
 
-const getJsxTag = (openingElement: JsxOpeningElement): string =>
-    `<${openingElement.getTagNameNode().getText()} />`;
+const getJsxTag = (
+    jsxElement: JsxOpeningElement | JsxSelfClosingElement
+): string => `<${jsxElement.getTagNameNode().getText()} />`;
 
 const getRuleViolation = (
-    openingElement: JsxOpeningElement,
+    jsxElement: JsxOpeningElement | JsxSelfClosingElement,
     prop: JsxAttribute,
     props: JsxAttribute[],
     sorted: JsxAttributeStructure[]
@@ -146,7 +151,7 @@ const getRuleViolation = (
         ]?.name;
     const relativePosition = propertyMovedToLastPosition ? "after" : "before";
     const hint = `'${propertyName}' should appear alphabetically ${relativePosition} '${relativePropertyName}'.`;
-    const jsxTag = getJsxTag(openingElement);
+    const jsxTag = getJsxTag(jsxElement);
     const message = `Expected prop '${propertyName}' in ${jsxTag} (index ${originalIndex}) to be at index ${expectedIndex}.`;
     return new RuleViolation({
         hint,
@@ -167,8 +172,13 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
             sortedPropStructures
         );
         const outOfOrder = expectedIndex !== index;
+        const parent =
+            prop.getFirstAncestorByKind(SyntaxKind.JsxOpeningElement) ??
+            prop.getFirstAncestorByKindOrThrow(
+                SyntaxKind.JsxSelfClosingElement
+            );
         const error = getRuleViolation(
-            prop.getFirstAncestorByKindOrThrow(SyntaxKind.JsxOpeningElement),
+            parent,
             prop as JsxAttribute,
             props,
             sortedPropStructures
