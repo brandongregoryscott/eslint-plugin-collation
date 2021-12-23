@@ -9,6 +9,12 @@
             "name": "Debug cli.js",
             "request": "launch",
             "type": "node-terminal"
+        },
+        {
+            "command": "npm test",
+            "name": "Debug tests",
+            "request": "launch",
+            "type": "node-terminal"
         }
     ]
 }

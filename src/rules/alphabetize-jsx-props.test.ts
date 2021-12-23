@@ -190,4 +190,66 @@ describe("alphabetizeJsxProps", () => {
         expect(result.errors.length).toBeGreaterThan(0);
         expectSourceFilesToMatch(result.file, expected);
     });
+
+    it("should sort props of self-closing JsxElements", async () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const input = project.createSourceFile(
+            "input.tsx",
+            `
+                <EmptyState
+                    title="No Instruments Found"
+                    description="Save a new instrument to begin"
+                    iconBgColor={theme.colors.gray100}
+                />
+            `
+        );
+
+        const expected = project.createSourceFile(
+            "expected.tsx",
+            `
+                <EmptyState
+                    description="Save a new instrument to begin"
+                    iconBgColor={theme.colors.gray100}
+                    title="No Instruments Found"
+                />
+            `
+        );
+
+        // Act
+        const result = await alphabetizeJsxProps(input);
+
+        // Assert
+        expect(result.errors.length).toBeGreaterThan(0);
+        expectSourceFilesToMatch(result.file, expected);
+    });
+
+    it("should sort props of JsxElements that receive JsxElements as props", async () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const input = project.createSourceFile(
+            "input.tsx",
+            `
+                <Button marginY={8} marginRight={12} iconAfter={<CogIcon size={24} color="gray" />}>
+                    Settings
+                </Button>
+            `
+        );
+
+        const expected = project.createSourceFile(
+            "expected.tsx",
+            `
+                <Button iconAfter={<CogIcon color="gray" size={24} />} marginRight={12} marginY={8}>
+                    Settings
+                </Button>
+            `
+        );
+
+        // Act
+        const result = await alphabetizeJsxProps(input);
+
+        // Assert
+        expect(result.errors.length).toBeGreaterThan(0);
+        expectSourceFilesToMatch(result.file, expected);
+    });
 });
