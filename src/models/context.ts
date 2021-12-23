@@ -25,12 +25,22 @@ class Context {
         return this;
     }
 
+    public isSilent(): boolean {
+        const { silent = false } = this.cliOptions;
+        return silent;
+    }
+
+    public isVerbose(): boolean {
+        const { verbose = false } = this.cliOptions;
+        return verbose;
+    }
+
     public async saveIfNotDryRun(): Promise<void> {
         this.throwIfUninitialized();
 
         const { dry = false } = this.cliOptions;
         if (dry) {
-            Logger.info(
+            Logger.debug(
                 `Continuing without saving since ${chalk.bold(
                     "--dry"
                 )} was specified.`

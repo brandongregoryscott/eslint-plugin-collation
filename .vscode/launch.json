@@ -6,7 +6,7 @@
     "configurations": [
         {
             "command": "npm start",
-            "name": "Debug cli.js",
+            "name": "Debug collation.ts",
             "request": "launch",
             "type": "node-terminal"
         },

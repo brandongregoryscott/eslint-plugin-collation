@@ -30,6 +30,8 @@ const main = async () => {
             "-p, --print-project",
             "Output debugging information about detected TypeScript project"
         )
+        .option("-s, --silent", "Silence all logs in output")
+        .option("-v, --verbose", "Include debug-level logs in output")
         .parse();
 
     const project = new Project({ tsConfigFilePath: "tsconfig.json" });
