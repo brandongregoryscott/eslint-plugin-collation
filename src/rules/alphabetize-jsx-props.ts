@@ -160,7 +160,7 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
                 index,
                 expectedIndex,
                 parentName: getJsxTag(parent),
-                elementName: "prop",
+                elementTypeName: "prop",
                 original: props,
                 sorted: sortedPropStructures,
                 getElementName: (prop) => prop.getName(),

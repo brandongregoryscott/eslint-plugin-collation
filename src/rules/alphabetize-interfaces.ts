@@ -54,7 +54,7 @@ const alphabetizeInterface = (
             ...getAlphabeticalMessages({
                 index: currentIndex,
                 expectedIndex,
-                elementName: "property",
+                elementTypeName: "property",
                 sorted,
                 original: properties,
                 parentName: _interface.getName(),

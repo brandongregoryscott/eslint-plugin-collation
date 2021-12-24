@@ -90,7 +90,7 @@ const alphabetizeFunctionCallDependencies = (
                 sorted: sortedIdentifierStrings,
                 original: identifiers,
                 parentName: getFunctionCallName(functionCall),
-                elementName: "dependency",
+                elementTypeName: "dependency",
                 getElementName: getIdentifierText,
                 getElementStructureName: (identifier) => identifier,
             }),
