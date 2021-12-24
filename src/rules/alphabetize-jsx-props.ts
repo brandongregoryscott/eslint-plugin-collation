@@ -13,6 +13,8 @@ import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Logger } from "../utils/logger";
 import { RuleFunction } from "../types/rule-function";
+import { RuleName } from "../enums/rule-name";
+import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 
 const alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
@@ -58,11 +60,13 @@ const alphabetizePropsByJsxElement = (
 
     if (isEqual(props, sortedProps)) {
         const jsxTag = getJsxTag(jsxElement);
-        const fileName = jsxElement.getSourceFile().getBaseName();
         const lineNumber = jsxElement.getStartLineNumber();
-        Logger.debug(
-            `Props for ${jsxTag} on line ${lineNumber} of ${fileName} are already sorted.`
-        );
+        Logger.ruleDebug({
+            file: jsxElement.getSourceFile(),
+            lineNumber,
+            rule: RuleName.AlphabetizeJsxProps,
+            message: `Props for ${jsxTag} are already sorted.`,
+        });
         return [];
     }
 
@@ -135,33 +139,6 @@ const getJsxTag = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): string => `<${jsxElement.getTagNameNode().getText()} />`;
 
-const getRuleViolation = (
-    jsxElement: JsxOpeningElement | JsxSelfClosingElement,
-    prop: JsxAttribute,
-    props: JsxAttribute[],
-    sorted: JsxAttributeStructure[]
-): RuleViolation | undefined => {
-    const propertyName = prop.getName();
-    const originalIndex = props.indexOf(prop);
-    const expectedIndex = findPropertyStructureIndexByName(prop, sorted);
-    const propertyMovedToLastPosition = expectedIndex + 1 === props.length;
-    const relativePropertyName =
-        sorted[
-            propertyMovedToLastPosition ? expectedIndex - 1 : expectedIndex + 1
-        ]?.name;
-    const relativePosition = propertyMovedToLastPosition ? "after" : "before";
-    const hint = `'${propertyName}' should appear alphabetically ${relativePosition} '${relativePropertyName}'.`;
-    const jsxTag = getJsxTag(jsxElement);
-    const message = `Expected prop '${propertyName}' in ${jsxTag} (index ${originalIndex}) to be at index ${expectedIndex}.`;
-    return new RuleViolation({
-        hint,
-        file: prop.getSourceFile(),
-        message,
-        lineNumber: prop.getStartLineNumber(),
-        rule: "alphabetize-jsx-props",
-    });
-};
-
 const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
     const sortedPropStructures = sortBy(props, (prop) => prop.getName()).map(
         (prop) => prop.getStructure()
@@ -177,12 +154,22 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
             prop.getFirstAncestorByKindOrThrow(
                 SyntaxKind.JsxSelfClosingElement
             );
-        const error = getRuleViolation(
-            parent,
-            prop as JsxAttribute,
-            props,
-            sortedPropStructures
-        );
+
+        const error = new RuleViolation({
+            ...getAlphabeticalMessages<JsxAttribute, JsxAttributeStructure>({
+                index,
+                expectedIndex,
+                parentName: getJsxTag(parent),
+                elementName: "prop",
+                original: props,
+                sorted: sortedPropStructures,
+                getElementName: (prop) => prop.getName(),
+                getElementStructureName: (prop) => prop.name,
+            }),
+            file: prop.getSourceFile(),
+            lineNumber: prop.getStartLineNumber(),
+            rule: RuleName.AlphabetizeJsxProps,
+        });
 
         prop.remove();
 

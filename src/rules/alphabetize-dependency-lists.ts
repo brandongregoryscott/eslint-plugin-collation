@@ -2,6 +2,7 @@ import { diffLines } from "diff";
 import {
     compact,
     first,
+    flatMap,
     flatten,
     isEmpty,
     isEqual,
@@ -11,6 +12,7 @@ import {
 import {
     ArrayLiteralExpression,
     CallExpression,
+    Identifier,
     SourceFile,
     SyntaxKind,
     Type,
@@ -19,6 +21,7 @@ import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
+import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
 
 const functionsWithDependencies = ["useCallback", "useEffect", "useMemo"];
@@ -30,20 +33,9 @@ const alphabetizeDependencyLists: RuleFunction = async (
 
     const functionCalls = file
         .getDescendantsOfKind(SyntaxKind.CallExpression)
-        .filter(
-            (functionCall) =>
-                isUseCallback(functionCall) ||
-                isUseEffect(functionCall) ||
-                isUseMemo(functionCall)
-        );
+        .filter(isFunctionWithDependencies);
 
-    const arrayLiterals = flatten(
-        functionCalls.map((functionCall) =>
-            functionCall.getChildrenOfKind(SyntaxKind.ArrayLiteralExpression)
-        )
-    );
-
-    const errors = flatten(arrayLiterals.map(alphabetizeArrayLiteral));
+    const errors = flatMap(functionCalls, alphabetizeFunctionCallDependencies);
     const endingFileContent = file.getText();
     return {
         errors,
@@ -52,9 +44,21 @@ const alphabetizeDependencyLists: RuleFunction = async (
     };
 };
 
-const alphabetizeArrayLiteral = (
-    arrayLiteral: ArrayLiteralExpression
+const alphabetizeFunctionCallDependencies = (
+    functionCall: CallExpression
 ): RuleViolation[] => {
+    const arrayLiteral = first(
+        functionCall.getChildrenOfKind(SyntaxKind.ArrayLiteralExpression)
+    );
+    // This shouldn't ever happen, but this will prevent null coalescing all over the place
+    if (arrayLiteral == null) {
+        Logger.debug(
+            `ArrayLiteralExpression in ${RuleName.AlphabetizeDependencyLists} was unexpectedly null.`,
+            functionCall
+        );
+        return [];
+    }
+
     const identifiers = arrayLiteral.getDescendantsOfKind(
         SyntaxKind.Identifier
     );
@@ -62,29 +66,41 @@ const alphabetizeArrayLiteral = (
         return [];
     }
 
-    const sortedIdentifiers = sortBy(identifiers, (identifier) =>
-        identifier.getText()
-    );
-    const sortedIdentifierStrings = sortedIdentifiers.map((identifier) =>
-        identifier.getText()
-    );
-    if (isEqual(identifiers, sortedIdentifiers)) {
-        Logger.debug("Dependency list already sorted.");
+    const sorted = sortBy(identifiers, getIdentifierText);
+    const sortedIdentifierStrings = sorted.map(getIdentifierText);
+    if (isEqual(identifiers, sorted)) {
+        const lineNumber = functionCall.getStartLineNumber();
+        const functionName = getFunctionCallName(functionCall);
+        Logger.ruleDebug({
+            file: functionCall.getSourceFile(),
+            lineNumber,
+            message: `Dependency list for ${functionName} already sorted.`,
+            rule: RuleName.AlphabetizeDependencyLists,
+        });
         return [];
     }
 
     const errors = identifiers.map((identifier, index) => {
-        const expectedIndex = sortedIdentifiers.indexOf(identifier);
+        const expectedIndex = sorted.indexOf(identifier);
         const outOfOrder = expectedIndex !== index;
+        const error = new RuleViolation({
+            ...getAlphabeticalMessages<Identifier, string>({
+                index,
+                expectedIndex,
+                sorted: sortedIdentifierStrings,
+                original: identifiers,
+                parentName: getFunctionCallName(functionCall),
+                elementName: "dependency",
+                getElementName: getIdentifierText,
+                getElementStructureName: (identifier) => identifier,
+            }),
+            file: arrayLiteral.getSourceFile(),
+            lineNumber: arrayLiteral.getStartLineNumber(),
+            rule: RuleName.AlphabetizeDependencyLists,
+        });
         arrayLiteral.removeElement(identifier);
-        return outOfOrder
-            ? new RuleViolation({
-                  file: arrayLiteral.getSourceFile(),
-                  message: "",
-                  lineNumber: arrayLiteral.getStartLineNumber(),
-                  rule: RuleName.AlphabetizeDependencyLists,
-              })
-            : null;
+
+        return outOfOrder ? error : null;
     });
 
     arrayLiteral.addElements(sortedIdentifierStrings);
@@ -92,17 +108,12 @@ const alphabetizeArrayLiteral = (
     return compact(errors);
 };
 
-const isUseCallback = (functionCall: CallExpression): boolean =>
-    isExpectedIdentifier("useCallback", functionCall) &&
-    hasDependencyList(functionCall);
+const getIdentifierText = (identifier: Identifier) => identifier.getText();
 
-const isUseEffect = (functionCall: CallExpression): boolean =>
-    isExpectedIdentifier("useEffect", functionCall) &&
-    hasDependencyList(functionCall);
-
-const isUseMemo = (functionCall: CallExpression): boolean =>
-    isExpectedIdentifier("useMemo", functionCall) &&
-    hasDependencyList(functionCall);
+const getFunctionCallName = (functionCall: CallExpression): string => {
+    const identifiers = functionCall.getChildrenOfKind(SyntaxKind.Identifier);
+    return first(identifiers)?.getText() ?? "";
+};
 
 const hasDependencyList = (functionCall: CallExpression): boolean => {
     const _arguments = functionCall.getArguments();
@@ -116,12 +127,11 @@ const hasDependencyList = (functionCall: CallExpression): boolean => {
 const isExpectedIdentifier = (
     expectedIdentifier: string,
     functionCall: CallExpression
-): boolean => {
-    const identifiers = functionCall.getChildrenOfKind(SyntaxKind.Identifier);
-    const hasIdentifiers = !isEmpty(identifiers);
-    const nameMatches = first(identifiers)?.getText() === "useEffect";
+): boolean => getFunctionCallName(functionCall) === expectedIdentifier;
 
-    return hasIdentifiers && nameMatches;
-};
+const isFunctionWithDependencies = (functionCall: CallExpression): boolean =>
+    functionsWithDependencies.some((functionName) =>
+        isExpectedIdentifier(functionName, functionCall)
+    ) && hasDependencyList(functionCall);
 
 export { alphabetizeDependencyLists };
