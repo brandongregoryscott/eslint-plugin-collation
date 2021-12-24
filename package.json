@@ -12,6 +12,7 @@
         "diff": "5.0.0",
         "fuzzaldrin": "2.1.0",
         "lodash": "4.17.21",
+        "source-map-support": "^0.5.21",
         "ts-morph": "13.0.2"
     },
     "description": "Code linting/manipulation tools to make your TypeScript code easier to read",
@@ -54,11 +55,11 @@
         "url": "git@github.com:brandongregoryscott/collation.git"
     },
     "scripts": {
-        "build": "npm run esbuild -- --sourcemap --external:commander --external:lodash --external:shelljs --external:ts-morph --external:fuzzaldrin",
+        "build": "npm run esbuild -- --external:commander --external:lodash --external:shelljs --external:ts-morph --external:fuzzaldrin",
         "build:dist": "npm run esbuild -- --minify",
-        "build:watch": "npm run esbuild -- --sourcemap --watch",
+        "build:watch": "npm run esbuild -- --watch",
         "clean": "rimraf dist",
-        "esbuild": "esbuild src/collation.ts --bundle --outfile=dist/collation.js --platform=node --external:ts-morph",
+        "esbuild": "esbuild src/collation.ts --bundle --outfile=dist/collation.js --platform=node --sourcemap --external:ts-morph",
         "prebuild": "npm run clean",
         "prebuild:dist": "npm run clean",
         "prebuild:watch": "npm run clean",
