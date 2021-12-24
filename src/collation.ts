@@ -7,10 +7,7 @@ import { CliOptions } from "./interfaces/cli-options";
 import { printProject } from "./cli/handlers/print-project";
 import { runByFile } from "./cli/handlers/run-by-file";
 import { runByFiles } from "./cli/handlers/run-by-files";
-import { alphabetizeInterfaces } from "./rules/alphabetize-interfaces";
-import { alphabetizeJsxProps } from "./rules/alphabetize-jsx-props";
-import { flatten } from "lodash";
-import { printRuleResults } from "./utils/print-rule-results";
+import { ruleRunner } from "./utils/rule-runner";
 
 const main = async () => {
     const program = new Command();
@@ -61,17 +58,8 @@ const main = async () => {
 
     // Default case: run for all files
     const files = project.getSourceFiles();
-    const results = await Promise.all(
-        flatten(
-            files.map((file) => [
-                alphabetizeInterfaces(file),
-                alphabetizeJsxProps(file),
-            ])
-        )
-    );
 
-    printRuleResults(results);
-
+    await ruleRunner(files);
     await Context.saveIfNotDryRun();
     process.exit(0);
 };

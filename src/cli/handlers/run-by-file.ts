@@ -1,10 +1,8 @@
 import { isEmpty } from "lodash";
 import { Context } from "../../models/context";
-import { alphabetizeInterfaces } from "../../rules/alphabetize-interfaces";
-import { alphabetizeJsxProps } from "../../rules/alphabetize-jsx-props";
 import { fuzzyFindFile } from "../../utils/fuzzy-find-file";
 import { Logger } from "../../utils/logger";
-import { printRuleResults } from "../../utils/print-rule-results";
+import { ruleRunner } from "../../utils/rule-runner";
 
 const runByFile = async () => {
     const { project } = Context;
@@ -29,13 +27,7 @@ const runByFile = async () => {
         process.exit(1);
     }
 
-    const results = await Promise.all([
-        alphabetizeInterfaces(file),
-        alphabetizeJsxProps(file),
-    ]);
-
-    printRuleResults(results);
-
+    await ruleRunner([file]);
     await Context.saveIfNotDryRun();
     process.exit(0);
 };

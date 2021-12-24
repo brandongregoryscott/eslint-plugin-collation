@@ -1,12 +1,14 @@
 import { diffLines } from "diff";
 import _, { isEqual, sortBy, flatten, compact } from "lodash";
 import { InterfaceDeclaration, PropertySignature, SourceFile } from "ts-morph";
+import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
-import { Rule } from "../types/rule";
+import { RuleFunction } from "../types/rule-function";
+import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
 
-const alphabetizeInterfaces: Rule = async (
+const alphabetizeInterfaces: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
@@ -25,14 +27,16 @@ const alphabetizeInterface = (
     _interface: InterfaceDeclaration
 ): RuleViolation[] => {
     const properties = _interface.getProperties();
-    const sorted = sortBy(properties, (e) => e.getName());
+    const sorted = sortBy(properties, getPropertyName);
 
     if (isEqual(properties, sorted)) {
-        const fileName = _interface.getSourceFile().getBaseName();
         const lineNumber = _interface.getStartLineNumber();
-        Logger.debug(
-            `Properties of interface ${_interface.getName()} on line ${lineNumber} of ${fileName} are already sorted.`
-        );
+        Logger.ruleDebug({
+            file: _interface.getSourceFile(),
+            lineNumber,
+            message: `Properties of interface ${_interface.getName()} are already sorted.`,
+            rule: RuleName.AlphabetizeInterfaces,
+        });
 
         return [];
     }
@@ -46,37 +50,26 @@ const alphabetizeInterface = (
 
         property.setOrder(sorted.indexOf(property));
 
-        return getRuleViolation(_interface, property, properties, sorted);
+        return new RuleViolation({
+            ...getAlphabeticalMessages({
+                index: currentIndex,
+                expectedIndex,
+                elementTypeName: "property",
+                sorted,
+                original: properties,
+                parentName: _interface.getName(),
+                getElementName: getPropertyName,
+                getElementStructureName: getPropertyName,
+            }),
+            file: _interface.getSourceFile(),
+            lineNumber: property.getStartLineNumber(),
+            rule: RuleName.AlphabetizeInterfaces,
+        });
     });
 
     return compact(errors);
 };
 
-const getRuleViolation = (
-    _interface: InterfaceDeclaration,
-    property: PropertySignature,
-    properties: PropertySignature[],
-    sorted: PropertySignature[]
-): RuleViolation => {
-    const propertyName = property.getName();
-    const interfaceName = _interface.getName();
-    const originalIndex = properties.indexOf(property);
-    const expectedIndex = sorted.indexOf(property);
-    const propertyMovedToLastPosition = expectedIndex + 1 === properties.length;
-    const relativePropertyName =
-        sorted[
-            propertyMovedToLastPosition ? expectedIndex - 1 : expectedIndex + 1
-        ]?.getName();
-    const relativePosition = propertyMovedToLastPosition ? "after" : "before";
-    const hint = `'${propertyName}' should appear alphabetically ${relativePosition} '${relativePropertyName}'.`;
-
-    return new RuleViolation({
-        file: _interface.getSourceFile(),
-        hint,
-        lineNumber: property.getStartLineNumber(),
-        message: `Expected property '${propertyName}' in '${interfaceName}' (index ${originalIndex}) to be at index ${expectedIndex}.`,
-        rule: "alphabetize-interfaces",
-    });
-};
+const getPropertyName = (property: PropertySignature) => property.getName();
 
 export { alphabetizeInterfaces };

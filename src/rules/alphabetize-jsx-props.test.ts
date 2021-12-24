@@ -1,5 +1,4 @@
 import { Project } from "ts-morph";
-import { expectSourceFilesToMatch } from "../test/matchers";
 import { alphabetizeJsxProps } from "./alphabetize-jsx-props";
 
 describe("alphabetizeJsxProps", () => {
@@ -38,8 +37,8 @@ describe("alphabetizeJsxProps", () => {
         const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expect(result.errors.length).toBeGreaterThan(0);
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 
     it("should sort props before and after spread assignment in JsxElement", async () => {
@@ -89,8 +88,8 @@ describe("alphabetizeJsxProps", () => {
         const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expect(result.errors.length).toBeGreaterThan(0);
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 
     it("should sort props when spread assignment is in beginning of JsxElement", async () => {
@@ -138,8 +137,8 @@ describe("alphabetizeJsxProps", () => {
         const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expect(result.errors.length).toBeGreaterThan(0);
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 
     it("should sort props when spread assignment is at end of JsxElement", async () => {
@@ -187,8 +186,8 @@ describe("alphabetizeJsxProps", () => {
         const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expect(result.errors.length).toBeGreaterThan(0);
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 
     it("should sort props of self-closing JsxElements", async () => {
@@ -220,8 +219,8 @@ describe("alphabetizeJsxProps", () => {
         const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expect(result.errors.length).toBeGreaterThan(0);
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 
     it("should sort props of JsxElements that receive JsxElements as props", async () => {
@@ -249,7 +248,7 @@ describe("alphabetizeJsxProps", () => {
         const result = await alphabetizeJsxProps(input);
 
         // Assert
-        expect(result.errors.length).toBeGreaterThan(0);
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 });

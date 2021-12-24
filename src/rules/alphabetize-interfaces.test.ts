@@ -1,5 +1,4 @@
 import { Project } from "ts-morph";
-import { expectSourceFilesToMatch } from "../test/matchers";
 import { alphabetizeInterfaces } from "./alphabetize-interfaces";
 
 describe("alphabetizeInterfaces", () => {
@@ -34,7 +33,8 @@ describe("alphabetizeInterfaces", () => {
         const result = await alphabetizeInterfaces(input);
 
         // Assert
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 
     it("should sort properties in all interfaces when there are multiple unsorted interfaces", async () => {
@@ -76,6 +76,58 @@ describe("alphabetizeInterfaces", () => {
         const result = await alphabetizeInterfaces(input);
 
         // Assert
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
+    it.skip("should sort properties with JSDoc comments", async () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const input = project.createSourceFile(
+            "input.ts",
+            `
+                interface Car {
+                    /*
+                     * Make of the car
+                     */
+                    make: string;
+                    /*
+                     * Number of wheels the car has
+                     */
+                    wheels: number;
+                    /*
+                     * Model of the car
+                     */
+                    model: string;
+                }
+            `
+        );
+
+        const expected = project.createSourceFile(
+            "expected.ts",
+            `
+                interface Car {
+                    /*
+                     * Make of the car
+                     */
+                    make: string;
+                    /*
+                     * Model of the car
+                     */
+                    model: string;
+                    /*
+                     * Number of wheels the car has
+                     */
+                    wheels: number;
+                }
+            `
+        );
+
+        // Act
+        const result = await alphabetizeInterfaces(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 });
