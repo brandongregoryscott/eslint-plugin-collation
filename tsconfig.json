@@ -12,5 +12,6 @@
         "strict": true,
         "target": "es2021"
     },
+    "files": ["src/global.d.ts"],
     "include": ["src"]
 }

@@ -1,5 +1,4 @@
 import { Project } from "ts-morph";
-import { expectSourceFilesToMatch } from "../test/matchers";
 import { alphabetizeInterfaces } from "./alphabetize-interfaces";
 
 describe("alphabetizeInterfaces", () => {
@@ -34,7 +33,8 @@ describe("alphabetizeInterfaces", () => {
         const result = await alphabetizeInterfaces(input);
 
         // Assert
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 
     it("should sort properties in all interfaces when there are multiple unsorted interfaces", async () => {
@@ -76,6 +76,7 @@ describe("alphabetizeInterfaces", () => {
         const result = await alphabetizeInterfaces(input);
 
         // Assert
-        expectSourceFilesToMatch(result.file, expected);
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
     });
 });

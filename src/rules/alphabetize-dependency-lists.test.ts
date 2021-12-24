@@ -1,5 +1,4 @@
 import { Project } from "ts-morph";
-import { expectSourceFilesToMatch } from "../test/matchers";
 import { alphabetizeDependencyLists } from "./alphabetize-dependency-lists";
 
 describe("alphabetizeDependencyLists", () => {
@@ -11,26 +10,27 @@ describe("alphabetizeDependencyLists", () => {
             const input = project.createSourceFile(
                 "input.tsx",
                 `
-                const value = ${functionName}(() => {
+                    const value = ${functionName}(() => {
 
-                }, [setProject, handleOpenDialog, isLoading])
-            `
+                    }, [setProject, handleOpenDialog, isLoading])
+                `
             );
 
             const expected = project.createSourceFile(
                 "expected.tsx",
                 `
-                const value = ${functionName}(() => {
+                    const value = ${functionName}(() => {
 
-                }, [handleOpenDialog, isLoading, setProject])
-            `
+                    }, [handleOpenDialog, isLoading, setProject])
+                `
             );
 
             // Act
             const result = await alphabetizeDependencyLists(input);
 
             // Assert
-            expectSourceFilesToMatch(result.file, expected);
+            expect(result).toHaveErrors();
+            expect(result).toMatchSourceFile(expected);
         }
     );
 
@@ -51,17 +51,18 @@ describe("alphabetizeDependencyLists", () => {
             const expected = project.createSourceFile(
                 "expected.tsx",
                 `
-                const value = ${functionName}(() => {
+                    const value = ${functionName}(() => {
 
-                })
-            `
+                    })
+                `
             );
 
             // Act
             const result = await alphabetizeDependencyLists(input);
 
             // Assert
-            expectSourceFilesToMatch(result.file, expected);
+            expect(result).not.toHaveErrors();
+            expect(result).toMatchSourceFile(expected);
         }
     );
 
@@ -92,7 +93,8 @@ describe("alphabetizeDependencyLists", () => {
             const result = await alphabetizeDependencyLists(input);
 
             // Assert
-            expectSourceFilesToMatch(result.file, expected);
+            expect(result).not.toHaveErrors();
+            expect(result).toMatchSourceFile(expected);
         }
     );
 });
