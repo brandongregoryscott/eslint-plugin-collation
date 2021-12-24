@@ -3,10 +3,10 @@ import _, { isEqual, sortBy, flatten, compact } from "lodash";
 import { InterfaceDeclaration, PropertySignature, SourceFile } from "ts-morph";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
-import { Rule } from "../types/rule";
+import { RuleFunction } from "../types/rule-function";
 import { Logger } from "../utils/logger";
 
-const alphabetizeInterfaces: Rule = async (
+const alphabetizeInterfaces: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();

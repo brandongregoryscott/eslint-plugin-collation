@@ -12,9 +12,9 @@ import { diffLines } from "diff";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Logger } from "../utils/logger";
-import { Rule } from "../types/rule";
+import { RuleFunction } from "../types/rule-function";
 
-const alphabetizeJsxProps: Rule = async (
+const alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
