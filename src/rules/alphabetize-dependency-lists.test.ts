@@ -97,4 +97,62 @@ describe("alphabetizeDependencyLists", () => {
             expect(result).toMatchSourceFile(expected);
         }
     );
+
+    it("should alphabetize nested property dependencies", async () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const input = project.createSourceFile(
+            "input.tsx",
+            `
+                const value = useMemo(() => {
+
+                }, [setProject, handleOpenDialog, project.name])
+            `
+        );
+
+        const expected = project.createSourceFile(
+            "expected.tsx",
+            `
+                const value = useMemo(() => {
+
+                }, [handleOpenDialog, project.name, setProject])
+            `
+        );
+
+        // Act
+        const result = await alphabetizeDependencyLists(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
+    it("should alphabetize deeply-nested property dependencies", async () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const input = project.createSourceFile(
+            "input.tsx",
+            `
+                const value = useMemo(() => {
+
+                }, [x, setProject, handleOpenDialog, theme.colors.gray900])
+            `
+        );
+
+        const expected = project.createSourceFile(
+            "expected.tsx",
+            `
+                const value = useMemo(() => {
+
+                }, [handleOpenDialog, setProject, theme.colors.gray900, x])
+            `
+        );
+
+        // Act
+        const result = await alphabetizeDependencyLists(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
 });

@@ -8,6 +8,7 @@ import { printProject } from "./cli/handlers/print-project";
 import { runByFile } from "./cli/handlers/run-by-file";
 import { runByFiles } from "./cli/handlers/run-by-files";
 import { ruleRunner } from "./utils/rule-runner";
+import "source-map-support/register";
 
 const main = async () => {
     const program = new Command();

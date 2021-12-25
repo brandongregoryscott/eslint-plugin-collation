@@ -14,9 +14,9 @@ interface GetHintOptions<TElement, TElementStructure = TElement> {
     /* Sorted collection of elements or their transformed structures */
     sorted: TElementStructure[];
     /* Function to return the element's actual name */
-    getElementName: (element: TElement) => string;
+    getElementName?: (element: TElement) => string;
     /* Function to return the transformed element's actual name */
-    getElementStructureName: (elementStructure: TElementStructure) => string;
+    getElementStructureName?: (elementStructure: TElementStructure) => string;
 }
 
 const getAlphabeticalMessages = <TElement, TElementStructure = TElement>(
@@ -29,8 +29,8 @@ const getAlphabeticalMessages = <TElement, TElementStructure = TElement>(
         elementTypeName,
         original,
         sorted,
-        getElementName,
-        getElementStructureName,
+        getElementName = (element) => element,
+        getElementStructureName = (element) => element,
     } = options;
 
     const propertyName = getElementName(original[index]);

@@ -3,19 +3,17 @@ import {
     compact,
     first,
     flatMap,
-    flatten,
     isEmpty,
     isEqual,
     last,
     sortBy,
 } from "lodash";
 import {
-    ArrayLiteralExpression,
     CallExpression,
     Identifier,
+    PropertyAccessExpression,
     SourceFile,
     SyntaxKind,
-    Type,
 } from "ts-morph";
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
@@ -59,13 +57,24 @@ const alphabetizeFunctionCallDependencies = (
         return [];
     }
 
-    const identifiers = arrayLiteral.getDescendantsOfKind(
-        SyntaxKind.Identifier
-    );
+    const identifiers = [
+        ...arrayLiteral
+            .getDescendantsOfKind(SyntaxKind.Identifier)
+            // Filter out identifier pieces of PropertyAccessExpressions such as project.name
+            // which are pulled separately to propertly reconstruct strings + dedupe
+            .filter(isNotChildOfPropertyAccess),
+        ...arrayLiteral
+            .getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)
+            // Similar case here - we want to get root parent PropertyAccessExpressions,
+            // not parts i.e. theme.colors can be a child of theme.colors.gray900
+            .filter(isNotChildOfPropertyAccess),
+    ];
+
     if (isEmpty(identifiers)) {
         return [];
     }
 
+    const originalIdentifierStrings = identifiers.map(getIdentifierText);
     const sorted = sortBy(identifiers, getIdentifierText);
     const sortedIdentifierStrings = sorted.map(getIdentifierText);
     if (isEqual(identifiers, sorted)) {
@@ -84,15 +93,13 @@ const alphabetizeFunctionCallDependencies = (
         const expectedIndex = sorted.indexOf(identifier);
         const outOfOrder = expectedIndex !== index;
         const error = new RuleViolation({
-            ...getAlphabeticalMessages<Identifier, string>({
+            ...getAlphabeticalMessages({
                 index,
                 expectedIndex,
                 sorted: sortedIdentifierStrings,
-                original: identifiers,
+                original: originalIdentifierStrings,
                 parentName: getFunctionCallName(functionCall),
                 elementTypeName: "dependency",
-                getElementName: getIdentifierText,
-                getElementStructureName: (identifier) => identifier,
             }),
             file: arrayLiteral.getSourceFile(),
             lineNumber: arrayLiteral.getStartLineNumber(),
@@ -108,7 +115,8 @@ const alphabetizeFunctionCallDependencies = (
     return compact(errors);
 };
 
-const getIdentifierText = (identifier: Identifier) => identifier.getText();
+const getIdentifierText = (identifier: Identifier | PropertyAccessExpression) =>
+    identifier.getText();
 
 const getFunctionCallName = (functionCall: CallExpression): string => {
     const identifiers = functionCall.getChildrenOfKind(SyntaxKind.Identifier);
@@ -133,5 +141,12 @@ const isFunctionWithDependencies = (functionCall: CallExpression): boolean =>
     functionsWithDependencies.some((functionName) =>
         isExpectedIdentifier(functionName, functionCall)
     ) && hasDependencyList(functionCall);
+
+const isNotChildOfPropertyAccess = (
+    identifierOrPropertyAccess: Identifier | PropertyAccessExpression
+): boolean =>
+    identifierOrPropertyAccess.getParentIfKind(
+        SyntaxKind.PropertyAccessExpression
+    ) == null;
 
 export { alphabetizeDependencyLists };
