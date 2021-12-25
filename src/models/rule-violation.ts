@@ -1,5 +1,6 @@
 import { SourceFile } from "ts-morph";
 import { RuleName } from "../enums/rule-name";
+import { formatRuleViolation } from "../utils/string-utils";
 
 class RuleViolation extends Error {
     public readonly file: SourceFile;
@@ -22,6 +23,10 @@ class RuleViolation extends Error {
         this.lineNumber = lineNumber;
         this.message = message;
         this.rule = rule;
+    }
+
+    public format(): string {
+        return formatRuleViolation(this);
     }
 }
 

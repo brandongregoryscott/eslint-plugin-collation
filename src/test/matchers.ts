@@ -8,12 +8,17 @@ interface MatcherResult {
 }
 
 const toHaveErrors = (result: RuleResult): MatcherResult => {
-    try {
-        expect(result.errors).not.toBeEmpty();
-        return { message: () => "", pass: true };
-    } catch (error) {
-        return { message: () => (error as Error).message, pass: false };
-    }
+    const { errors } = result;
+    const pass = errors != null && errors.length > 0;
+    const condition = pass ? "not to have" : "to have";
+    const formattedErrors = pass
+        ? `\n\n${errors.map((error) => error.format()).join("\n")}`
+        : JSON.stringify(errors);
+    return {
+        message: () =>
+            `Expected result ${condition} errors, but received: ${formattedErrors}`,
+        pass,
+    };
 };
 
 const toMatchSourceFile = (
