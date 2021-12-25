@@ -1,4 +1,5 @@
 import { Project } from "ts-morph";
+import { Context } from "../models/context";
 import { alphabetizeJsxProps } from "./alphabetize-jsx-props";
 
 describe("alphabetizeJsxProps", () => {
@@ -141,6 +142,43 @@ describe("alphabetizeJsxProps", () => {
         expect(result).toMatchSourceFile(expected);
     });
 
+    it("should leave props unmodified when spread assignment is in beginning of JsxElement and there's only one named prop", async () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const input = project.createSourceFile(
+            "input.tsx",
+            `
+                const Example = (props) => {
+                    return (
+                        <button
+                            {...buttonProps}
+                            readOnly={false}></button>
+                    );
+                };
+            `
+        );
+
+        const expected = project.createSourceFile(
+            "expected.tsx",
+            `
+                const Example = (props) => {
+                    return (
+                        <button
+                            {...buttonProps}
+                            readOnly={false}></button>
+                    );
+                };
+            `
+        );
+
+        // Act
+        const result = await alphabetizeJsxProps(input);
+
+        // Assert
+        expect(result).not.toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
     it("should sort props when spread assignment is at end of JsxElement", async () => {
         // Arrange
         const project = new Project({ useInMemoryFileSystem: true });
@@ -187,6 +225,43 @@ describe("alphabetizeJsxProps", () => {
 
         // Assert
         expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
+    it("should leave props unmodified when spread assignment is at end of JsxElement and there's only one named prop", async () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const input = project.createSourceFile(
+            "input.tsx",
+            `
+                const Example = (props) => {
+                    return (
+                        <button
+                            readOnly={false}
+                            {...buttonProps}></button>
+                    );
+                };
+            `
+        );
+
+        const expected = project.createSourceFile(
+            "expected.tsx",
+            `
+                const Example = (props) => {
+                    return (
+                        <button
+                            readOnly={false}
+                            {...buttonProps}></button>
+                    );
+                };
+            `
+        );
+
+        // Act
+        const result = await alphabetizeJsxProps(input);
+
+        // Assert
+        expect(result).not.toHaveErrors();
         expect(result).toMatchSourceFile(expected);
     });
 

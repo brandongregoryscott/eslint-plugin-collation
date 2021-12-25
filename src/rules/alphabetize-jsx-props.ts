@@ -7,7 +7,16 @@ import {
     SourceFile,
     SyntaxKind,
 } from "ts-morph";
-import { compact, first, flatten, isEqual, last, range, sortBy } from "lodash";
+import {
+    compact,
+    first,
+    flatten,
+    isEmpty,
+    isEqual,
+    last,
+    range,
+    sortBy,
+} from "lodash";
 import { diffLines } from "diff";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
@@ -52,24 +61,12 @@ const alphabetizePropsByJsxElement = (
         return alphabetizeJsxPropsWithSpread(jsxElement);
     }
 
-    const props = jsxElement
-        .getAttributes()
-        .filter((prop) => Node.isJsxAttribute(prop)) as JsxAttribute[];
-
-    const sortedProps = sortBy(props, (prop) => prop.getName());
-
-    if (isEqual(props, sortedProps)) {
-        const jsxTag = getJsxTag(jsxElement);
-        const lineNumber = jsxElement.getStartLineNumber();
-        Logger.ruleDebug({
-            file: jsxElement.getSourceFile(),
-            lineNumber,
-            rule: RuleName.AlphabetizeJsxProps,
-            message: `Props for ${jsxTag} are already sorted.`,
-        });
+    if (propsAlreadySorted(jsxElement)) {
         return [];
     }
 
+    const props = jsxElement.getAttributes() as JsxAttribute[];
+    const sortedProps = sortBy(props, (prop) => prop.getName());
     const sortedPropStructures = sortedProps.map((prop) => prop.getStructure());
     const errors = removeProps(props);
     jsxElement.addAttributes(sortedPropStructures);
@@ -86,8 +83,11 @@ const alphabetizePropsByJsxElement = (
 const alphabetizeJsxPropsWithSpread = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): RuleViolation[] => {
-    const props = jsxElement.getAttributes();
+    if (propsAlreadySorted(jsxElement)) {
+        return [];
+    }
 
+    const props = jsxElement.getAttributes();
     const spreadPropIndexes = props
         .map((prop, index) =>
             Node.isJsxSpreadAttribute(prop) ? index : undefined
@@ -138,6 +138,31 @@ const findPropertyStructureIndexByName = (
 const getJsxTag = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): string => `<${jsxElement.getTagNameNode().getText()} />`;
+
+const propsAlreadySorted = (
+    jsxElement: JsxOpeningElement | JsxSelfClosingElement
+): boolean => {
+    const props = jsxElement
+        .getAttributes()
+        .filter((prop) => Node.isJsxAttribute(prop)) as JsxAttribute[];
+
+    const sortedProps = sortBy(props, (prop) => prop.getName());
+
+    if (!isEqual(props, sortedProps)) {
+        return false;
+    }
+
+    const jsxTag = getJsxTag(jsxElement);
+    const lineNumber = jsxElement.getStartLineNumber();
+    Logger.ruleDebug({
+        file: jsxElement.getSourceFile(),
+        lineNumber,
+        rule: RuleName.AlphabetizeJsxProps,
+        message: `Props for ${jsxTag} are already sorted.`,
+    });
+
+    return true;
+};
 
 const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
     const sortedPropStructures = sortBy(props, (prop) => prop.getName()).map(
