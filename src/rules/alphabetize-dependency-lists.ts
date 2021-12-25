@@ -1,5 +1,6 @@
 import { diffLines } from "diff";
 import {
+    chain,
     compact,
     first,
     flatMap,
@@ -11,6 +12,7 @@ import {
 import {
     CallExpression,
     Identifier,
+    Node,
     PropertyAccessExpression,
     SourceFile,
     SyntaxKind,
@@ -57,18 +59,16 @@ const alphabetizeFunctionCallDependencies = (
         return [];
     }
 
-    const identifiers = [
-        ...arrayLiteral
-            .getDescendantsOfKind(SyntaxKind.Identifier)
-            // Filter out identifier pieces of PropertyAccessExpressions such as project.name
-            // which are pulled separately to propertly reconstruct strings + dedupe
-            .filter(isNotChildOfPropertyAccess),
-        ...arrayLiteral
-            .getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)
-            // Similar case here - we want to get root parent PropertyAccessExpressions,
-            // not parts i.e. theme.colors can be a child of theme.colors.gray900
-            .filter(isNotChildOfPropertyAccess),
-    ];
+    const identifiers = chain(arrayLiteral.getDescendants())
+        .filter(
+            (node) =>
+                Node.isIdentifier(node) || Node.isPropertyAccessExpression(node)
+        )
+        .thru((nodes) => nodes as Array<Identifier | PropertyAccessExpression>)
+        // Filter out identifier pieces of PropertyAccessExpressions such as project.name
+        // which are pulled separately to propertly reconstruct strings + dedupe
+        .filter(isNotChildOfPropertyAccess)
+        .value();
 
     if (isEmpty(identifiers)) {
         return [];
