@@ -155,4 +155,33 @@ describe("alphabetizeDependencyLists", () => {
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
     });
+
+    it("should not return errors when deeply-nested property dependencies are already sorted", async () => {
+        // Arrange
+        const project = new Project({ useInMemoryFileSystem: true });
+        const input = project.createSourceFile(
+            "input.tsx",
+            `
+                const value = useMemo(() => {
+
+                }, [handleOpenDialog, setProject, theme.colors.gray900, x])
+            `
+        );
+
+        const expected = project.createSourceFile(
+            "expected.tsx",
+            `
+                const value = useMemo(() => {
+
+                }, [handleOpenDialog, setProject, theme.colors.gray900, x])
+            `
+        );
+
+        // Act
+        const result = await alphabetizeDependencyLists(input);
+
+        // Assert
+        expect(result).not.toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
 });
