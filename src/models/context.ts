@@ -9,12 +9,16 @@ interface ContextOptions {
 }
 
 class Context {
-    /* @ts-ignore */
     public cliOptions: CliOptions;
-    /* @ts-ignore We're manually handling initialization and don't need TS to hold our hand */
     public project: Project;
 
     private initialized: boolean = false;
+
+    public constructor() {
+        // Set defaults for the sake of testing
+        this.cliOptions = {};
+        this.project = new Project();
+    }
 
     public initialize(context: ContextOptions): Context {
         const { cliOptions, project } = context;

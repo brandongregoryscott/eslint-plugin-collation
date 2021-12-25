@@ -3,6 +3,10 @@ import { isEmpty } from "lodash";
 import { Context } from "../models/context";
 import { RuleViolation } from "../models/rule-violation";
 
+interface RuleMessageOptions
+    extends Pick<RuleViolation, "file" | "message" | "rule">,
+        Partial<Pick<RuleViolation, "lineNumber">> {}
+
 const prefix = chalk.cyanBright("[collation]");
 
 class Logger {
@@ -45,12 +49,10 @@ class Logger {
     };
 
     public ruleDebug = (
-        partialViolation: Pick<
-            RuleViolation,
-            "file" | "lineNumber" | "message" | "rule"
-        >
+        options: RuleMessageOptions,
+        ...values: any[]
     ): Logger => {
-        return this.debug(this.getRuleMessage(partialViolation));
+        return this.debug(this.getRuleMessage(options), ...values);
     };
 
     public ruleViolation = (violation: RuleViolation): Logger => {
@@ -69,16 +71,15 @@ class Logger {
         );
     };
 
-    private getRuleMessage = (
-        partialViolation: Pick<
-            RuleViolation,
-            "file" | "lineNumber" | "message" | "rule"
-        >
-    ): string => {
-        const { file, lineNumber, message } = partialViolation;
-        const rule = chalk.magenta(partialViolation.rule);
+    private getRuleMessage = (options: RuleMessageOptions): string => {
+        const { file, lineNumber, message } = options;
+        const rule = chalk.magenta(options.rule);
         const fileName = chalk.bold(file.getBaseName());
-        const location = chalk.bold(`${fileName}:${lineNumber}`);
+        let location = chalk.bold(`${fileName}`);
+
+        if (lineNumber != null) {
+            location += chalk.bold(`:${lineNumber}`);
+        }
 
         return `${rule} ${location} ${message}`;
     };
