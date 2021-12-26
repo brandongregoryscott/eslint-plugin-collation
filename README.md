@@ -33,17 +33,7 @@ npx collation --file button.tsx
 npx collation --files button.tsx dialog.tsx
 ```
 
-In a `pre-commit` hook:
-
-```sh
-#!/bin/sh
-
-# Run on modified files ending in .ts or .tsx
-npx collation --files $(git diff --cached --name-only --diff-filter=ACMR | grep -e .ts -e .tsx | sed 's| |\\ |g')
-
-# Re-add the files to be staged before committing
-git add -A
-```
+See [`.husky/pre-commit`](.husky/pre-commit) for an example of usage in a git hook.
 
 ## Rules
 
@@ -96,8 +86,6 @@ If you aren't sure what files/project is being picked up, you can run the CLI wi
 npx collation --print-project
 
 Compiler options:
---------------------------------------------------------------------------------
-
 {
     "_defaultSettings": {},
     "_settings": {
@@ -130,10 +118,7 @@ Compiler options:
     }
 }
 
---------------------------------------------------------------------------------
 Source files:
---------------------------------------------------------------------------------
-
 [
     "/Users/Brandon/beets/src/app.tsx",
     "/Users/Brandon/beets/src/index.tsx",
