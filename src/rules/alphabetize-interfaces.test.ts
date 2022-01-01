@@ -80,7 +80,7 @@ describe("alphabetizeInterfaces", () => {
         expect(result).toMatchSourceFile(expected);
     });
 
-    it.skip("should sort properties with JSDoc comments", async () => {
+    it("should sort properties with multi-line comments", async () => {
         // Arrange
         const project = new Project({ useInMemoryFileSystem: true });
         const input = project.createSourceFile(

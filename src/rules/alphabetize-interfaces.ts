@@ -1,15 +1,18 @@
 import { diffLines } from "diff";
-import _, { isEqual, sortBy, flatten, compact, chain } from "lodash";
+import { isEqual, sortBy, flatten, compact } from "lodash";
 import {
+    CallSignatureDeclaration,
     CommentClassElement,
     CommentEnumMember,
     CommentObjectLiteralElement,
     CommentStatement,
     CommentTypeElement,
+    ConstructSignatureDeclaration,
+    IndexSignatureDeclaration,
     InterfaceDeclaration,
     Node,
-    PropertySignature,
     SourceFile,
+    TypeElementTypes,
 } from "ts-morph";
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
@@ -25,9 +28,16 @@ type CommentNode =
     | CommentObjectLiteralElement
     | CommentEnumMember;
 
+type InterfaceMember = Exclude<
+    TypeElementTypes,
+    | ConstructSignatureDeclaration
+    | CallSignatureDeclaration
+    | IndexSignatureDeclaration
+>;
+
 interface PropertyGroup {
     comment?: CommentNode;
-    property: PropertySignature;
+    property: InterfaceMember;
 }
 
 const alphabetizeInterfaces: RuleFunction = async (
@@ -51,18 +61,20 @@ const alphabetizeInterface = (
     const propertyOrCommentNodes = _interface
         .getDescendants()
         .filter(
-            (node) => Node.isPropertySignature(node) || Node.isCommentNode(node)
-        ) as Array<CommentNode | PropertySignature>;
+            (node) =>
+                (Node.hasName(node) && Node.isTypeElement(node)) ||
+                Node.isCommentNode(node)
+        ) as Array<CommentNode | InterfaceMember>;
 
-    const propertyGroups = propertyOrCommentNodes.map(
-        (commentOrProperty, index) =>
+    const propertyGroups = compact(
+        propertyOrCommentNodes.map((commentOrProperty, index) =>
             toPropertyGroup(propertyOrCommentNodes, commentOrProperty, index)
+        )
     );
 
-    const properties = _interface.getProperties();
-    const sorted = sortBy(properties, getPropertyName);
+    const sorted = sortBy(propertyGroups, getPropertyName);
 
-    if (isEqual(properties, sorted)) {
+    if (isEqual(propertyGroups, sorted)) {
         const lineNumber = _interface.getStartLineNumber();
         Logger.ruleDebug({
             file: _interface.getSourceFile(),
@@ -74,14 +86,27 @@ const alphabetizeInterface = (
         return [];
     }
 
-    const errors = properties.map((property) => {
-        const currentIndex = properties.indexOf(property);
-        const expectedIndex = sorted.indexOf(property);
+    const deletionQueue: Array<InterfaceMember | CommentNode> = [];
+
+    let index = 0;
+    const errors = sorted.map((propertyGroup) => {
+        const { comment, property } = propertyGroup;
+        const currentIndex = propertyGroups.indexOf(propertyGroup);
+        const expectedIndex = sorted.indexOf(propertyGroup);
+
+        if (comment != null) {
+            deletionQueue.push(comment);
+            _interface.insertMember(index, comment.getText(true));
+            index++;
+        }
+
+        deletionQueue.push(property);
+        _interface.insertMember(index, property.getStructure());
+        index++;
+
         if (currentIndex === expectedIndex) {
             return;
         }
-
-        property.setOrder(sorted.indexOf(property));
 
         return new RuleViolation({
             ...getAlphabeticalMessages({
@@ -89,7 +114,7 @@ const alphabetizeInterface = (
                 expectedIndex,
                 elementTypeName: "property",
                 sorted,
-                original: properties,
+                original: propertyGroups,
                 parentName: _interface.getName(),
                 getElementName: getPropertyName,
                 getElementStructureName: getPropertyName,
@@ -100,14 +125,16 @@ const alphabetizeInterface = (
         });
     });
 
+    deletionQueue.forEach((node) => node.remove());
     return compact(errors);
 };
 
-const getPropertyName = (property: PropertySignature) => property.getName();
+const getPropertyName = (propertyGroup: PropertyGroup) =>
+    propertyGroup.property.getName();
 
 const toPropertyGroup = (
-    propertyOrCommentNodes: Array<PropertySignature | CommentNode>,
-    commentOrProperty: PropertySignature | CommentNode,
+    propertyOrCommentNodes: Array<InterfaceMember | CommentNode>,
+    commentOrProperty: InterfaceMember | CommentNode,
     index: number
 ): PropertyGroup | undefined => {
     if (Node.isCommentNode(commentOrProperty)) {
