@@ -27,7 +27,7 @@ npm install --save-dev collation ts-morph
 npx collation --help
 
 # Run on specific file
-npx collation --file button.tsx
+npx collation --files button.tsx
 
 # Run on list of files
 npx collation --files button.tsx dialog.tsx
@@ -41,6 +41,19 @@ This project implements various different rules to make your code more consisten
 
 Current rules:
 
+1. `alphabetize-dependency-lists`
+    - Alphabetizes React dependency lists, i.e.
+    ```tsx
+    useEffect(() => {
+        // ...business logic here
+    }, [setProject, handleOpenDialog, isLoading]);
+    ```
+    will be transformed to:
+    ```tsx
+    useEffect(() => {
+        // ...business logic here
+    }, [handleOpenDialog, isLoading, setProject]);
+    ```
 1. `alphabetize-interfaces`
     - Alphabetizes properties in an interface, i.e.
     ```ts
