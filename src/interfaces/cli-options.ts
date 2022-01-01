@@ -1,8 +1,11 @@
+import { RuleName } from "../enums/rule-name";
+
 interface CliOptions {
+    all?: boolean;
     dry?: boolean;
-    file?: string;
     files?: string[];
     printProject?: boolean;
+    rules?: RuleName[];
     silent?: boolean;
     verbose?: boolean;
 }

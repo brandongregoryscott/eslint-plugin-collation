@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { compact, flatMap, isEmpty } from "lodash";
 import { Context } from "../../models/context";
+import { fuzzyFindFile } from "../../utils/fuzzy-find-file";
 import { Logger } from "../../utils/logger";
 import { ruleRunner } from "../../utils/rule-runner";
 
@@ -30,9 +31,19 @@ const runByFiles = async () => {
                 project.getSourceFile(filePath) != null ? undefined : filePath
             )
         );
+
         Logger.warn(
             "Some of the specified files could not be found in the project."
-        ).json(missingFiles);
+        );
+
+        missingFiles.forEach((fileName) =>
+            Logger.warn(
+                `File ${chalk.magenta(
+                    fileName
+                )} not found, did you mean one of these?`,
+                fuzzyFindFile(fileName, project)
+            )
+        );
     }
 
     await ruleRunner(files);

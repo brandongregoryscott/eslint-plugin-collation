@@ -1,6 +1,6 @@
 import { filter } from "fuzzaldrin";
 import { Project } from "ts-morph";
-import { flatMap, sumBy } from "lodash";
+import { flatMap, sumBy, uniq } from "lodash";
 
 const fuzzyFindFile = (query: string, project: Project) => {
     const fileNames = project
@@ -16,13 +16,15 @@ const fuzzyFindFile = (query: string, project: Project) => {
     // i.e. instrument-setings-dialog.tsx will match instrument-settings-dialog.tsx vs. nothing at
     // all in above implementation
     const queryParts = query.split("-");
-    return flatMap(queryParts, (part) =>
-        filter(fileNames, part, { maxResults: 5 })
-    ).sort((a, b) => {
-        const sumMatchingParts = (match: string) =>
-            sumBy(queryParts, (part) => (match.includes(part) ? 1 : 0));
-        return sumMatchingParts(b) - sumMatchingParts(a);
-    });
+    return uniq(
+        flatMap(queryParts, (part) =>
+            filter(fileNames, part, { maxResults: 5 })
+        ).sort((a, b) => {
+            const sumMatchingParts = (match: string) =>
+                sumBy(queryParts, (part) => (match.includes(part) ? 1 : 0));
+            return sumMatchingParts(b) - sumMatchingParts(a);
+        })
+    );
 };
 
 export { fuzzyFindFile };
