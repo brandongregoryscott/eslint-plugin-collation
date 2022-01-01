@@ -5,7 +5,6 @@ import { Project } from "ts-morph";
 import { Context } from "./models/context";
 import { CliOptions } from "./interfaces/cli-options";
 import { printProject } from "./cli/handlers/print-project";
-import { runByFile } from "./cli/handlers/run-by-file";
 import { runByFiles } from "./cli/handlers/run-by-files";
 import { ruleRunner } from "./utils/rule-runner";
 import "source-map-support/register";
@@ -17,12 +16,8 @@ const main = async () => {
         .version(version)
         .option("-d, --dry", "Run without saving changes")
         .option(
-            "-f, --file <fileNameOrPath>",
-            "Run on specific file (e.g. --file button.tsx)"
-        )
-        .option(
-            "-F, --files [fileNamesOrPaths...]",
-            "Run on specific files (e.g. --files button.tsx form.tsx)"
+            "-f, --files [fileNamesOrPaths...]",
+            "Run on specific file(s) (e.g. --files button.tsx form.tsx)"
         )
         .option(
             "-p, --print-project",
@@ -33,11 +28,8 @@ const main = async () => {
         .parse();
 
     const project = new Project({ tsConfigFilePath: "tsconfig.json" });
-    const {
-        file: filePath,
-        files: filePaths,
-        printProject: shouldPrintProject,
-    } = program.opts<CliOptions>();
+    const { files: filePaths, printProject: shouldPrintProject } =
+        program.opts<CliOptions>();
 
     Context.initialize({
         project,
@@ -51,10 +43,6 @@ const main = async () => {
 
     if (filePaths != null) {
         await runByFiles();
-    }
-
-    if (filePath != null) {
-        await runByFile();
     }
 
     // Default case: run for all files
