@@ -1,4 +1,5 @@
 interface CliOptions {
+    all?: boolean;
     dry?: boolean;
     files?: string[];
     printProject?: boolean;

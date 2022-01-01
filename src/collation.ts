@@ -8,12 +8,14 @@ import { printProject } from "./cli/handlers/print-project";
 import { runByFiles } from "./cli/handlers/run-by-files";
 import { ruleRunner } from "./utils/rule-runner";
 import "source-map-support/register";
+import { runAll } from "./cli/handlers/run-all";
 
 const main = async () => {
     const program = new Command();
     program
         .description(description)
         .version(version)
+        .option("-a, --all", "Run for all files in project")
         .option("-d, --dry", "Run without saving changes")
         .option(
             "-f, --files [fileNamesOrPaths...]",
@@ -28,8 +30,11 @@ const main = async () => {
         .parse();
 
     const project = new Project({ tsConfigFilePath: "tsconfig.json" });
-    const { files: filePaths, printProject: shouldPrintProject } =
-        program.opts<CliOptions>();
+    const {
+        all,
+        files: filePaths,
+        printProject: shouldPrintProject,
+    } = program.opts<CliOptions>();
 
     Context.initialize({
         project,
@@ -45,12 +50,11 @@ const main = async () => {
         await runByFiles();
     }
 
-    // Default case: run for all files
-    const files = project.getSourceFiles();
+    if (all === true) {
+        await runAll();
+    }
 
-    await ruleRunner(files);
-    await Context.saveIfNotDryRun();
-    process.exit(0);
+    program.outputHelp();
 };
 
 main();
