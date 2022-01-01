@@ -6,7 +6,6 @@ import { Context } from "./models/context";
 import { CliOptions } from "./interfaces/cli-options";
 import { printProject } from "./cli/handlers/print-project";
 import { runByFiles } from "./cli/handlers/run-by-files";
-import { ruleRunner } from "./utils/rule-runner";
 import "source-map-support/register";
 import { runAll } from "./cli/handlers/run-all";
 
@@ -25,6 +24,7 @@ const main = async () => {
             "-p, --print-project",
             "Output debugging information about detected TypeScript project"
         )
+        .option("-r, --rules [ruleNames...]", "Run specific rules only")
         .option("-s, --silent", "Silence all logs in output")
         .option("-v, --verbose", "Include debug-level logs in output")
         .parse();
