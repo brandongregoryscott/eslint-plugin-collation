@@ -1,12 +1,34 @@
 import { diffLines } from "diff";
-import _, { isEqual, sortBy, flatten, compact } from "lodash";
-import { InterfaceDeclaration, PropertySignature, SourceFile } from "ts-morph";
+import _, { isEqual, sortBy, flatten, compact, chain } from "lodash";
+import {
+    CommentClassElement,
+    CommentEnumMember,
+    CommentObjectLiteralElement,
+    CommentStatement,
+    CommentTypeElement,
+    InterfaceDeclaration,
+    Node,
+    PropertySignature,
+    SourceFile,
+} from "ts-morph";
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
+
+type CommentNode =
+    | CommentStatement
+    | CommentClassElement
+    | CommentTypeElement
+    | CommentObjectLiteralElement
+    | CommentEnumMember;
+
+interface PropertyGroup {
+    comment?: CommentNode;
+    property: PropertySignature;
+}
 
 const alphabetizeInterfaces: RuleFunction = async (
     file: SourceFile
@@ -26,6 +48,17 @@ const alphabetizeInterfaces: RuleFunction = async (
 const alphabetizeInterface = (
     _interface: InterfaceDeclaration
 ): RuleViolation[] => {
+    const propertyOrCommentNodes = _interface
+        .getDescendants()
+        .filter(
+            (node) => Node.isPropertySignature(node) || Node.isCommentNode(node)
+        ) as Array<CommentNode | PropertySignature>;
+
+    const propertyGroups = propertyOrCommentNodes.map(
+        (commentOrProperty, index) =>
+            toPropertyGroup(propertyOrCommentNodes, commentOrProperty, index)
+    );
+
     const properties = _interface.getProperties();
     const sorted = sortBy(properties, getPropertyName);
 
@@ -71,5 +104,21 @@ const alphabetizeInterface = (
 };
 
 const getPropertyName = (property: PropertySignature) => property.getName();
+
+const toPropertyGroup = (
+    propertyOrCommentNodes: Array<PropertySignature | CommentNode>,
+    commentOrProperty: PropertySignature | CommentNode,
+    index: number
+): PropertyGroup | undefined => {
+    if (Node.isCommentNode(commentOrProperty)) {
+        return;
+    }
+    const previousNode = propertyOrCommentNodes[index - 1];
+
+    return {
+        comment: Node.isCommentNode(previousNode) ? previousNode : undefined,
+        property: commentOrProperty,
+    };
+};
 
 export { alphabetizeInterfaces };
