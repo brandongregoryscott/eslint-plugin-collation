@@ -28,4 +28,29 @@ describe.only("alphabetizeEnums", () => {
         expect(result).toMatchSourceFile(expected);
         expect(result).toHaveErrors();
     });
+
+    it("should alphabetize explicit number-based enums by key", async () => {
+        const input = createSourceFile(
+            `
+                enum SortOrder {
+                    DESC = 0,
+                    ASC = 1,
+                }
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                enum SortOrder {
+                    ASC = 1,
+                    DESC = 0,
+                }
+            `
+        );
+
+        const result = await alphabetizeEnums(input);
+
+        expect(result).toMatchSourceFile(expected);
+        expect(result).toHaveErrors();
+    });
 });
