@@ -6,7 +6,8 @@ const createInMemoryProject = (): Project =>
 
 const createSourceFile = (content: string): SourceFile =>
     createInMemoryProject().createSourceFile(
-        `${uniqueId("source-file")}.ts`,
+        // Always use .tsx to support JSX whether or not fixture requires it
+        `${uniqueId("source-file")}.tsx`,
         content
     );
 

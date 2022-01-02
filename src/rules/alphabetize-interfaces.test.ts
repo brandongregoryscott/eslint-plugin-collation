@@ -1,12 +1,11 @@
 import { Project } from "ts-morph";
+import { createSourceFile } from "../test/test-utils";
 import { alphabetizeInterfaces } from "./alphabetize-interfaces";
 
 describe("alphabetizeInterfaces", () => {
     it("should sort properties in interface when there are unsorted properties", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.ts",
+        const input = createSourceFile(
             `
                 interface Example {
                     zeta?: string;
@@ -17,8 +16,7 @@ describe("alphabetizeInterfaces", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.ts",
+        const expected = createSourceFile(
             `
                 interface Example {
                     alpha: number;
@@ -39,9 +37,7 @@ describe("alphabetizeInterfaces", () => {
 
     it("should sort properties in all interfaces when there are multiple unsorted interfaces", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.ts",
+        const input = createSourceFile(
             `
                 interface Car {
                     make: string;
@@ -56,8 +52,7 @@ describe("alphabetizeInterfaces", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.ts",
+        const expected = createSourceFile(
             `
                 interface Car {
                     make: string;
@@ -82,9 +77,7 @@ describe("alphabetizeInterfaces", () => {
 
     it("should sort properties with multi-line comments", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.ts",
+        const input = createSourceFile(
             `
                 interface Car {
                     /*
@@ -103,8 +96,7 @@ describe("alphabetizeInterfaces", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.ts",
+        const expected = createSourceFile(
             `
                 interface Car {
                     /*
@@ -133,9 +125,7 @@ describe("alphabetizeInterfaces", () => {
 
     it("should sort properties with single-line comments", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.ts",
+        const input = createSourceFile(
             `
                 interface Car {
                     // Make of the car
@@ -148,8 +138,7 @@ describe("alphabetizeInterfaces", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.ts",
+        const expected = createSourceFile(
             `
                 interface Car {
                     // Make of the car

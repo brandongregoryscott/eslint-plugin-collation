@@ -1,4 +1,4 @@
-import { Project } from "ts-morph";
+import { createSourceFile } from "../test/test-utils";
 import { alphabetizeDependencyLists } from "./alphabetize-dependency-lists";
 
 describe("alphabetizeDependencyLists", () => {
@@ -6,9 +6,7 @@ describe("alphabetizeDependencyLists", () => {
         "should alphabetize variables in %p dependency list",
         async (functionName: string) => {
             // Arrange
-            const project = new Project({ useInMemoryFileSystem: true });
-            const input = project.createSourceFile(
-                "input.tsx",
+            const input = createSourceFile(
                 `
                     const value = ${functionName}(() => {
 
@@ -16,8 +14,7 @@ describe("alphabetizeDependencyLists", () => {
                 `
             );
 
-            const expected = project.createSourceFile(
-                "expected.tsx",
+            const expected = createSourceFile(
                 `
                     const value = ${functionName}(() => {
 
@@ -38,9 +35,7 @@ describe("alphabetizeDependencyLists", () => {
         "should not change %p calls that don't have a second argument",
         async (functionName: string) => {
             // Arrange
-            const project = new Project({ useInMemoryFileSystem: true });
-            const input = project.createSourceFile(
-                "input.tsx",
+            const input = createSourceFile(
                 `
                 const value = ${functionName}(() => {
 
@@ -48,8 +43,7 @@ describe("alphabetizeDependencyLists", () => {
             `
             );
 
-            const expected = project.createSourceFile(
-                "expected.tsx",
+            const expected = createSourceFile(
                 `
                     const value = ${functionName}(() => {
 
@@ -70,9 +64,7 @@ describe("alphabetizeDependencyLists", () => {
         "should not change %p calls that don't have an ArrayLiteralExpression as second argument",
         async (functionName: string) => {
             // Arrange
-            const project = new Project({ useInMemoryFileSystem: true });
-            const input = project.createSourceFile(
-                "input.tsx",
+            const input = createSourceFile(
                 `
                     const value = ${functionName}(() => {
 
@@ -80,8 +72,7 @@ describe("alphabetizeDependencyLists", () => {
                 `
             );
 
-            const expected = project.createSourceFile(
-                "expected.tsx",
+            const expected = createSourceFile(
                 `
                     const value = ${functionName}(() => {
 
@@ -100,22 +91,19 @@ describe("alphabetizeDependencyLists", () => {
 
     it("should alphabetize nested property dependencies", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const value = useMemo(() => {
 
-                }, [setProject, handleOpenDialog, project.name])
+                }, [setProject, handleOpenDialog, name])
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const value = useMemo(() => {
 
-                }, [handleOpenDialog, project.name, setProject])
+                }, [handleOpenDialog, name, setProject])
             `
         );
 
@@ -129,9 +117,7 @@ describe("alphabetizeDependencyLists", () => {
 
     it("should alphabetize deeply-nested property dependencies", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const value = useMemo(() => {
 
@@ -139,8 +125,7 @@ describe("alphabetizeDependencyLists", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const value = useMemo(() => {
 
@@ -158,9 +143,7 @@ describe("alphabetizeDependencyLists", () => {
 
     it("should not return errors when deeply-nested property dependencies are already sorted", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const value = useMemo(() => {
 
@@ -168,8 +151,7 @@ describe("alphabetizeDependencyLists", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const value = useMemo(() => {
 
