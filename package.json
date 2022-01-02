@@ -60,7 +60,7 @@
         "build:dist": "npm run esbuild -- --minify",
         "build:watch": "npm run esbuild -- --watch",
         "clean": "rimraf dist",
-        "esbuild": "esbuild src/collation.ts --bundle --outfile=dist/collation.js --platform=node --sourcemap --external:ts-morph",
+        "esbuild": "tsc --noEmit && esbuild src/collation.ts --bundle --outfile=dist/collation.js --platform=node --sourcemap --external:ts-morph",
         "format": "prettier --write",
         "prebuild": "npm run clean",
         "prebuild:dist": "npm run clean",
