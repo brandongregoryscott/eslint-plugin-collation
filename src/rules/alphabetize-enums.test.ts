@@ -54,6 +54,36 @@ describe("alphabetizeEnums", () => {
         expect(result).toHaveErrors();
     });
 
+    it("should not modify implicit-numeric enums", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                enum Car {
+                    Make,
+                    Wheels,
+                    Model,
+                }
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                enum Car {
+                    Make,
+                    Wheels,
+                    Model,
+                }
+            `
+        );
+
+        // Act
+        const result = await alphabetizeEnums(input);
+
+        // Assert
+        expect(result).not.toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
     it("should alphabetize members with multi-line comments", async () => {
         // Arrange
         const input = createSourceFile(
