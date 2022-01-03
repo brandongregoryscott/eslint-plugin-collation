@@ -1,13 +1,10 @@
-import { Project } from "ts-morph";
-import { Context } from "../models/context";
+import { createSourceFile } from "../test/test-utils";
 import { alphabetizeJsxProps } from "./alphabetize-jsx-props";
 
 describe("alphabetizeJsxProps", () => {
     it("should sort props of each JsxElement when there are unsorted props", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -21,8 +18,7 @@ describe("alphabetizeJsxProps", () => {
                 };
             `
         );
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -44,9 +40,7 @@ describe("alphabetizeJsxProps", () => {
 
     it("should sort props before and after spread assignment in JsxElement", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -65,8 +59,7 @@ describe("alphabetizeJsxProps", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -95,9 +88,7 @@ describe("alphabetizeJsxProps", () => {
 
     it("should sort props when spread assignment is in beginning of JsxElement", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -115,8 +106,7 @@ describe("alphabetizeJsxProps", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -144,9 +134,7 @@ describe("alphabetizeJsxProps", () => {
 
     it("should leave props unmodified when spread assignment is in beginning of JsxElement and there's only one named prop", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -158,8 +146,7 @@ describe("alphabetizeJsxProps", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -181,9 +168,7 @@ describe("alphabetizeJsxProps", () => {
 
     it("should sort props when spread assignment is at end of JsxElement", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -201,8 +186,7 @@ describe("alphabetizeJsxProps", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -230,9 +214,7 @@ describe("alphabetizeJsxProps", () => {
 
     it("should leave props unmodified when spread assignment is at end of JsxElement and there's only one named prop", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -244,8 +226,7 @@ describe("alphabetizeJsxProps", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 const Example = (props) => {
                     return (
@@ -267,9 +248,7 @@ describe("alphabetizeJsxProps", () => {
 
     it("should sort props of self-closing JsxElements", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 <EmptyState
                     title="No Instruments Found"
@@ -279,8 +258,7 @@ describe("alphabetizeJsxProps", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 <EmptyState
                     description="Save a new instrument to begin"
@@ -300,9 +278,7 @@ describe("alphabetizeJsxProps", () => {
 
     it("should sort props of JsxElements that receive JsxElements as props", async () => {
         // Arrange
-        const project = new Project({ useInMemoryFileSystem: true });
-        const input = project.createSourceFile(
-            "input.tsx",
+        const input = createSourceFile(
             `
                 <Button marginY={8} marginRight={12} iconAfter={<CogIcon size={24} color="gray" />}>
                     Settings
@@ -310,8 +286,7 @@ describe("alphabetizeJsxProps", () => {
             `
         );
 
-        const expected = project.createSourceFile(
-            "expected.tsx",
+        const expected = createSourceFile(
             `
                 <Button iconAfter={<CogIcon color="gray" size={24} />} marginRight={12} marginY={8}>
                     Settings

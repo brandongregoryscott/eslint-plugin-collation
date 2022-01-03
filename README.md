@@ -54,6 +54,23 @@ Current rules:
         // ...business logic here
     }, [handleOpenDialog, isLoading, setProject]);
     ```
+1. `alphabetize-enums`
+    - Alphabetizes members of explicitly defined enums, i.e.
+    ```ts
+    enum Animals {
+        Dog = "dog",
+        Wolf = "wolf",
+        Cat = "cat",
+    }
+    ```
+    will be transformed to:
+    ```ts
+    enum Animals {
+        Cat = "cat",
+        Dog = "dog",
+        Wolf = "wolf",
+    }
+    ```
 1. `alphabetize-interfaces`
     - Alphabetizes properties in an interface, i.e.
     ```ts
