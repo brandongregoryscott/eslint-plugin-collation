@@ -1,12 +1,26 @@
 import { diffLines } from "diff";
 import { compact, flatMap, isEqual, sortBy } from "lodash";
-import { EnumDeclaration, EnumMember, SourceFile } from "ts-morph";
+import {
+    CommentEnumMember,
+    EnumDeclaration,
+    EnumMember,
+    Node,
+    SourceFile,
+    Statement,
+    SyntaxKind,
+} from "ts-morph";
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
+import { Comment } from "../types/comment";
 import { RuleFunction } from "../types/rule-function";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
+
+interface EnumGroup {
+    comment?: Comment;
+    member: EnumMember;
+}
 
 const alphabetizeEnums: RuleFunction = async (
     file: SourceFile
@@ -14,6 +28,7 @@ const alphabetizeEnums: RuleFunction = async (
     const originalFileContent = file.getText();
     const enums = file.getEnums();
     const errors = flatMap(enums, alphabetizeEnum);
+    removeDoubleCommas(file);
     const endingFileContent = file.getText();
 
     return {
@@ -48,13 +63,38 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
         return [];
     }
 
-    const deletionQueue: EnumMember[] = [];
-    const errors = sorted.map((member) => {
-        const currentIndex = members.indexOf(member);
-        const expectedIndex = sorted.indexOf(member);
+    const membersOrComments = _enum
+        .getDescendants()
+        .filter(
+            (node) => Node.isEnumMember(node) || Node.isCommentNode(node)
+        ) as Array<EnumMember | Comment>;
+
+    const groups = compact(
+        membersOrComments.map((memberOrComment, index) =>
+            toGroup(membersOrComments, memberOrComment, index)
+        )
+    );
+
+    const sortedGroups = sortBy(groups, (group) =>
+        getEnumMemberName(group.member)
+    );
+
+    let index = 0;
+    const deletionQueue: Array<Comment | EnumMember> = [];
+    const errors = sortedGroups.map((group) => {
+        const { comment, member } = group;
+        const currentIndex = groups.indexOf(group);
+        const expectedIndex = sortedGroups.indexOf(group);
+
+        if (comment != null) {
+            deletionQueue.push(comment);
+            _enum.insertMember(index, comment.getFullText());
+            index++;
+        }
 
         deletionQueue.push(member);
-        _enum.insertMember(expectedIndex, member.getStructure());
+        _enum.insertMember(index, member.getStructure());
+        index++;
 
         if (currentIndex === expectedIndex) {
             return;
@@ -65,11 +105,12 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
                 index: currentIndex,
                 expectedIndex,
                 elementTypeName: "member",
-                sorted,
-                original: members,
+                sorted: sortedGroups,
+                original: groups,
                 parentName: name,
-                getElementName: getEnumMemberName,
-                getElementStructureName: getEnumMemberName,
+                getElementName: (group) => getEnumMemberName(group.member),
+                getElementStructureName: (group) =>
+                    getEnumMemberName(group.member),
             }),
             file: member.getSourceFile(),
             lineNumber: member.getStartLineNumber(),
@@ -77,11 +118,55 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
         });
     });
 
-    deletionQueue.forEach((member) => member.remove());
+    deletionQueue.forEach((member) => {
+        if (member.wasForgotten()) {
+            return;
+        }
+
+        member.remove();
+    });
     return compact(errors);
 };
 
 const getEnumMemberName = (enumMember: EnumMember) => enumMember.getName();
 const getEnumName = (_enum: EnumDeclaration) => _enum.getName();
+
+/**
+ * Seems that adding single-line comments with `EnumDeclaration.insertMember` adds a trailing comma unexpectedly
+ * https://github.com/dsherret/ts-morph/issues/961
+ */
+const removeDoubleCommas = (file: SourceFile) => {
+    const commas = file
+        .getDescendants()
+        .filter((node) => node.getKind() === SyntaxKind.CommaToken);
+
+    const deletionQueue: Node[] = [];
+    commas.forEach((comma, index) => {
+        const previousComma = commas[index - 1];
+        if (previousComma?.getPos() !== comma.getPos() - 1) {
+            return;
+        }
+
+        deletionQueue.push(previousComma);
+    });
+
+    deletionQueue.forEach((comma) => comma.replaceWithText(""));
+};
+
+const toGroup = (
+    membersOrComments: Array<EnumMember | Comment>,
+    memberOrComment: EnumMember | Comment,
+    index: number
+): EnumGroup | undefined => {
+    if (Node.isCommentNode(memberOrComment)) {
+        return;
+    }
+    const previousNode = membersOrComments[index - 1];
+
+    return {
+        comment: Node.isCommentNode(previousNode) ? previousNode : undefined,
+        member: memberOrComment,
+    };
+};
 
 export { alphabetizeEnums };

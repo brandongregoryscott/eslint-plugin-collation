@@ -17,16 +17,10 @@ import {
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
+import { Comment } from "../types/comment";
 import { RuleFunction } from "../types/rule-function";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
-
-type CommentNode =
-    | CommentStatement
-    | CommentClassElement
-    | CommentTypeElement
-    | CommentObjectLiteralElement
-    | CommentEnumMember;
 
 type InterfaceMember = Exclude<
     TypeElementTypes,
@@ -36,7 +30,7 @@ type InterfaceMember = Exclude<
 >;
 
 interface PropertyGroup {
-    comment?: CommentNode;
+    comment?: Comment;
     property: InterfaceMember;
 }
 
@@ -58,17 +52,17 @@ const alphabetizeInterfaces: RuleFunction = async (
 const alphabetizeInterface = (
     _interface: InterfaceDeclaration
 ): RuleViolation[] => {
-    const propertyOrCommentNodes = _interface
+    const propertyOrComments = _interface
         .getDescendants()
         .filter(
             (node) =>
                 (Node.hasName(node) && Node.isTypeElement(node)) ||
                 Node.isCommentNode(node)
-        ) as Array<CommentNode | InterfaceMember>;
+        ) as Array<Comment | InterfaceMember>;
 
     const propertyGroups = compact(
-        propertyOrCommentNodes.map((commentOrProperty, index) =>
-            toPropertyGroup(propertyOrCommentNodes, commentOrProperty, index)
+        propertyOrComments.map((commentOrProperty, index) =>
+            toPropertyGroup(propertyOrComments, commentOrProperty, index)
         )
     );
 
@@ -86,7 +80,7 @@ const alphabetizeInterface = (
         return [];
     }
 
-    const deletionQueue: Array<InterfaceMember | CommentNode> = [];
+    const deletionQueue: Array<InterfaceMember | Comment> = [];
 
     let index = 0;
     const errors = sorted.map((propertyGroup) => {
@@ -133,8 +127,8 @@ const getPropertyName = (propertyGroup: PropertyGroup) =>
     propertyGroup.property.getName();
 
 const toPropertyGroup = (
-    propertyOrCommentNodes: Array<InterfaceMember | CommentNode>,
-    commentOrProperty: InterfaceMember | CommentNode,
+    propertyOrCommentNodes: Array<InterfaceMember | Comment>,
+    commentOrProperty: InterfaceMember | Comment,
     index: number
 ): PropertyGroup | undefined => {
     if (Node.isCommentNode(commentOrProperty)) {
