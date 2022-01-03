@@ -95,7 +95,7 @@ describe("alphabetizeDependencyLists", () => {
             `
                 const value = useMemo(() => {
 
-                }, [setProject, handleOpenDialog, name])
+                }, [setProject, handleOpenDialog, project.name])
             `
         );
 
@@ -103,7 +103,7 @@ describe("alphabetizeDependencyLists", () => {
             `
                 const value = useMemo(() => {
 
-                }, [handleOpenDialog, name, setProject])
+                }, [handleOpenDialog, project.name, setProject])
             `
         );
 
