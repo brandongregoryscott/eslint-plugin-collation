@@ -160,3 +160,15 @@ Source files:
 ## Notes
 
 -   This package does not do any additional formatting/processing on the code that's emitted from the TS compiler. For example, multi-line props for a component may be lifted up to a single line once they are alphabetized with `alphabetize-jsx-props`. It is recommended that you use a tool like `prettier` after your code has been transformed from `collation`.
+
+## Adding a new rule
+
+When adding a new rule, there are a few places that need to be updated:
+
+-   The rule name must be added to [`rule-name.ts`](./src/enums/rule-name.ts)
+-   The function that should accept a [`SourceFile`](https://ts-morph.com/details/source-files) should be created at [`src/rules/<rule-name>.ts`](./src/rules/)
+-   The function should have a test file next to its implementation, i.e. [`src/rules/<rule-name>.test.ts`](./src/rules/)
+-   The function needs to be mapped to its rule name in [`src/constants/rule-map.ts`](./src/constants/rule-map.ts)
+
+A small CLI has been created for internally scaffolding out these changes given a rule name:
+`npm run internal-codegen -- --name new-rule-name`
