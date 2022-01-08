@@ -1,12 +1,10 @@
 import { diffLines } from "diff";
 import { compact, flatMap, isEqual, sortBy } from "lodash";
 import {
-    CommentEnumMember,
     EnumDeclaration,
     EnumMember,
     Node,
     SourceFile,
-    Statement,
     SyntaxKind,
 } from "ts-morph";
 import { RuleName } from "../enums/rule-name";
