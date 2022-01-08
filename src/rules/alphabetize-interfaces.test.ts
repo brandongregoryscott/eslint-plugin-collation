@@ -158,4 +158,54 @@ describe("alphabetizeInterfaces", () => {
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
     });
+
+    it.skip("#24 should sort nested object properties", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                interface Release {
+                    assets: any[];
+                    author: {
+                        login: string;
+                        id: number;
+                        avatar_url: string;
+                        gravatar_id: string;
+                        type: string;
+                        site_admin: boolean;
+                    };
+                    html_url: string;
+                    name: string;
+                    id: number;
+                    zipball_url: string;
+                }
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                interface Release {
+                    assets: any[];
+                    author: {
+                        avatar_url: string;
+                        gravatar_id: string;
+                        id: number;
+                        login: string;
+                        site_admin: boolean;
+                        type: string;
+                    };
+                    html_url: string;
+                    id: number;
+                    name: string;
+                    zipball_url: string;
+                }
+            `
+        );
+
+        // Act
+        const result = await alphabetizeInterfaces(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
 });
