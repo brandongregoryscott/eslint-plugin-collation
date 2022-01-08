@@ -119,7 +119,13 @@ const alphabetizeInterface = (
         });
     });
 
-    deletionQueue.forEach((node) => node.remove());
+    deletionQueue.forEach((node) => {
+        if (node.wasForgotten()) {
+            return;
+        }
+
+        node.remove();
+    });
     return compact(errors);
 };
 
