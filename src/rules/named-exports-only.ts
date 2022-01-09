@@ -4,7 +4,14 @@ import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
 import { Logger } from "../utils/logger";
-import { ExportableNode, ExportAssignment, Node, SourceFile } from "ts-morph";
+import {
+    ExportableNode,
+    ExportAssignment,
+    NameableNode,
+    Node,
+    SourceFile,
+} from "ts-morph";
+import _ from "lodash";
 
 const namedExportsOnly: RuleFunction = async (
     file: SourceFile
@@ -20,40 +27,74 @@ const namedExportsOnly: RuleFunction = async (
         return { errors: [], diff: [], file };
     }
 
-    const defaultExport = file
-        .getExportAssignments()
-        .find((_export) => !_export.isExportEquals());
+    const inlineExportErrors = convertInlineExports(file);
+    const defaultExportErrors = convertDefaultExport(file);
 
-    if (defaultExport == null) {
-        throw new Error(
-            "Found default export symbol but no default export assignment"
-        );
-    }
-
-    const defaultExportName = getDefaultExportIdentifier(defaultExport);
-    defaultExport?.remove();
-
-    file.addExportDeclaration({ namedExports: [defaultExportName] });
-
-    const errors = [
-        new RuleViolation({
-            file,
-            message: `Found default export '${defaultExportName}'`,
-            lineNumber: 0,
-            hint: `'${defaultExportName}' should be a named export instead`,
-            rule: RuleName.NamedExportsOnly,
-        }),
-    ];
     const endingFileContent = file.getText();
 
     return {
-        errors,
+        errors: [...defaultExportErrors, ...inlineExportErrors],
         diff: diffLines(originalFileContent, endingFileContent),
         file,
     };
 };
 
+const convertDefaultExport = (file: SourceFile): RuleViolation[] => {
+    const defaultExport = file
+        .getExportAssignments()
+        .find((_export) => !_export.isExportEquals());
+
+    if (defaultExport == null) {
+        return [];
+    }
+
+    const defaultExportName = getDefaultExportIdentifier(defaultExport);
+    const errors = [getRuleViolation(file, defaultExport)];
+
+    defaultExport?.remove();
+    file.addExportDeclaration({ namedExports: [defaultExportName] });
+
+    return errors;
+};
+
+const convertInlineExports = (file: SourceFile): RuleViolation[] => {
+    const exportableNodes = file
+        .getDescendants()
+        .filter((node) => Node.isExportable(node)) as any as ExportableNode[];
+
+    const defaultExport = exportableNodes.find((node) =>
+        node.hasDefaultKeyword()
+    );
+
+    if (defaultExport == null) {
+        return [];
+    }
+
+    defaultExport.setIsExported(true);
+    return [getRuleViolation(file, defaultExport)];
+};
+
 const getDefaultExportIdentifier = (_export: ExportAssignment): string =>
     _export.getText().replace("export default", "").replace(";", "").trim();
+
+const getRuleViolation = (
+    file: SourceFile,
+    _export: ExportAssignment | ExportableNode
+) => {
+    const name =
+        _export instanceof ExportAssignment
+            ? getDefaultExportIdentifier(_export)
+            : (_export as any as NameableNode).getName();
+
+    const lineNumber = (_export as any as Node).getStartLineNumber();
+
+    return new RuleViolation({
+        file,
+        message: `Found default export '${name}'`,
+        lineNumber,
+        hint: `'${name}' should be a named export instead`,
+        rule: RuleName.NamedExportsOnly,
+    });
+};
 
 export { namedExportsOnly };
