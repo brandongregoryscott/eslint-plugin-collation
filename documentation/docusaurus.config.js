@@ -65,8 +65,16 @@ const config = {
                         title: "Docs",
                         items: [
                             {
-                                label: "Tutorial",
+                                label: "Intro",
                                 to: "/docs/intro",
+                            },
+                            {
+                                label: "CLI Options",
+                                to: "/docs/cli/options",
+                            },
+                            {
+                                label: "Rules",
+                                to: "/docs/rules",
                             },
                         ],
                     },

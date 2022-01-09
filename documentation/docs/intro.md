@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+title: "Intro"
 ---
 
 # What is collation, and why use it?
