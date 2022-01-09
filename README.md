@@ -108,55 +108,6 @@ Current rules:
     );
     ```
 
-## Debugging
-
-If you aren't sure what files/project is being picked up, you can run the CLI with the `--print-project` (or `-p`) flag to print some additional information.
-
-```sh
-npx collation --print-project
-
-Compiler options:
-{
-    "_defaultSettings": {},
-    "_settings": {
-        "allowJs": true,
-        "allowSyntheticDefaultImports": true,
-        "baseUrl": "/Users/Brandon/example/src",
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "isolatedModules": true,
-        "jsx": 4,
-        "lib": [
-            "lib.dom.d.ts",
-            "lib.dom.iterable.d.ts",
-            "lib.esnext.d.ts"
-        ],
-        "module": 99,
-        "moduleResolution": 2,
-        "noEmit": true,
-        "noFallthroughCasesInSwitch": true,
-        "resolveJsonModule": true,
-        "skipLibCheck": true,
-        "strict": true,
-        "target": 1,
-        "configFilePath": "/Users/Brandon/example/tsconfig.json"
-    },
-    "_modifiedEventContainer": {
-        "subscriptions": [
-            null
-        ]
-    }
-}
-
-Source files:
-[
-    "/Users/Brandon/beets/src/app.tsx",
-    "/Users/Brandon/beets/src/index.tsx",
-    "/Users/Brandon/beets/src/react-app-env.d.ts",
-    # ...
-]
-```
-
 ## Notes
 
 -   This package does not do any additional formatting/processing on the code that's emitted from the TS compiler. For example, multi-line props for a component may be lifted up to a single line once they are alphabetized with `alphabetize-jsx-props`. It is recommended that you use a tool like `prettier` after your code has been transformed from `collation`.

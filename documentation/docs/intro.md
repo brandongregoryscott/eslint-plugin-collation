@@ -25,14 +25,14 @@ These tools are great, but there are certain styles of formatting/organization t
 Get started using `collation` by running `npx collation -f <file>` in a TypeScript project:
 
 ```sh
-$ ls -l
+ls -l
 drwxr-xr-x  1161 Brandon  staff    37152 Jan  8 10:23 node_modules
 -rw-r--r--     1 Brandon  staff  1870419 Jan  8 10:23 package-lock.json
 -rw-r--r--     1 Brandon  staff     3533 Jan  8 10:23 package.json
 drwxr-xr-x    21 Brandon  staff      672 Jan  7 20:48 src
 -rw-r--r--     1 Brandon  staff      627 Dec 31 21:04 tsconfig.json
 
-$ npx collation -f profile-menu.tsx
+npx collation -f profile-menu.tsx
 [collation] ERROR alphabetize-interfaces profile-menu.tsx:16 Expected property 'onClose' in 'ProfileMenuProps' (index 0) to be at index 1. ('onClose' should appear alphabetically after 'onAboutDialogClick'.)
 [collation] ERROR alphabetize-interfaces profile-menu.tsx:15 Expected property 'onAboutDialogClick' in 'ProfileMenuProps' (index 1) to be at index 0. ('onAboutDialogClick' should appear alphabetically before 'onClose'.)
 ```
