@@ -1,17 +1,11 @@
 import React from "react";
-import clsx from "clsx";
 import styles from "./HomepageFeatures.module.css";
+import { Feature, FeatureProps } from "@site/src/components/Feature";
 
-type FeatureItem = {
-    title: string;
-    image: string;
-    description: JSX.Element;
-};
-
-const FeatureList: FeatureItem[] = [
+const FeatureList: FeatureProps[] = [
     {
         title: "Code should be easy to read",
-        image: "/assets/undraw_docusaurus_mountain.svg",
+        image: "/img/undraw_docusaurus_mountain.svg",
         description: (
             <>
                 The more consistent your codebase is, the easier it is to
@@ -21,7 +15,7 @@ const FeatureList: FeatureItem[] = [
     },
     {
         title: "Consistency should be automated",
-        image: "/assets/undraw_docusaurus_tree.svg",
+        image: "/img/undraw_docusaurus_tree.svg",
         description: (
             <>
                 Code consistency should be enforced by tooling to avoid
@@ -31,7 +25,7 @@ const FeatureList: FeatureItem[] = [
     },
     {
         title: "Plug & Play",
-        image: "/assets/undraw_docusaurus_react.svg",
+        image: "/img/undraw_docusaurus_react.svg",
         description: (
             <>
                 Pick and choose the rules that you want to use, run on specific
@@ -40,20 +34,6 @@ const FeatureList: FeatureItem[] = [
         ),
     },
 ];
-
-function Feature({ title, image, description }: FeatureItem) {
-    return (
-        <div className={clsx("col col--4")}>
-            <div className="text--center">
-                <img className={styles.featureSvg} alt={title} src={image} />
-            </div>
-            <div className="text--center padding-horiz--md">
-                <h3>{title}</h3>
-                <p>{description}</p>
-            </div>
-        </div>
-    );
-}
 
 export default function HomepageFeatures(): JSX.Element {
     return (
