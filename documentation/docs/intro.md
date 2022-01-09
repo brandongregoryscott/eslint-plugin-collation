@@ -19,7 +19,7 @@ That being said, no one enjoys the effort that consistency requires - whether th
 
 These tools are great, but there are certain styles of formatting/organization that require additional plugins, complex configuration or aren't supported at all. I wrote `collation` as a tool to fit my personal organization preferences on my projects and maybe you'll find it useful, too.
 
-# Getting Started
+## Getting Started
 
 `collation` ships with a CLI that can be run manually, in a CI pipeline or pre-commit hook.
 
@@ -63,7 +63,7 @@ If you're only checking for rule violations and you don't want to automatically 
 
 A full list of CLI options can be found [here](http://google.com) or by specifying the `--help` flag: `npx collation --help`
 
-### Note
+## Installation Note
 
 `npx collation` can be run from anywhere, but it will do a full install of the package to run if it can't be found in the current `npm` project.
 
