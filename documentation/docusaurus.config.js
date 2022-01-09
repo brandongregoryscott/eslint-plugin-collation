@@ -10,7 +10,7 @@ const config = {
     tagline:
         "Code linting/manipulation tools to make your TypeScript code easier to read",
     url: "https://brandongregoryscott.github.io/",
-    baseUrl: "/",
+    baseUrl: "/collation/",
     onBrokenLinks: "throw",
     onBrokenMarkdownLinks: "warn",
     favicon: "img/favicon.ico",
