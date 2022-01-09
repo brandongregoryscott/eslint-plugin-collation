@@ -26,7 +26,7 @@ const config = {
                     sidebarPath: require.resolve("./sidebars.js"),
                     // Please change this to your repo.
                     editUrl:
-                        "https://github.com/brandongregoryscott/collation/tree/main/documentation/docs/",
+                        "https://github.com/brandongregoryscott/collation/tree/main/documentation/",
                 },
                 theme: {
                     customCss: require.resolve("./src/css/custom.css"),
