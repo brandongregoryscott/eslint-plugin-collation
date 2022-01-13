@@ -9,8 +9,8 @@ const config = {
     title: "collation",
     tagline:
         "Code linting/manipulation tools to make your TypeScript code easier to read",
-    url: "https://brandongregoryscott.github.io/",
-    baseUrl: "/collation/",
+    url: "https://collation.brandonscott.me/",
+    baseUrl: "/",
     onBrokenLinks: "throw",
     onBrokenMarkdownLinks: "warn",
     favicon: "img/favicon.ico",
