@@ -5,7 +5,7 @@ import { Feature, FeatureProps } from "@site/src/components/Feature";
 const FeatureList: FeatureProps[] = [
     {
         title: "Code should be easy to read",
-        image: "/img/undraw_docusaurus_mountain.svg",
+        image: "img/undraw_docusaurus_mountain.svg",
         description: (
             <>
                 The more consistent your codebase is, the easier it is to
@@ -15,7 +15,7 @@ const FeatureList: FeatureProps[] = [
     },
     {
         title: "Consistency should be automated",
-        image: "/img/undraw_docusaurus_tree.svg",
+        image: "img/undraw_docusaurus_tree.svg",
         description: (
             <>
                 Code consistency should be enforced by tooling to avoid
@@ -25,7 +25,7 @@ const FeatureList: FeatureProps[] = [
     },
     {
         title: "Plug & Play",
-        image: "/img/undraw_docusaurus_react.svg",
+        image: "img/undraw_docusaurus_react.svg",
         description: (
             <>
                 Pick and choose the rules that you want to use, run on specific
