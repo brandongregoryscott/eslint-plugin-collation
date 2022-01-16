@@ -11,14 +11,11 @@ import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
+import { NodeCommentGroup } from "../types/node-comment-group";
 import { RuleFunction } from "../types/rule-function";
+import { getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
-
-interface EnumGroup {
-    comment?: Comment;
-    member: EnumMember;
-}
 
 const alphabetizeEnums: RuleFunction = async (
     file: SourceFile
@@ -61,26 +58,14 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
         return [];
     }
 
-    const membersOrComments = _enum
-        .getDescendants()
-        .filter(
-            (node) => Node.isEnumMember(node) || Node.isCommentNode(node)
-        ) as Array<EnumMember | Comment>;
+    const groups = getNodeCommentGroups<EnumMember>(_enum, Node.isEnumMember);
 
-    const groups = compact(
-        membersOrComments.map((memberOrComment, index) =>
-            toGroup(membersOrComments, memberOrComment, index)
-        )
-    );
-
-    const sortedGroups = sortBy(groups, (group) =>
-        getEnumMemberName(group.member)
-    );
+    const sortedGroups = sortBy(groups, getEnumMemberName);
 
     let index = 0;
     const deletionQueue: Array<Comment | EnumMember> = [];
     const errors = sortedGroups.map((group) => {
-        const { comment, member } = group;
+        const { comment, node: member } = group;
         const currentIndex = groups.indexOf(group);
         const expectedIndex = sortedGroups.indexOf(group);
 
@@ -106,9 +91,7 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
                 sorted: sortedGroups,
                 original: groups,
                 parentName: name,
-                getElementName: (group) => getEnumMemberName(group.member),
-                getElementStructureName: (group) =>
-                    getEnumMemberName(group.member),
+                getElementName: getEnumMemberName,
             }),
             file: member.getSourceFile(),
             lineNumber: member.getStartLineNumber(),
@@ -126,7 +109,8 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
     return compact(errors);
 };
 
-const getEnumMemberName = (enumMember: EnumMember) => enumMember.getName();
+const getEnumMemberName = (group: NodeCommentGroup<EnumMember>) =>
+    group.node.getName();
 const getEnumName = (_enum: EnumDeclaration) => _enum.getName();
 
 /**
@@ -149,22 +133,6 @@ const removeDoubleCommas = (file: SourceFile) => {
     });
 
     deletionQueue.forEach((comma) => comma.replaceWithText(""));
-};
-
-const toGroup = (
-    membersOrComments: Array<EnumMember | Comment>,
-    memberOrComment: EnumMember | Comment,
-    index: number
-): EnumGroup | undefined => {
-    if (Node.isCommentNode(memberOrComment)) {
-        return;
-    }
-    const previousNode = membersOrComments[index - 1];
-
-    return {
-        comment: Node.isCommentNode(previousNode) ? previousNode : undefined,
-        member: memberOrComment,
-    };
 };
 
 export { alphabetizeEnums };

@@ -2,11 +2,6 @@ import { diffLines } from "diff";
 import { isEqual, sortBy, flatten, compact } from "lodash";
 import {
     CallSignatureDeclaration,
-    CommentClassElement,
-    CommentEnumMember,
-    CommentObjectLiteralElement,
-    CommentStatement,
-    CommentTypeElement,
     ConstructSignatureDeclaration,
     IndexSignatureDeclaration,
     InterfaceDeclaration,
@@ -18,7 +13,9 @@ import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
+import { NodeCommentGroup } from "../types/node-comment-group";
 import { RuleFunction } from "../types/rule-function";
+import { getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
 
@@ -28,11 +25,6 @@ type InterfaceMember = Exclude<
     | CallSignatureDeclaration
     | IndexSignatureDeclaration
 >;
-
-interface PropertyGroup {
-    comment?: Comment;
-    property: InterfaceMember;
-}
 
 const alphabetizeInterfaces: RuleFunction = async (
     file: SourceFile
@@ -52,21 +44,14 @@ const alphabetizeInterfaces: RuleFunction = async (
 const alphabetizeInterface = (
     _interface: InterfaceDeclaration
 ): RuleViolation[] => {
-    const propertyOrComments = _interface
-        .getDescendants()
-        .filter(
-            (node) =>
-                (Node.hasName(node) && Node.isTypeElement(node)) ||
-                Node.isCommentNode(node)
-        ) as Array<Comment | InterfaceMember>;
-
-    const propertyGroups = compact(
-        propertyOrComments.map((commentOrProperty, index) =>
-            toPropertyGroup(propertyOrComments, commentOrProperty, index)
-        )
+    const propertyGroups = getNodeCommentGroups<InterfaceMember>(
+        _interface,
+        (node) => Node.hasName(node) && Node.isTypeElement(node)
     );
 
-    const sorted = sortBy(propertyGroups, getPropertyName);
+    const sorted = sortBy(propertyGroups, getPropertyName) as Array<
+        NodeCommentGroup<InterfaceMember>
+    >;
 
     if (isEqual(propertyGroups, sorted)) {
         const lineNumber = _interface.getStartLineNumber();
@@ -84,7 +69,7 @@ const alphabetizeInterface = (
 
     let index = 0;
     const errors = sorted.map((propertyGroup) => {
-        const { comment, property } = propertyGroup;
+        const { comment, node: property } = propertyGroup;
         const currentIndex = propertyGroups.indexOf(propertyGroup);
         const expectedIndex = sorted.indexOf(propertyGroup);
 
@@ -129,23 +114,7 @@ const alphabetizeInterface = (
     return compact(errors);
 };
 
-const getPropertyName = (propertyGroup: PropertyGroup) =>
-    propertyGroup.property.getName();
-
-const toPropertyGroup = (
-    propertyOrCommentNodes: Array<InterfaceMember | Comment>,
-    commentOrProperty: InterfaceMember | Comment,
-    index: number
-): PropertyGroup | undefined => {
-    if (Node.isCommentNode(commentOrProperty)) {
-        return;
-    }
-    const previousNode = propertyOrCommentNodes[index - 1];
-
-    return {
-        comment: Node.isCommentNode(previousNode) ? previousNode : undefined,
-        property: commentOrProperty,
-    };
-};
+const getPropertyName = (propertyGroup: NodeCommentGroup<InterfaceMember>) =>
+    propertyGroup.node.getName();
 
 export { alphabetizeInterfaces };
