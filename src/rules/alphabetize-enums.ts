@@ -13,9 +13,10 @@ import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
 import { NodeCommentGroup } from "../types/node-comment-group";
 import { RuleFunction } from "../types/rule-function";
-import { getNodeCommentGroups } from "../utils/comment-utils";
+import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
+import { safelyRemoveAll } from "../utils/node-utils";
 
 const alphabetizeEnums: RuleFunction = async (
     file: SourceFile
@@ -71,7 +72,7 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
 
         if (comment != null) {
             deletionQueue.push(comment);
-            _enum.insertMember(index, comment.getFullText());
+            _enum.insertMember(index, getCommentText(comment));
             index++;
         }
 
@@ -99,13 +100,7 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
         });
     });
 
-    deletionQueue.forEach((member) => {
-        if (member.wasForgotten()) {
-            return;
-        }
-
-        member.remove();
-    });
+    safelyRemoveAll(deletionQueue);
     return compact(errors);
 };
 

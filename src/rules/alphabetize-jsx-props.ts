@@ -7,16 +7,7 @@ import {
     SourceFile,
     SyntaxKind,
 } from "ts-morph";
-import {
-    compact,
-    first,
-    flatten,
-    isEmpty,
-    isEqual,
-    last,
-    range,
-    sortBy,
-} from "lodash";
+import { compact, first, flatten, isEqual, last, range, sortBy } from "lodash";
 import { diffLines } from "diff";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";

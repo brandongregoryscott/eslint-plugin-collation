@@ -15,9 +15,10 @@ import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
 import { NodeCommentGroup } from "../types/node-comment-group";
 import { RuleFunction } from "../types/rule-function";
-import { getNodeCommentGroups } from "../utils/comment-utils";
+import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
+import { safelyRemoveAll } from "../utils/node-utils";
 
 type InterfaceMember = Exclude<
     TypeElementTypes,
@@ -75,7 +76,7 @@ const alphabetizeInterface = (
 
         if (comment != null) {
             deletionQueue.push(comment);
-            _interface.insertMember(index, comment.getText(true));
+            _interface.insertMember(index, getCommentText(comment));
             index++;
         }
 
@@ -104,13 +105,8 @@ const alphabetizeInterface = (
         });
     });
 
-    deletionQueue.forEach((node) => {
-        if (node.wasForgotten()) {
-            return;
-        }
+    safelyRemoveAll(deletionQueue);
 
-        node.remove();
-    });
     return compact(errors);
 };
 
