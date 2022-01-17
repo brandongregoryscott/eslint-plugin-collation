@@ -18,7 +18,6 @@ import { RuleFunction } from "../types/rule-function";
 import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
-import { safelyRemoveAll } from "../utils/node-utils";
 
 type InterfaceMember = Exclude<
     TypeElementTypes,
@@ -105,8 +104,7 @@ const alphabetizeInterface = (
         });
     });
 
-    safelyRemoveAll(deletionQueue);
-
+    deletionQueue.forEach((node) => node.remove());
     return compact(errors);
 };
 

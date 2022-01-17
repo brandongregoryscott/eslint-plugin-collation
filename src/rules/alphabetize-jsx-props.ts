@@ -15,6 +15,8 @@ import { Logger } from "../utils/logger";
 import { RuleFunction } from "../types/rule-function";
 import { RuleName } from "../enums/rule-name";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
+import { getNodeCommentGroups } from "../utils/comment-utils";
+import { NodeCommentGroup } from "../types/node-comment-group";
 
 const alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
@@ -44,6 +46,19 @@ const alphabetizeJsxProps: RuleFunction = async (
 const alphabetizePropsByJsxElement = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): RuleViolation[] => {
+    const sourceFile = jsxElement.getSourceFile();
+    const kind = jsxElement.getKind();
+    const name = jsxElement.getTagNameNode().getText();
+    const refreshJsxElement = () =>
+        sourceFile
+            .getDescendantsOfKind(kind)
+            .find(
+                (jsxElement) =>
+                    (jsxElement as JsxOpeningElement | JsxSelfClosingElement)
+                        .getTagNameNode()
+                        .getText() === name
+            ) as JsxSelfClosingElement | JsxOpeningElement;
+
     const hasSpreadAssignments = jsxElement
         .getAttributes()
         .some((prop) => Node.isJsxSpreadAttribute(prop));
@@ -56,11 +71,37 @@ const alphabetizePropsByJsxElement = (
         return [];
     }
 
-    const props = jsxElement.getAttributes() as JsxAttribute[];
-    const sortedProps = sortBy(props, (prop) => prop.getName());
-    const sortedPropStructures = sortedProps.map((prop) => prop.getStructure());
-    const errors = removeProps(props);
-    jsxElement.addAttributes(sortedPropStructures);
+    const groups = getNodeCommentGroups<JsxAttribute>(jsxElement, (node) =>
+        Node.isJsxAttribute(node)
+    );
+    const sortedGroups = sortBy(groups, (group) => group.node.getName());
+    const sortedPropStructures = sortedGroups.map((group) =>
+        group.node.getStructure()
+    );
+    const errors = _getErrors(groups, sortedPropStructures);
+
+    groups.forEach((group) => {
+        if (group.comment == null) {
+            return;
+        }
+
+        // The comment removal may forget the underlying JsxElement node, so be sure to refresh after
+        group.comment.remove();
+        jsxElement = refreshJsxElement();
+    });
+
+    jsxElement = refreshJsxElement();
+    jsxElement.getAttributes().forEach((attribute) => attribute.remove());
+
+    sortedGroups.forEach((group, index) => {
+        const { comment } = group;
+        const structure = sortedPropStructures[index];
+
+        jsxElement.addAttribute({
+            ...structure,
+            leadingTrivia: comment?.getFullText(),
+        });
+    });
 
     return compact(errors);
 };
@@ -153,6 +194,49 @@ const propsAlreadySorted = (
     });
 
     return true;
+};
+
+const _getErrors = (
+    groups: Array<NodeCommentGroup<JsxAttribute>>,
+    sortedPropStructures: Array<JsxAttributeStructure>
+): RuleViolation[] => {
+    const errors = groups.map((group, index) => {
+        const { node: prop } = group;
+        const expectedIndex = findPropertyStructureIndexByName(
+            prop as JsxAttribute,
+            sortedPropStructures
+        );
+        const outOfOrder = expectedIndex !== index;
+
+        const parent =
+            prop.getFirstAncestorByKind(SyntaxKind.JsxOpeningElement) ??
+            prop.getFirstAncestorByKindOrThrow(
+                SyntaxKind.JsxSelfClosingElement
+            );
+
+        const error = new RuleViolation({
+            ...getAlphabeticalMessages<
+                NodeCommentGroup<JsxAttribute>,
+                JsxAttributeStructure
+            >({
+                index,
+                expectedIndex,
+                parentName: getJsxTag(parent),
+                elementTypeName: "prop",
+                original: groups,
+                sorted: sortedPropStructures,
+                getElementName: (group) => group.node.getName(),
+                getElementStructureName: (prop) => prop.name,
+            }),
+            file: prop.getSourceFile(),
+            lineNumber: prop.getStartLineNumber(),
+            rule: RuleName.AlphabetizeJsxProps,
+        });
+
+        return outOfOrder ? error : undefined;
+    });
+
+    return compact(errors);
 };
 
 const removeProps = (props: JsxAttribute[]): RuleViolation[] => {

@@ -16,7 +16,6 @@ import { RuleFunction } from "../types/rule-function";
 import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
-import { safelyRemoveAll } from "../utils/node-utils";
 
 const alphabetizeEnums: RuleFunction = async (
     file: SourceFile
@@ -100,7 +99,7 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
         });
     });
 
-    safelyRemoveAll(deletionQueue);
+    deletionQueue.forEach((node) => node.remove());
     return compact(errors);
 };
 

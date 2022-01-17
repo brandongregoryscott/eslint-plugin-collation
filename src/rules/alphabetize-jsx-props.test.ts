@@ -345,7 +345,6 @@ describe("alphabetizeJsxProps", () => {
         const input = createSourceFile(
             `
                 <IconButton
-                    {...dragHandleProps}
                     /**
                      * Don't apply className with hover style
                      * if another element is being dragged
@@ -363,7 +362,6 @@ describe("alphabetizeJsxProps", () => {
         const expected = createSourceFile(
             `
                 <IconButton
-                    {...dragHandleProps}
                     appearance="default"
                     backgroundColor={theme.colors.gray200}
                     /**
