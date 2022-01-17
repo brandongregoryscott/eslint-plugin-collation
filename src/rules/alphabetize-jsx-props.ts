@@ -17,6 +17,7 @@ import { RuleName } from "../enums/rule-name";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { getNodeCommentGroups } from "../utils/comment-utils";
 import { NodeCommentGroup } from "../types/node-comment-group";
+import { PrimitiveComment } from "../models/primitive-comment";
 
 const alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
@@ -46,19 +47,7 @@ const alphabetizeJsxProps: RuleFunction = async (
 const alphabetizePropsByJsxElement = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): RuleViolation[] => {
-    const sourceFile = jsxElement.getSourceFile();
-    const kind = jsxElement.getKind();
-    const name = jsxElement.getTagNameNode().getText();
-    const refreshJsxElement = () =>
-        sourceFile
-            .getDescendantsOfKind(kind)
-            .find(
-                (jsxElement) =>
-                    (jsxElement as JsxOpeningElement | JsxSelfClosingElement)
-                        .getTagNameNode()
-                        .getText() === name
-            ) as JsxSelfClosingElement | JsxOpeningElement;
-
+    const refreshJsxElement = getRefreshJsxElementFunction(jsxElement);
     const hasSpreadAssignments = jsxElement
         .getAttributes()
         .some((prop) => Node.isJsxSpreadAttribute(prop));
@@ -102,6 +91,13 @@ const alphabetizePropsByJsxElement = (
             leadingTrivia: comment?.getFullText(),
         });
     });
+
+    removeDuplicateComments(
+        jsxElement.getSourceFile(),
+        groups
+            .filter((group) => group.comment instanceof PrimitiveComment)
+            .map((group) => group.comment as PrimitiveComment)
+    );
 
     return compact(errors);
 };
@@ -170,6 +166,25 @@ const findPropertyStructureIndexByName = (
 const getJsxTag = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): string => `<${jsxElement.getTagNameNode().getText()} />`;
+
+const getRefreshJsxElementFunction = (
+    jsxElement: JsxOpeningElement | JsxSelfClosingElement
+): (() => JsxOpeningElement | JsxSelfClosingElement) => {
+    const sourceFile = jsxElement.getSourceFile();
+    const kind = jsxElement.getKind();
+    const name = jsxElement.getTagNameNode().getText();
+    const refreshJsxElement = () =>
+        sourceFile
+            .getDescendantsOfKind(kind)
+            .find(
+                (jsxElement) =>
+                    (jsxElement as JsxOpeningElement | JsxSelfClosingElement)
+                        .getTagNameNode()
+                        .getText() === name
+            ) as JsxSelfClosingElement | JsxOpeningElement;
+
+    return refreshJsxElement;
+};
 
 const propsAlreadySorted = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
@@ -277,6 +292,35 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
     });
 
     return compact(errors);
+};
+
+/**
+ * Hack to search for & remove duplicate comments from adding JsxAttributes.
+ * @see https://github.com/dsherret/ts-morph/issues/1240
+ */
+const removeDuplicateComments = (
+    file: SourceFile,
+    comments: PrimitiveComment[]
+) => {
+    const removedComments: PrimitiveComment[] = [];
+    file.forEachDescendant((node) => {
+        const matchingComment = comments.find((comment) =>
+            node.getText().includes(comment.getPaddedText())
+        );
+        if (matchingComment == null) {
+            return;
+        }
+
+        if (removedComments.includes(matchingComment)) {
+            return;
+        }
+
+        const fullText = node.getText(true);
+        node.replaceWithText(
+            fullText.replace(matchingComment.getPaddedText(), "")
+        );
+        removedComments.push(matchingComment);
+    });
 };
 
 export { alphabetizeJsxProps };

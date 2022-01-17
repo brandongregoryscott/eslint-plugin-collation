@@ -302,7 +302,7 @@ describe("alphabetizeJsxProps", () => {
         expect(result).toMatchSourceFile(expected);
     });
 
-    it.only("#25 should sort props with single-line comments", async () => {
+    it("should sort props with single-line comments", async () => {
         // Arrange
         const input = createSourceFile(
             `
@@ -340,7 +340,7 @@ describe("alphabetizeJsxProps", () => {
         expect(result).toMatchSourceFile(expected);
     });
 
-    it.skip("#25 should sort props with multi-line comments", async () => {
+    it.skip("should sort props with multi-line comments", async () => {
         // Arrange
         const input = createSourceFile(
             `

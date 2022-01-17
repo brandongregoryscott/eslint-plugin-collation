@@ -17,6 +17,14 @@ class PrimitiveComment {
         return this.text;
     }
 
+    /**
+     * Returns comment text padded with a space - really only useful for matching & removing duplicated
+     * comment nodes from `JsxOpeningElement.addAttribute` or `JsxSelfClosingElement.addAttribute`
+     */
+    public getPaddedText(): string {
+        return ` ${this.text}`;
+    }
+
     public getText(): string {
         return this.text;
     }
