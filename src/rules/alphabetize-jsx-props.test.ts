@@ -302,7 +302,7 @@ describe("alphabetizeJsxProps", () => {
         expect(result).toMatchSourceFile(expected);
     });
 
-    it.skip("#35 should sort props of deeply nested JsxElements that receive JsxElements as props", async () => {
+    it("should sort props of deeply nested JsxElements that receive JsxElements as props", async () => {
         // Arrange
         const input = createSourceFile(
             `

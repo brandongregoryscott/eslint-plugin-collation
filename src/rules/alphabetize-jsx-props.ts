@@ -7,16 +7,7 @@ import {
     SourceFile,
     SyntaxKind,
 } from "ts-morph";
-import {
-    compact,
-    first,
-    flatten,
-    isEmpty,
-    isEqual,
-    last,
-    range,
-    sortBy,
-} from "lodash";
+import { compact, first, flatten, isEqual, last, range, sortBy } from "lodash";
 import { diffLines } from "diff";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
@@ -29,22 +20,27 @@ const alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
-    const jsxElements: Array<JsxOpeningElement | JsxSelfClosingElement> =
-        sortBy(
-            [
-                ...file.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
-                ...file.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
-            ],
-            // Sort by JsxElements that are children of JsxExpressions, which means they are being
-            // passed as props. This resolves the forgotten node error when traversing & manipulating the AST
-            (element) =>
-                element.getParentIfKind(SyntaxKind.JsxExpression) == null
+    let aggregatedErrors: RuleViolation[] = [];
+
+    file.forEachDescendant((node) => {
+        if (
+            !Node.isJsxOpeningElement(node) &&
+            !Node.isJsxSelfClosingElement(node)
+        ) {
+            return;
+        }
+
+        const errors = alphabetizePropsByJsxElement(
+            node as JsxOpeningElement | JsxSelfClosingElement
         );
-    const errors = flatten(jsxElements.map(alphabetizePropsByJsxElement));
+
+        aggregatedErrors = aggregatedErrors.concat(errors);
+    });
+
     const endingFileContent = file.getText();
 
     return {
-        errors,
+        errors: aggregatedErrors,
         diff: diffLines(originalFileContent, endingFileContent),
         file,
     };
