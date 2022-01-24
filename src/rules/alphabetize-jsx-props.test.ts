@@ -302,7 +302,55 @@ describe("alphabetizeJsxProps", () => {
         expect(result).toMatchSourceFile(expected);
     });
 
-    it("should sort props with single-line comments", async () => {
+    it("should sort props of deeply nested JsxElements that receive JsxElements as props", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                <Pane>
+                    <FormField
+                        label="Preview"
+                        hint={
+                            <InlineAlert>
+                                Curve and Release changes will not be reflected until
+                                saving and reopening.
+                            </InlineAlert>
+                        }>
+                        <Button marginY={8} marginRight={12} iconAfter={<CogIcon size={24} color="gray" />}>
+                            Settings
+                        </Button>
+                    </FormField>
+                </Pane>
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                <Pane>
+                    <FormField
+                        hint={
+                            <InlineAlert>
+                                Curve and Release changes will not be reflected until
+                                saving and reopening.
+                            </InlineAlert>
+                        }
+                        label="Preview">
+                        <Button iconAfter={<CogIcon color="gray" size={24} />} marginRight={12} marginY={8}>
+                            Settings
+                        </Button>
+                    </FormField>
+                </Pane>
+            `
+        );
+
+        // Act
+        const result = await alphabetizeJsxProps(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
+    it.skip("#25 should sort props with single-line comments", async () => {
         // Arrange
         const input = createSourceFile(
             `
