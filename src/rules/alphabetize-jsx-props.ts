@@ -17,7 +17,6 @@ import { RuleName } from "../enums/rule-name";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { getNodeCommentGroups } from "../utils/comment-utils";
 import { NodeCommentGroup } from "../types/node-comment-group";
-import { PrimitiveComment } from "../models/primitive-comment";
 
 const alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
@@ -91,13 +90,6 @@ const alphabetizePropsByJsxElement = (
             leadingTrivia: comment?.getFullText(),
         });
     });
-
-    removeDuplicateComments(
-        jsxElement.getSourceFile(),
-        groups
-            .filter((group) => group.comment instanceof PrimitiveComment)
-            .map((group) => group.comment as PrimitiveComment)
-    );
 
     return compact(errors);
 };
@@ -292,35 +284,6 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
     });
 
     return compact(errors);
-};
-
-/**
- * Hack to search for & remove duplicate comments from adding JsxAttributes.
- * @see https://github.com/dsherret/ts-morph/issues/1240
- */
-const removeDuplicateComments = (
-    file: SourceFile,
-    comments: PrimitiveComment[]
-) => {
-    const removedComments: PrimitiveComment[] = [];
-    file.forEachDescendant((node) => {
-        const matchingComment = comments.find((comment) =>
-            node.getText().includes(comment.getPaddedText())
-        );
-        if (matchingComment == null) {
-            return;
-        }
-
-        if (removedComments.includes(matchingComment)) {
-            return;
-        }
-
-        const fullText = node.getText(true);
-        node.replaceWithText(
-            fullText.replace(matchingComment.getPaddedText(), "")
-        );
-        removedComments.push(matchingComment);
-    });
 };
 
 export { alphabetizeJsxProps };
