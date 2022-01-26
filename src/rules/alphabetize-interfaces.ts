@@ -18,6 +18,7 @@ import { RuleFunction } from "../types/rule-function";
 import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
+import { withRetry } from "../utils/with-retry";
 
 type InterfaceMember = Exclude<
     TypeElementTypes,
@@ -26,7 +27,7 @@ type InterfaceMember = Exclude<
     | IndexSignatureDeclaration
 >;
 
-const alphabetizeInterfaces: RuleFunction = async (
+const _alphabetizeInterfaces: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
@@ -110,5 +111,7 @@ const alphabetizeInterface = (
 
 const getPropertyName = (propertyGroup: NodeCommentGroup<InterfaceMember>) =>
     propertyGroup.node.getName();
+
+const alphabetizeInterfaces = withRetry(_alphabetizeInterfaces);
 
 export { alphabetizeInterfaces };

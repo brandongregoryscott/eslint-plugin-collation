@@ -12,8 +12,9 @@ import {
     SourceFile,
 } from "ts-morph";
 import _ from "lodash";
+import { withRetry } from "../utils/with-retry";
 
-const namedExportsOnly: RuleFunction = async (
+const _namedExportsOnly: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
@@ -96,5 +97,7 @@ const getRuleViolation = (
         rule: RuleName.NamedExportsOnly,
     });
 };
+
+const namedExportsOnly = withRetry(_namedExportsOnly);
 
 export { namedExportsOnly };

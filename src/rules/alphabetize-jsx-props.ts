@@ -11,7 +11,6 @@ import {
     compact,
     first,
     flatten,
-    isEmpty,
     isEqual,
     last,
     merge,
@@ -28,36 +27,34 @@ import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { getNodeCommentGroups } from "../utils/comment-utils";
 import { withRetry } from "../utils/with-retry";
 
-const alphabetizeJsxProps: RuleFunction = withRetry(
-    async (file: SourceFile): Promise<RuleResult> => {
-        const originalFileContent = file.getText();
-        const jsxElements: Array<JsxOpeningElement | JsxSelfClosingElement> =
-            sortBy(
-                [
-                    ...file.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
-                    ...file.getDescendantsOfKind(
-                        SyntaxKind.JsxSelfClosingElement
-                    ),
-                ],
-                // Sort by JsxElements that are children of JsxExpressions, which means they are being
-                // passed as props. This resolves the forgotten node error when traversing & manipulating the AST
-                (element) =>
-                    element.getParentIfKind(SyntaxKind.JsxExpression) == null
-            );
-
-        const errors: RuleViolation[] = flatten(
-            jsxElements.map(alphabetizePropsByJsxElement)
+const _alphabetizeJsxProps: RuleFunction = async (
+    file: SourceFile
+): Promise<RuleResult> => {
+    const originalFileContent = file.getText();
+    const jsxElements: Array<JsxOpeningElement | JsxSelfClosingElement> =
+        sortBy(
+            [
+                ...file.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
+                ...file.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
+            ],
+            // Sort by JsxElements that are children of JsxExpressions, which means they are being
+            // passed as props. This resolves the forgotten node error when traversing & manipulating the AST
+            (element) =>
+                element.getParentIfKind(SyntaxKind.JsxExpression) == null
         );
 
-        const endingFileContent = file.getText();
+    const errors: RuleViolation[] = flatten(
+        jsxElements.map(alphabetizePropsByJsxElement)
+    );
 
-        return {
-            errors,
-            diff: diffLines(originalFileContent, endingFileContent),
-            file,
-        };
-    }
-);
+    const endingFileContent = file.getText();
+
+    return {
+        errors,
+        diff: diffLines(originalFileContent, endingFileContent),
+        file,
+    };
+};
 
 const alphabetizePropsByJsxElement = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
@@ -236,5 +233,7 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
 
     return compact(errors);
 };
+
+const alphabetizeJsxProps = withRetry(_alphabetizeJsxProps);
 
 export { alphabetizeJsxProps };
