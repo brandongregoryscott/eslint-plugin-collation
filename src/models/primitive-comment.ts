@@ -14,19 +14,11 @@ class PrimitiveComment {
     }
 
     public getFullText(): string {
-        return this.text;
-    }
-
-    /**
-     * Returns comment text padded with a space - really only useful for matching & removing duplicated
-     * comment nodes from `JsxOpeningElement.addAttribute` or `JsxSelfClosingElement.addAttribute`
-     */
-    public getPaddedText(): string {
-        return ` ${this.text}`;
+        return this.getFormattedText();
     }
 
     public getText(): string {
-        return this.text;
+        return this.getFormattedText();
     }
 
     public remove(): void {
@@ -38,6 +30,15 @@ class PrimitiveComment {
      */
     public wasForgotten(): boolean {
         return false;
+    }
+
+    private getFormattedText(): string {
+        const { text } = this;
+        if (text.endsWith("*/")) {
+            return `${text} `; // Pad multi-line comments so they don't brush up with actual code
+        }
+
+        return text;
     }
 }
 

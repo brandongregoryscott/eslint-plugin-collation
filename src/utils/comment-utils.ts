@@ -1,28 +1,33 @@
-import { compact, chain } from "lodash";
+import { compact, chain, first } from "lodash";
 import { CommentRange, Node } from "ts-morph";
 import { PrimitiveComment } from "../models/primitive-comment";
 import { Comment } from "../types/comment";
 import { NodeCommentGroup } from "../types/node-comment-group";
 
-const getNodeCommentGroups = <T extends Node>(
-    node: Node,
-    selector: (node: Node) => boolean
-): Array<NodeCommentGroup<T>> => {
-    const commentsOrNodes = chain(node.getDescendants())
+const getNodeCommentGroups = <
+    TInputNode extends Node,
+    TOutputNode extends Node
+>(
+    node: TInputNode,
+    selector?: (node: TInputNode) => boolean,
+    getNodes: (node: TInputNode) => Array<Node> = getDescendants
+): Array<NodeCommentGroup<TOutputNode>> => {
+    const commentsOrNodes = chain(getNodes(node))
         .map((node, index, descendants) => {
             if (Node.isCommentNode(node)) {
                 return node;
             }
 
-            if (!selector(node)) {
+            if (selector != null && !selector(node as TInputNode)) {
                 return [];
             }
 
             // As of writing, ts-morph only wraps a specific set of CommentRange nodes that are associated
             // with other nodes. This is some what of a manual hack to associate the first `CommentRange`
             // with any arbitrary node, assuming it is placed above the node.
-            const leadingCommentRange: CommentRange | undefined =
-                node.getLeadingCommentRanges()[0];
+            const leadingCommentRange: CommentRange | undefined = first(
+                node.getLeadingCommentRanges()
+            );
 
             const hasNoComment = leadingCommentRange == null;
             const hasDuplicateOfPreviousComment = isEqual(
@@ -37,7 +42,7 @@ const getNodeCommentGroups = <T extends Node>(
         })
         .flatten() // Flatten tuple arrays that may contain comments
         .compact() // Filter out `undefined` values (i.e. nodes that have no `CommentRange` instances)
-        .thru((values) => values as Array<Comment | T>)
+        .thru((values) => values as Array<Comment | TOutputNode>)
         .value();
 
     const groups = commentsOrNodes.map(toNodeCommentGroup);
@@ -46,6 +51,8 @@ const getNodeCommentGroups = <T extends Node>(
 };
 
 const getCommentText = (comment: Comment): string => comment.getFullText();
+
+const getDescendants = <T extends Node>(node: T) => node.getDescendants();
 
 const isComment = (node: any): node is Comment =>
     node instanceof PrimitiveComment || Node.isCommentNode(node);

@@ -44,10 +44,10 @@ const alphabetizeInterfaces: RuleFunction = async (
 const alphabetizeInterface = (
     _interface: InterfaceDeclaration
 ): RuleViolation[] => {
-    const propertyGroups = getNodeCommentGroups<InterfaceMember>(
-        _interface,
-        (node) => Node.hasName(node) && Node.isTypeElement(node)
-    );
+    const propertyGroups = getNodeCommentGroups<
+        InterfaceDeclaration,
+        InterfaceMember
+    >(_interface, (node) => Node.hasName(node) && Node.isTypeElement(node));
 
     const sorted = sortBy(propertyGroups, getPropertyName) as Array<
         NodeCommentGroup<InterfaceMember>
