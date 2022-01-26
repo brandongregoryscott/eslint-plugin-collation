@@ -26,6 +26,7 @@ import { RuleName } from "../enums/rule-name";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { getNodeCommentGroups } from "../utils/comment-utils";
 import { withRetry } from "../utils/with-retry";
+import { NodeCommentGroup } from "../types/node-comment-group";
 
 const _alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
@@ -113,9 +114,18 @@ const alphabetizeJsxPropsWithSpread = (
     }
 
     const props = jsxElement.getAttributes();
-    const spreadPropIndexes = props
-        .map((prop, index) =>
-            Node.isJsxSpreadAttribute(prop) ? index : undefined
+    const groups = getNodeCommentGroups<
+        JsxSelfClosingElement | JsxOpeningElement,
+        JsxAttribute
+    >(
+        jsxElement,
+        (node) => Node.isJsxAttribute(node) || Node.isJsxSpreadAttribute(node),
+        (node) => node.getAttributes()
+    );
+
+    const spreadPropIndexes = groups
+        .map((group, index) =>
+            Node.isJsxSpreadAttribute(group.node) ? index : undefined
         )
         .filter((value) => value != null) as number[]; // Can't use compact here as 0 is falsy
 
@@ -135,15 +145,20 @@ const alphabetizeJsxPropsWithSpread = (
     }
 
     const errors = indexRanges.map((indexRange) => {
-        const subsetProps = props.slice(
+        const subsetPropGroups = groups.slice(
             first(indexRange),
             last(indexRange)
-        ) as JsxAttribute[];
-        const sortedPropStructures = sortBy(subsetProps, (prop) =>
-            prop.getName()
-        ).map((prop) => prop.getStructure());
+        ) as Array<NodeCommentGroup<JsxAttribute>>;
+        const sortedGroups = sortBy(subsetPropGroups, (group) =>
+            group.node.getName()
+        );
+        const sortedPropStructures = sortedGroups.map((group) =>
+            merge({}, group.node.getStructure(), {
+                leadingTrivia: group.comment?.getText(),
+            })
+        );
+        const errors = removeProps(subsetPropGroups.map((group) => group.node));
 
-        const errors = removeProps(subsetProps);
         jsxElement.insertAttributes(first(indexRange)!, sortedPropStructures);
 
         return errors;
@@ -219,7 +234,7 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
                 original: props,
                 sorted: sortedPropStructures,
                 getElementName: (prop) => prop.getName(),
-                getElementStructureName: (prop) => prop.name,
+                getElementStructureName: (prop) => prop?.name,
             }),
             file: prop.getSourceFile(),
             lineNumber: prop.getStartLineNumber(),

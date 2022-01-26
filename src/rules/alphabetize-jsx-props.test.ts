@@ -431,4 +431,96 @@ describe("alphabetizeJsxProps", () => {
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
     });
+
+    it("should sort spread props with single-line comments", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                <IconButton
+                    appearance="default"
+                    // These are the button props
+                    {...buttonProps}
+                    // Don't apply className with hover style if another element is being dragged
+                    className={isOtherElementDragging ? undefined : props.className}
+                    backgroundColor={theme.colors.gray200}
+                    onClick={onClick}
+                    size="small"
+                    visibility={visibility}
+                />
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                <IconButton
+                    appearance="default"
+                    // These are the button props
+                    {...buttonProps}
+                    backgroundColor={theme.colors.gray200}
+                    // Don't apply className with hover style if another element is being dragged
+                    className={isOtherElementDragging ? undefined : props.className}
+                    onClick={onClick}
+                    size="small"
+                    visibility={visibility}
+                />
+            `
+        );
+
+        // Act
+        const result = await alphabetizeJsxProps(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
+    it("should sort spread props with multi-line comments", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                <IconButton
+                    appearance="default"
+                    /**
+                     * These are
+                     * the
+                     * button props
+                     */
+                    {...buttonProps}
+                    // Don't apply className with hover style if another element is being dragged
+                    className={isOtherElementDragging ? undefined : props.className}
+                    backgroundColor={theme.colors.gray200}
+                    onClick={onClick}
+                    size="small"
+                    visibility={visibility}
+                />
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                <IconButton
+                    appearance="default"
+                    /**
+                     * These are
+                     * the
+                     * button props
+                     */
+                    {...buttonProps}
+                    backgroundColor={theme.colors.gray200}
+                    // Don't apply className with hover style if another element is being dragged
+                    className={isOtherElementDragging ? undefined : props.className}
+                    onClick={onClick}
+                    size="small"
+                    visibility={visibility}
+                />
+            `
+        );
+
+        // Act
+        const result = await alphabetizeJsxProps(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
 });
