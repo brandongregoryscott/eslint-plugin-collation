@@ -10,6 +10,7 @@ import {
 import {
     compact,
     first,
+    flatMap,
     flatten,
     isEqual,
     last,
@@ -24,29 +25,21 @@ import { Logger } from "../utils/logger";
 import { RuleFunction } from "../types/rule-function";
 import { RuleName } from "../enums/rule-name";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
-import { getNodeCommentGroups } from "../utils/comment-utils";
+import {
+    getCommentNodeStructures,
+    getNodeCommentGroups,
+} from "../utils/comment-utils";
 import { withRetry } from "../utils/with-retry";
 import { NodeCommentGroup } from "../types/node-comment-group";
+import { JsxElement } from "../types/jsx-element";
 
 const _alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
-    const jsxElements: Array<JsxOpeningElement | JsxSelfClosingElement> =
-        sortBy(
-            [
-                ...file.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
-                ...file.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
-            ],
-            // Sort by JsxElements that are children of JsxExpressions, which means they are being
-            // passed as props. This resolves the forgotten node error when traversing & manipulating the AST
-            (element) =>
-                element.getParentIfKind(SyntaxKind.JsxExpression) == null
-        );
+    const jsxElements: Array<JsxElement> = getJsxElements(file);
 
-    const errors: RuleViolation[] = flatten(
-        jsxElements.map(alphabetizePropsByJsxElement)
-    );
+    const errors = flatMap(jsxElements, alphabetizePropsByJsxElement);
 
     const endingFileContent = file.getText();
 
@@ -58,7 +51,7 @@ const _alphabetizeJsxProps: RuleFunction = async (
 };
 
 const alphabetizePropsByJsxElement = (
-    jsxElement: JsxOpeningElement | JsxSelfClosingElement
+    jsxElement: JsxElement
 ): RuleViolation[] => {
     const emptyJsx = getJsxTag(jsxElement);
     const hasSpreadAssignments = jsxElement
@@ -73,27 +66,21 @@ const alphabetizePropsByJsxElement = (
         return [];
     }
 
-    const groups = getNodeCommentGroups<
-        JsxSelfClosingElement | JsxOpeningElement,
-        JsxAttribute
-    >(
+    const groups = getNodeCommentGroups<JsxElement, JsxAttribute>(
         jsxElement,
         (node) => Node.isJsxAttribute(node),
         (node) => node.getAttributes()
     );
 
     const sortedGroups = sortBy(groups, (group) => group.node.getName());
-    const sortedPropStructures = sortedGroups.map((group) =>
-        merge({}, group.node.getStructure(), {
-            leadingTrivia: group.comment?.getText(),
-        })
-    );
+    const sortedPropStructures = getCommentNodeStructures<
+        JsxAttribute,
+        JsxAttributeStructure
+    >(sortedGroups);
     const errors = removeProps(jsxElement.getAttributes() as JsxAttribute[]);
 
     // This clears out any trivia/comments that might have been left behind from removeProps
-    jsxElement = jsxElement.replaceWithText(emptyJsx) as
-        | JsxSelfClosingElement
-        | JsxOpeningElement;
+    jsxElement = jsxElement.replaceWithText(emptyJsx) as JsxElement;
 
     jsxElement.addAttributes(sortedPropStructures);
 
@@ -107,17 +94,14 @@ const alphabetizePropsByJsxElement = (
  * each of the spread assignments
  */
 const alphabetizeJsxPropsWithSpread = (
-    jsxElement: JsxOpeningElement | JsxSelfClosingElement
+    jsxElement: JsxElement
 ): RuleViolation[] => {
     if (propsAlreadySorted(jsxElement)) {
         return [];
     }
 
     const props = jsxElement.getAttributes();
-    const groups = getNodeCommentGroups<
-        JsxSelfClosingElement | JsxOpeningElement,
-        JsxAttribute
-    >(
+    const groups = getNodeCommentGroups<JsxElement, JsxAttribute>(
         jsxElement,
         (node) => Node.isJsxAttribute(node) || Node.isJsxSpreadAttribute(node),
         (node) => node.getAttributes()
@@ -152,11 +136,10 @@ const alphabetizeJsxPropsWithSpread = (
         const sortedGroups = sortBy(subsetPropGroups, (group) =>
             group.node.getName()
         );
-        const sortedPropStructures = sortedGroups.map((group) =>
-            merge({}, group.node.getStructure(), {
-                leadingTrivia: group.comment?.getText(),
-            })
-        );
+        const sortedPropStructures = getCommentNodeStructures<
+            JsxAttribute,
+            JsxAttributeStructure
+        >(sortedGroups);
         const errors = removeProps(subsetPropGroups.map((group) => group.node));
 
         jsxElement.insertAttributes(first(indexRange)!, sortedPropStructures);
@@ -175,18 +158,19 @@ const findPropertyStructureIndexByName = (
         (propertyStructure) => propertyStructure.name === prop.getName()
     );
 
-const getJsxTag = (
-    jsxElement: JsxOpeningElement | JsxSelfClosingElement
-): string => {
+const getJsxElements = (file: SourceFile): Array<JsxElement> => [
+    ...file.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
+    ...file.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
+];
+
+const getJsxTag = (jsxElement: JsxElement): string => {
     const endingBracket = Node.isJsxSelfClosingElement(jsxElement)
         ? " />"
         : ">";
     return `<${jsxElement.getTagNameNode().getText()}${endingBracket}`;
 };
 
-const propsAlreadySorted = (
-    jsxElement: JsxOpeningElement | JsxSelfClosingElement
-): boolean => {
+const propsAlreadySorted = (jsxElement: JsxElement): boolean => {
     const props = jsxElement
         .getAttributes()
         .filter((prop) => Node.isJsxAttribute(prop)) as JsxAttribute[];
