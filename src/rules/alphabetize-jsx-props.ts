@@ -1,6 +1,5 @@
 import {
     JsxAttribute,
-    JsxAttributedNode,
     JsxAttributeStructure,
     JsxOpeningElement,
     JsxSelfClosingElement,
@@ -27,23 +26,11 @@ import { RuleFunction } from "../types/rule-function";
 import { RuleName } from "../enums/rule-name";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { getNodeCommentGroups } from "../utils/comment-utils";
-import { isForgottenNodeError } from "../utils/error-utils";
-import {
-    formatPartialRuleViolation,
-    formatRuleViolation,
-} from "../utils/string-utils";
+import { withRetry } from "../utils/with-retry";
 
-const maxRetries = 5;
-let retryMap: Record<string, number> = {};
-
-const alphabetizeJsxProps: RuleFunction = async (
-    file: SourceFile
-): Promise<RuleResult> => {
-    const fileName = file.getBaseName();
-    const originalFileContent = file.getText();
-    let errors: RuleViolation[] = [];
-
-    try {
+const alphabetizeJsxProps: RuleFunction = withRetry(
+    async (file: SourceFile): Promise<RuleResult> => {
+        const originalFileContent = file.getText();
         const jsxElements: Array<JsxOpeningElement | JsxSelfClosingElement> =
             sortBy(
                 [
@@ -57,40 +44,20 @@ const alphabetizeJsxProps: RuleFunction = async (
                 (element) =>
                     element.getParentIfKind(SyntaxKind.JsxExpression) == null
             );
-        errors = [
-            ...errors,
-            ...flatten(jsxElements.map(alphabetizePropsByJsxElement)),
-        ];
-    } catch (error) {
-        if (isForgottenNodeError(error)) {
-            retryMap = merge({}, retryMap, {
-                [fileName]: (retryMap[fileName] ?? 0) + 1,
-            });
 
-            if (retryMap[fileName] > maxRetries) {
-                throw new Error(
-                    formatPartialRuleViolation({
-                        rule: RuleName.AlphabetizeJsxProps,
-                        file,
-                        message: `Attempted to resolve forgotten node errors ${maxRetries} times. Bailing.`,
-                    })
-                );
-            }
+        const errors: RuleViolation[] = flatten(
+            jsxElements.map(alphabetizePropsByJsxElement)
+        );
 
-            return alphabetizeJsxProps(file);
-        }
+        const endingFileContent = file.getText();
 
-        Logger.error("Unhandled error in retry catch: ", error);
+        return {
+            errors,
+            diff: diffLines(originalFileContent, endingFileContent),
+            file,
+        };
     }
-
-    const endingFileContent = file.getText();
-
-    return {
-        errors,
-        diff: diffLines(originalFileContent, endingFileContent),
-        file,
-    };
-};
+);
 
 const alphabetizePropsByJsxElement = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
