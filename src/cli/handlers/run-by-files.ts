@@ -36,14 +36,19 @@ const runByFiles = async () => {
             "Some of the specified files could not be found in the project."
         );
 
-        missingFiles.forEach((fileName) =>
+        missingFiles.forEach((fileName) => {
+            const potentialMatchingFiles = fuzzyFindFile(fileName, project);
+            const baseMessage = `File ${chalk.magenta(fileName)} not found.`;
+            if (isEmpty(potentialMatchingFiles)) {
+                Logger.warn(baseMessage);
+                return;
+            }
+
             Logger.warn(
-                `File ${chalk.magenta(
-                    fileName
-                )} not found, did you mean one of these?`,
+                `${baseMessage} Did you mean one of these?`,
                 fuzzyFindFile(fileName, project)
-            )
-        );
+            );
+        });
     }
 
     await ruleRunner(files);

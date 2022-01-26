@@ -7,7 +7,16 @@ import {
     SourceFile,
     SyntaxKind,
 } from "ts-morph";
-import { compact, first, flatten, isEqual, last, range, sortBy } from "lodash";
+import {
+    compact,
+    first,
+    flatten,
+    isEqual,
+    last,
+    merge,
+    range,
+    sortBy,
+} from "lodash";
 import { diffLines } from "diff";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
@@ -15,32 +24,34 @@ import { Logger } from "../utils/logger";
 import { RuleFunction } from "../types/rule-function";
 import { RuleName } from "../enums/rule-name";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
+import { getNodeCommentGroups } from "../utils/comment-utils";
+import { withRetry } from "../utils/with-retry";
+import { NodeCommentGroup } from "../types/node-comment-group";
 
-const alphabetizeJsxProps: RuleFunction = async (
+const _alphabetizeJsxProps: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
-    let aggregatedErrors: RuleViolation[] = [];
-
-    file.forEachDescendant((node) => {
-        if (
-            !Node.isJsxOpeningElement(node) &&
-            !Node.isJsxSelfClosingElement(node)
-        ) {
-            return;
-        }
-
-        const errors = alphabetizePropsByJsxElement(
-            node as JsxOpeningElement | JsxSelfClosingElement
+    const jsxElements: Array<JsxOpeningElement | JsxSelfClosingElement> =
+        sortBy(
+            [
+                ...file.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
+                ...file.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
+            ],
+            // Sort by JsxElements that are children of JsxExpressions, which means they are being
+            // passed as props. This resolves the forgotten node error when traversing & manipulating the AST
+            (element) =>
+                element.getParentIfKind(SyntaxKind.JsxExpression) == null
         );
 
-        aggregatedErrors = aggregatedErrors.concat(errors);
-    });
+    const errors: RuleViolation[] = flatten(
+        jsxElements.map(alphabetizePropsByJsxElement)
+    );
 
     const endingFileContent = file.getText();
 
     return {
-        errors: aggregatedErrors,
+        errors,
         diff: diffLines(originalFileContent, endingFileContent),
         file,
     };
@@ -49,6 +60,7 @@ const alphabetizeJsxProps: RuleFunction = async (
 const alphabetizePropsByJsxElement = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
 ): RuleViolation[] => {
+    const emptyJsx = getJsxTag(jsxElement);
     const hasSpreadAssignments = jsxElement
         .getAttributes()
         .some((prop) => Node.isJsxSpreadAttribute(prop));
@@ -61,10 +73,28 @@ const alphabetizePropsByJsxElement = (
         return [];
     }
 
-    const props = jsxElement.getAttributes() as JsxAttribute[];
-    const sortedProps = sortBy(props, (prop) => prop.getName());
-    const sortedPropStructures = sortedProps.map((prop) => prop.getStructure());
-    const errors = removeProps(props);
+    const groups = getNodeCommentGroups<
+        JsxSelfClosingElement | JsxOpeningElement,
+        JsxAttribute
+    >(
+        jsxElement,
+        (node) => Node.isJsxAttribute(node),
+        (node) => node.getAttributes()
+    );
+
+    const sortedGroups = sortBy(groups, (group) => group.node.getName());
+    const sortedPropStructures = sortedGroups.map((group) =>
+        merge({}, group.node.getStructure(), {
+            leadingTrivia: group.comment?.getText(),
+        })
+    );
+    const errors = removeProps(jsxElement.getAttributes() as JsxAttribute[]);
+
+    // This clears out any trivia/comments that might have been left behind from removeProps
+    jsxElement = jsxElement.replaceWithText(emptyJsx) as
+        | JsxSelfClosingElement
+        | JsxOpeningElement;
+
     jsxElement.addAttributes(sortedPropStructures);
 
     return compact(errors);
@@ -84,9 +114,18 @@ const alphabetizeJsxPropsWithSpread = (
     }
 
     const props = jsxElement.getAttributes();
-    const spreadPropIndexes = props
-        .map((prop, index) =>
-            Node.isJsxSpreadAttribute(prop) ? index : undefined
+    const groups = getNodeCommentGroups<
+        JsxSelfClosingElement | JsxOpeningElement,
+        JsxAttribute
+    >(
+        jsxElement,
+        (node) => Node.isJsxAttribute(node) || Node.isJsxSpreadAttribute(node),
+        (node) => node.getAttributes()
+    );
+
+    const spreadPropIndexes = groups
+        .map((group, index) =>
+            Node.isJsxSpreadAttribute(group.node) ? index : undefined
         )
         .filter((value) => value != null) as number[]; // Can't use compact here as 0 is falsy
 
@@ -106,15 +145,20 @@ const alphabetizeJsxPropsWithSpread = (
     }
 
     const errors = indexRanges.map((indexRange) => {
-        const subsetProps = props.slice(
+        const subsetPropGroups = groups.slice(
             first(indexRange),
             last(indexRange)
-        ) as JsxAttribute[];
-        const sortedPropStructures = sortBy(subsetProps, (prop) =>
-            prop.getName()
-        ).map((prop) => prop.getStructure());
+        ) as Array<NodeCommentGroup<JsxAttribute>>;
+        const sortedGroups = sortBy(subsetPropGroups, (group) =>
+            group.node.getName()
+        );
+        const sortedPropStructures = sortedGroups.map((group) =>
+            merge({}, group.node.getStructure(), {
+                leadingTrivia: group.comment?.getText(),
+            })
+        );
+        const errors = removeProps(subsetPropGroups.map((group) => group.node));
 
-        const errors = removeProps(subsetProps);
         jsxElement.insertAttributes(first(indexRange)!, sortedPropStructures);
 
         return errors;
@@ -133,7 +177,12 @@ const findPropertyStructureIndexByName = (
 
 const getJsxTag = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
-): string => `<${jsxElement.getTagNameNode().getText()} />`;
+): string => {
+    const endingBracket = Node.isJsxSelfClosingElement(jsxElement)
+        ? " />"
+        : ">";
+    return `<${jsxElement.getTagNameNode().getText()}${endingBracket}`;
+};
 
 const propsAlreadySorted = (
     jsxElement: JsxOpeningElement | JsxSelfClosingElement
@@ -185,7 +234,7 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
                 original: props,
                 sorted: sortedPropStructures,
                 getElementName: (prop) => prop.getName(),
-                getElementStructureName: (prop) => prop.name,
+                getElementStructureName: (prop) => prop?.name,
             }),
             file: prop.getSourceFile(),
             lineNumber: prop.getStartLineNumber(),
@@ -199,5 +248,7 @@ const removeProps = (props: JsxAttribute[]): RuleViolation[] => {
 
     return compact(errors);
 };
+
+const alphabetizeJsxProps = withRetry(_alphabetizeJsxProps);
 
 export { alphabetizeJsxProps };

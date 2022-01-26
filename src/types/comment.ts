@@ -5,12 +5,14 @@ import {
     CommentObjectLiteralElement,
     CommentEnumMember,
 } from "ts-morph";
+import { PrimitiveComment } from "../models/primitive-comment";
 
 type Comment =
     | CommentStatement
     | CommentClassElement
     | CommentTypeElement
     | CommentObjectLiteralElement
-    | CommentEnumMember;
+    | CommentEnumMember
+    | PrimitiveComment;
 
 export type { Comment };

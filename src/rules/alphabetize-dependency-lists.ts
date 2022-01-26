@@ -23,10 +23,11 @@ import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
+import { withRetry } from "../utils/with-retry";
 
 const functionsWithDependencies = ["useCallback", "useEffect", "useMemo"];
 
-const alphabetizeDependencyLists: RuleFunction = async (
+const _alphabetizeDependencyLists: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
@@ -148,5 +149,7 @@ const isNotChildOfPropertyAccess = (
     identifierOrPropertyAccess.getParentIfKind(
         SyntaxKind.PropertyAccessExpression
     ) == null;
+
+const alphabetizeDependencyLists = withRetry(_alphabetizeDependencyLists);
 
 export { alphabetizeDependencyLists };

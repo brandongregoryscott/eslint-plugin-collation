@@ -2,11 +2,6 @@ import { diffLines } from "diff";
 import { isEqual, sortBy, flatten, compact } from "lodash";
 import {
     CallSignatureDeclaration,
-    CommentClassElement,
-    CommentEnumMember,
-    CommentObjectLiteralElement,
-    CommentStatement,
-    CommentTypeElement,
     ConstructSignatureDeclaration,
     IndexSignatureDeclaration,
     InterfaceDeclaration,
@@ -18,9 +13,12 @@ import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
+import { NodeCommentGroup } from "../types/node-comment-group";
 import { RuleFunction } from "../types/rule-function";
+import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
+import { withRetry } from "../utils/with-retry";
 
 type InterfaceMember = Exclude<
     TypeElementTypes,
@@ -29,12 +27,7 @@ type InterfaceMember = Exclude<
     | IndexSignatureDeclaration
 >;
 
-interface PropertyGroup {
-    comment?: Comment;
-    property: InterfaceMember;
-}
-
-const alphabetizeInterfaces: RuleFunction = async (
+const _alphabetizeInterfaces: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
@@ -52,21 +45,14 @@ const alphabetizeInterfaces: RuleFunction = async (
 const alphabetizeInterface = (
     _interface: InterfaceDeclaration
 ): RuleViolation[] => {
-    const propertyOrComments = _interface
-        .getDescendants()
-        .filter(
-            (node) =>
-                (Node.hasName(node) && Node.isTypeElement(node)) ||
-                Node.isCommentNode(node)
-        ) as Array<Comment | InterfaceMember>;
+    const propertyGroups = getNodeCommentGroups<
+        InterfaceDeclaration,
+        InterfaceMember
+    >(_interface, (node) => Node.hasName(node) && Node.isTypeElement(node));
 
-    const propertyGroups = compact(
-        propertyOrComments.map((commentOrProperty, index) =>
-            toPropertyGroup(propertyOrComments, commentOrProperty, index)
-        )
-    );
-
-    const sorted = sortBy(propertyGroups, getPropertyName);
+    const sorted = sortBy(propertyGroups, getPropertyName) as Array<
+        NodeCommentGroup<InterfaceMember>
+    >;
 
     if (isEqual(propertyGroups, sorted)) {
         const lineNumber = _interface.getStartLineNumber();
@@ -84,13 +70,13 @@ const alphabetizeInterface = (
 
     let index = 0;
     const errors = sorted.map((propertyGroup) => {
-        const { comment, property } = propertyGroup;
+        const { comment, node: property } = propertyGroup;
         const currentIndex = propertyGroups.indexOf(propertyGroup);
         const expectedIndex = sorted.indexOf(propertyGroup);
 
         if (comment != null) {
             deletionQueue.push(comment);
-            _interface.insertMember(index, comment.getText(true));
+            _interface.insertMember(index, getCommentText(comment));
             index++;
         }
 
@@ -119,33 +105,13 @@ const alphabetizeInterface = (
         });
     });
 
-    deletionQueue.forEach((node) => {
-        if (node.wasForgotten()) {
-            return;
-        }
-
-        node.remove();
-    });
+    deletionQueue.forEach((node) => node.remove());
     return compact(errors);
 };
 
-const getPropertyName = (propertyGroup: PropertyGroup) =>
-    propertyGroup.property.getName();
+const getPropertyName = (propertyGroup: NodeCommentGroup<InterfaceMember>) =>
+    propertyGroup.node.getName();
 
-const toPropertyGroup = (
-    propertyOrCommentNodes: Array<InterfaceMember | Comment>,
-    commentOrProperty: InterfaceMember | Comment,
-    index: number
-): PropertyGroup | undefined => {
-    if (Node.isCommentNode(commentOrProperty)) {
-        return;
-    }
-    const previousNode = propertyOrCommentNodes[index - 1];
-
-    return {
-        comment: Node.isCommentNode(previousNode) ? previousNode : undefined,
-        property: commentOrProperty,
-    };
-};
+const alphabetizeInterfaces = withRetry(_alphabetizeInterfaces);
 
 export { alphabetizeInterfaces };
