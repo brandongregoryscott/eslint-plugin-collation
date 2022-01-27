@@ -62,7 +62,7 @@
         "build:dist": "npm run esbuild -- --minify",
         "build:watch": "npm run esbuild -- --watch",
         "clean": "rimraf dist",
-        "deploy:docs": "cd documentation && yarn deploy",
+        "deploy:docs": "cd documentation && yarn install && yarn deploy",
         "esbuild": "tsc --noEmit && esbuild src/collation.ts --bundle --outfile=dist/collation.js --platform=node --sourcemap --external:ts-morph",
         "format": "prettier --write",
         "internal-codegen": "ts-node src/utils/internal-codegen/main.ts",
