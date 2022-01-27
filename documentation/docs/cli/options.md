@@ -34,6 +34,19 @@ npx collation --dry
 [collation] ERROR alphabetize-interfaces profile-menu.tsx:15 Expected property 'onAboutDialogClick' in 'ProfileMenuProps' (index 1) to be at index 0. ('onAboutDialogClick' should appear alphabetically before 'onClose'.)
 ```
 
+## Exclude
+
+Flags: `-e, --exclude`
+
+Description: Run all rules except those specified
+
+Example:
+
+```sh
+npx collation --verbose --exclude named-exports-only alphabetize-interfaces
+[collation] DEBUG alphabetize-enums rule-name.ts:1 Members of enum RuleName are already alphabetized.
+```
+
 ## Help
 
 Flags: `-h, --help`

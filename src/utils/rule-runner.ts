@@ -8,9 +8,10 @@ import { Logger } from "./logger";
 import { printRuleResults } from "./print-rule-results";
 
 const ruleRunner = async (files: SourceFile[]): Promise<RuleResult[]> => {
-    const { rules: requestedRules } = Context.cliOptions;
+    const { rules: requestedRules, exclude: excludedRules } =
+        Context.cliOptions;
     const invalidRuleNames =
-        requestedRules?.filter(
+        (requestedRules ?? excludedRules)?.filter(
             (rule) => !Object.values(RuleName).includes(rule)
         ) ?? [];
     if (!isEmpty(invalidRuleNames)) {
@@ -19,7 +20,11 @@ const ruleRunner = async (files: SourceFile[]): Promise<RuleResult[]> => {
         process.exit(1);
     }
 
-    const rules = requestedRules ?? Object.values(RuleName);
+    const rules =
+        requestedRules ??
+        Object.values(RuleName).filter(
+            (rule) => !excludedRules?.includes(rule)
+        );
 
     const results = await Promise.all(
         flatten(
