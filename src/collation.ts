@@ -8,6 +8,7 @@ import { printProject } from "./cli/handlers/print-project";
 import { runByFiles } from "./cli/handlers/run-by-files";
 import "source-map-support/register";
 import { runAll } from "./cli/handlers/run-all";
+import { Logger } from "./utils/logger";
 
 const main = async () => {
     const program = new Command();
@@ -16,6 +17,10 @@ const main = async () => {
         .version(version)
         .option("-a, --all", "Run for all files in project")
         .option("-d, --dry", "Run without saving changes")
+        .option(
+            "-e, --exclude [ruleNames...]",
+            "Run all rules except those specified"
+        )
         .option(
             "-f, --files [fileNamesOrPaths...]",
             "Run on specific file(s) (e.g. --files button.tsx form.tsx)"
@@ -31,10 +36,19 @@ const main = async () => {
 
     const project = new Project({ tsConfigFilePath: "tsconfig.json" });
     const {
+        rules,
+        exclude,
         all,
         files: filePaths,
         printProject: shouldPrintProject,
     } = program.opts<CliOptions>();
+
+    if (rules != null && exclude != null) {
+        Logger.error(
+            "--rules and --exclude cannot be used in conjunction. Use one or the other to pick specific rules to run."
+        );
+        process.exit(1);
+    }
 
     Context.initialize({
         project,
