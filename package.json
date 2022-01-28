@@ -66,7 +66,6 @@
         "esbuild": "tsc --noEmit && esbuild src/collation.ts --bundle --outfile=dist/collation.js --platform=node --sourcemap --external:ts-morph",
         "format": "prettier --write",
         "internal-codegen": "ts-node src/utils/internal-codegen/main.ts",
-        "postpublish": "npm run deploy:docs",
         "prebuild": "npm run clean",
         "prebuild:dist": "npm run clean",
         "prebuild:watch": "npm run clean",
