@@ -1,5 +1,11 @@
-<h1 align="center">collation</h1>
 <p align="center">
+    <a href="https://collation.brandonscott.me/#gh-light-mode-only">
+        <img src="https://raw.githubusercontent.com/brandongregoryscott/collation/main/documentation/static/img/collation-hero-light.png" width="75%" height="75%"/>
+    </a>
+        <a href="https://collation.brandonscott.me/#gh-dark-mode-only">
+        <img src="https://raw.githubusercontent.com/brandongregoryscott/collation/main/documentation/static/img/collation-hero-dark.png" width="75%" height="75%"/>
+    </a>
+    <br/>
     <a href="https://github.com/brandongregoryscott/collation/actions/workflows/build.yaml">
         <img alt="build status" src="https://github.com/brandongregoryscott/collation/actions/workflows/build.yaml/badge.svg"/>
     </a>
@@ -10,8 +16,6 @@
         <img alt="TypeScript" src="https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg"/>
     </a>
 </p>
-
-> **Collation** is the assembly of written information into a standard order.
 
 Code linting/manipulation tools to make your TypeScript code easier to read
 
