@@ -59,10 +59,9 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
         return [];
     }
 
-    const groups = getNodeCommentGroups<EnumDeclaration, EnumMember>(
-        _enum,
-        Node.isEnumMember
-    );
+    const groups = getNodeCommentGroups<EnumDeclaration, EnumMember>(_enum, {
+        selector: Node.isEnumMember,
+    });
 
     const sortedGroups = sortBy(groups, getEnumMemberName);
 

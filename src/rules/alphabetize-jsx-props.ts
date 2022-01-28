@@ -66,11 +66,11 @@ const alphabetizePropsByJsxElement = (
         return [];
     }
 
-    const groups = getNodeCommentGroups<JsxElement, JsxAttribute>(
-        jsxElement,
-        (node) => Node.isJsxAttribute(node),
-        (node) => node.getAttributes()
-    );
+    const groups = getNodeCommentGroups<JsxElement, JsxAttribute>(jsxElement, {
+        parseCommentRanges: true,
+        selector: (node) => Node.isJsxAttribute(node),
+        getDescendants: (node) => node.getAttributes(),
+    });
 
     const sortedGroups = sortBy(groups, (group) => group.node.getName());
     const sortedPropStructures = getCommentNodeStructures<
@@ -101,11 +101,12 @@ const alphabetizeJsxPropsWithSpread = (
     }
 
     const props = jsxElement.getAttributes();
-    const groups = getNodeCommentGroups<JsxElement, JsxAttribute>(
-        jsxElement,
-        (node) => Node.isJsxAttribute(node) || Node.isJsxSpreadAttribute(node),
-        (node) => node.getAttributes()
-    );
+    const groups = getNodeCommentGroups<JsxElement, JsxAttribute>(jsxElement, {
+        parseCommentRanges: true,
+        selector: (node) =>
+            Node.isJsxAttribute(node) || Node.isJsxSpreadAttribute(node),
+        getDescendants: (node) => node.getAttributes(),
+    });
 
     const spreadPropIndexes = groups
         .map((group, index) =>

@@ -1,35 +1,47 @@
 import { compact, chain, first, merge } from "lodash";
-import {
-    CommentRange,
-    Node,
-    StatementStructures,
-    Structure,
-    StructureKind,
-    Structures,
-} from "ts-morph";
+import { CommentRange, Node, Structure } from "ts-morph";
 import { PrimitiveComment } from "../models/primitive-comment";
 import { Comment } from "../types/comment";
 import { NodeCommentGroup } from "../types/node-comment-group";
 
-const getCommentText = (comment: Comment): string => comment.getFullText();
+interface GroupingOptions<T extends Node = Node> {
+    getDescendants?: (node: T) => Array<Node>;
+    /**
+     * When true, parses out `CommentRanges` into `PrimitiveComment` objects. For nodes that have
+     * built-in comment association (such as `EnumDeclaration` or `InterfaceDeclaration`, this
+     * can break the standard association process)
+     */
+    parseCommentRanges?: boolean;
+    selector?: (node: T) => boolean;
+}
 
-const getDescendants = <T extends Node>(node: T) => node.getDescendants();
+const defaultOptions: GroupingOptions = {
+    parseCommentRanges: false,
+    getDescendants: (node) => node.getDescendants(),
+};
+
+const getCommentText = (comment: Comment): string => comment.getFullText();
 
 const getNodeCommentGroups = <
     TInputNode extends Node,
     TOutputNode extends Node
 >(
     node: TInputNode,
-    selector?: (node: TInputNode) => boolean,
-    getNodes: (node: TInputNode) => Array<Node> = getDescendants
+    options?: GroupingOptions<TInputNode>
 ): Array<NodeCommentGroup<TOutputNode>> => {
-    const commentsOrNodes = chain(getNodes(node))
+    const {
+        getDescendants = defaultOptions.getDescendants,
+        selector,
+        parseCommentRanges = defaultOptions.parseCommentRanges,
+    } = options ?? defaultOptions;
+    const commentsOrNodes = chain(getDescendants?.(node))
         .map((node, index, descendants) =>
             getNodeOrComment(
                 node as TInputNode,
                 index,
                 descendants as Array<Node>,
-                selector
+                selector,
+                parseCommentRanges
             )
         )
         .flatten() // Flatten tuple arrays that may contain comments
@@ -63,7 +75,8 @@ const getNodeOrComment = <T extends Node>(
     node: T,
     index: number,
     descendants: Array<Node>,
-    selector?: (node: T) => boolean
+    selector?: (node: T) => boolean,
+    parseCommentRanges: boolean = false
 ): [PrimitiveComment, T] | T | Comment | [] => {
     if (Node.isCommentNode(node)) {
         return node;
@@ -71,6 +84,10 @@ const getNodeOrComment = <T extends Node>(
 
     if (selector != null && !selector(node as T)) {
         return [];
+    }
+
+    if (!parseCommentRanges) {
+        return node;
     }
 
     // As of writing, ts-morph only wraps a specific set of CommentRange nodes that are associated
