@@ -36,6 +36,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort props before and after spread assignment in JsxElement", async () => {
@@ -84,6 +85,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort props when spread assignment is in beginning of JsxElement", async () => {
@@ -130,6 +132,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should leave props unmodified when spread assignment is in beginning of JsxElement and there's only one named prop", async () => {
@@ -164,6 +167,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).not.toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort props when spread assignment is at end of JsxElement", async () => {
@@ -210,6 +214,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should leave props unmodified when spread assignment is at end of JsxElement and there's only one named prop", async () => {
@@ -244,6 +249,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).not.toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort props of self-closing JsxElements", async () => {
@@ -274,6 +280,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort props of JsxElements that receive JsxElements as props", async () => {
@@ -300,6 +307,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort props of deeply nested JsxElements that receive JsxElements as props", async () => {
@@ -348,6 +356,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort props with single-line comments", async () => {
@@ -386,6 +395,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort props with multi-line comments", async () => {
@@ -430,6 +440,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort spread props with single-line comments", async () => {
@@ -472,6 +483,7 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort spread props with multi-line comments", async () => {
@@ -522,5 +534,6 @@ describe("alphabetizeJsxProps", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 });

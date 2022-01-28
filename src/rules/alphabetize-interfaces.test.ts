@@ -33,6 +33,7 @@ describe("alphabetizeInterfaces", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort properties in all interfaces when there are multiple unsorted interfaces", async () => {
@@ -73,6 +74,7 @@ describe("alphabetizeInterfaces", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort properties with multi-line comments", async () => {
@@ -121,6 +123,7 @@ describe("alphabetizeInterfaces", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should sort properties with single-line comments", async () => {
@@ -157,6 +160,7 @@ describe("alphabetizeInterfaces", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should not fail to save", async () => {
@@ -197,11 +201,11 @@ describe("alphabetizeInterfaces", () => {
 
         // Act
         const result = await alphabetizeInterfaces(input);
-        await result.file.save();
 
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it.skip("#24 should sort nested object properties", async () => {
@@ -252,5 +256,6 @@ describe("alphabetizeInterfaces", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 });
