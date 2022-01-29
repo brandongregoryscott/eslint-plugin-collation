@@ -14,7 +14,7 @@ import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
 import { NodeCommentGroup } from "../types/node-comment-group";
-import { NamedRuleFunction, RuleFunction } from "../types/rule-function";
+import { RuleFunction } from "../types/rule-function";
 import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
@@ -42,8 +42,7 @@ const _alphabetizeInterfaces: RuleFunction = async (
     };
 };
 
-(_alphabetizeInterfaces as NamedRuleFunction).__name =
-    RuleName.AlphabetizeInterfaces;
+_alphabetizeInterfaces.__name = RuleName.AlphabetizeInterfaces;
 
 const alphabetizeInterface = (
     _interface: InterfaceDeclaration

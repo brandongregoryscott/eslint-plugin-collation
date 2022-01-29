@@ -2,7 +2,7 @@ import { diffLines } from "diff";
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
-import { NamedRuleFunction, RuleFunction } from "../types/rule-function";
+import { RuleFunction } from "../types/rule-function";
 import { Logger } from "../utils/logger";
 import {
     ExportableNode,
@@ -40,7 +40,7 @@ const _namedExportsOnly: RuleFunction = async (
     };
 };
 
-(_namedExportsOnly as NamedRuleFunction).__name = RuleName.NamedExportsOnly;
+_namedExportsOnly.__name = RuleName.NamedExportsOnly;
 
 const convertDefaultExport = (file: SourceFile): RuleViolation[] => {
     const defaultExport = file

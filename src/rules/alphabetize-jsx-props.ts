@@ -22,7 +22,7 @@ import { diffLines } from "diff";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Logger } from "../utils/logger";
-import { NamedRuleFunction, RuleFunction } from "../types/rule-function";
+import { RuleFunction } from "../types/rule-function";
 import { RuleName } from "../enums/rule-name";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import {
@@ -50,8 +50,7 @@ const _alphabetizeJsxProps: RuleFunction = async (
     };
 };
 
-(_alphabetizeJsxProps as NamedRuleFunction).__name =
-    RuleName.AlphabetizeJsxProps;
+_alphabetizeJsxProps.__name = RuleName.AlphabetizeJsxProps;
 
 const alphabetizePropsByJsxElement = (
     jsxElement: JsxElement

@@ -20,7 +20,7 @@ import {
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
-import { NamedRuleFunction, RuleFunction } from "../types/rule-function";
+import { RuleFunction } from "../types/rule-function";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
 import { withRetry } from "../utils/with-retry";
@@ -45,8 +45,7 @@ const _alphabetizeDependencyLists: RuleFunction = async (
     };
 };
 
-(_alphabetizeDependencyLists as NamedRuleFunction).__name =
-    RuleName.AlphabetizeDependencyLists;
+_alphabetizeDependencyLists.__name = RuleName.AlphabetizeDependencyLists;
 
 const alphabetizeFunctionCallDependencies = (
     functionCall: CallExpression

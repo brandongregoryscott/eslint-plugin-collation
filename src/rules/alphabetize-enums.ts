@@ -12,7 +12,7 @@ import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
 import { NodeCommentGroup } from "../types/node-comment-group";
-import { NamedRuleFunction, RuleFunction } from "../types/rule-function";
+import { RuleFunction } from "../types/rule-function";
 import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
@@ -34,7 +34,7 @@ const _alphabetizeEnums: RuleFunction = async (
     };
 };
 
-(_alphabetizeEnums as NamedRuleFunction).__name = RuleName.AlphabetizeEnums;
+_alphabetizeEnums.__name = RuleName.AlphabetizeEnums;
 
 const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
     const members = _enum.getMembers();
