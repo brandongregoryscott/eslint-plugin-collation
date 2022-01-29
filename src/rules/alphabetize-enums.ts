@@ -34,6 +34,8 @@ const _alphabetizeEnums: RuleFunction = async (
     };
 };
 
+_alphabetizeEnums.__name = RuleName.AlphabetizeEnums;
+
 const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
     const members = _enum.getMembers();
     const name = getEnumName(_enum);
@@ -59,10 +61,9 @@ const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
         return [];
     }
 
-    const groups = getNodeCommentGroups<EnumDeclaration, EnumMember>(
-        _enum,
-        Node.isEnumMember
-    );
+    const groups = getNodeCommentGroups<EnumDeclaration, EnumMember>(_enum, {
+        selector: Node.isEnumMember,
+    });
 
     const sortedGroups = sortBy(groups, getEnumMemberName);
 

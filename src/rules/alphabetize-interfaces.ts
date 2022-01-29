@@ -42,13 +42,17 @@ const _alphabetizeInterfaces: RuleFunction = async (
     };
 };
 
+_alphabetizeInterfaces.__name = RuleName.AlphabetizeInterfaces;
+
 const alphabetizeInterface = (
     _interface: InterfaceDeclaration
 ): RuleViolation[] => {
     const propertyGroups = getNodeCommentGroups<
         InterfaceDeclaration,
         InterfaceMember
-    >(_interface, (node) => Node.hasName(node) && Node.isTypeElement(node));
+    >(_interface, {
+        selector: (node) => Node.hasName(node) && Node.isTypeElement(node),
+    });
 
     const sorted = sortBy(propertyGroups, getPropertyName) as Array<
         NodeCommentGroup<InterfaceMember>
@@ -105,7 +109,13 @@ const alphabetizeInterface = (
         });
     });
 
-    deletionQueue.forEach((node) => node.remove());
+    deletionQueue.forEach((node) => {
+        if (node.wasForgotten()) {
+            return;
+        }
+
+        node.remove();
+    });
     return compact(errors);
 };
 

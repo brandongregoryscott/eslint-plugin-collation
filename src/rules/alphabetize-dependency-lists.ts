@@ -45,6 +45,8 @@ const _alphabetizeDependencyLists: RuleFunction = async (
     };
 };
 
+_alphabetizeDependencyLists.__name = RuleName.AlphabetizeDependencyLists;
+
 const alphabetizeFunctionCallDependencies = (
     functionCall: CallExpression
 ): RuleViolation[] => {

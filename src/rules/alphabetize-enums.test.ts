@@ -27,6 +27,7 @@ describe("alphabetizeEnums", () => {
 
         expect(result).toMatchSourceFile(expected);
         expect(result).toHaveErrors();
+        await result.file.save();
     });
 
     it("should alphabetize explicit number-based enums by key", async () => {
@@ -52,6 +53,7 @@ describe("alphabetizeEnums", () => {
 
         expect(result).toMatchSourceFile(expected);
         expect(result).toHaveErrors();
+        await result.file.save();
     });
 
     it("should not modify implicit-numeric enums", async () => {
@@ -82,6 +84,7 @@ describe("alphabetizeEnums", () => {
         // Assert
         expect(result).not.toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should alphabetize members with multi-line comments", async () => {
@@ -118,6 +121,7 @@ describe("alphabetizeEnums", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should alphabetize members with single-line comments", async () => {
@@ -154,5 +158,6 @@ describe("alphabetizeEnums", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 });

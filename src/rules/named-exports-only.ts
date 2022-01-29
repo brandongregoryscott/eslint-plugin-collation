@@ -40,6 +40,8 @@ const _namedExportsOnly: RuleFunction = async (
     };
 };
 
+_namedExportsOnly.__name = RuleName.NamedExportsOnly;
+
 const convertDefaultExport = (file: SourceFile): RuleViolation[] => {
     const defaultExport = file
         .getExportAssignments()

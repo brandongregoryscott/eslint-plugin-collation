@@ -30,6 +30,7 @@ describe("namedExportsOnly", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should convert inline default export to named export", async () => {
@@ -56,5 +57,6 @@ describe("namedExportsOnly", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 });

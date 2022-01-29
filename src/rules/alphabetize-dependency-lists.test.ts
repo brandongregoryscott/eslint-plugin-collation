@@ -28,6 +28,7 @@ describe("alphabetizeDependencyLists", () => {
             // Assert
             expect(result).toHaveErrors();
             expect(result).toMatchSourceFile(expected);
+            await result.file.save();
         }
     );
 
@@ -57,6 +58,7 @@ describe("alphabetizeDependencyLists", () => {
             // Assert
             expect(result).not.toHaveErrors();
             expect(result).toMatchSourceFile(expected);
+            await result.file.save();
         }
     );
 
@@ -86,6 +88,7 @@ describe("alphabetizeDependencyLists", () => {
             // Assert
             expect(result).not.toHaveErrors();
             expect(result).toMatchSourceFile(expected);
+            await result.file.save();
         }
     );
 
@@ -113,6 +116,7 @@ describe("alphabetizeDependencyLists", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should alphabetize deeply-nested property dependencies", async () => {
@@ -139,6 +143,7 @@ describe("alphabetizeDependencyLists", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 
     it("should not return errors when deeply-nested property dependencies are already sorted", async () => {
@@ -165,5 +170,6 @@ describe("alphabetizeDependencyLists", () => {
         // Assert
         expect(result).not.toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+        await result.file.save();
     });
 });

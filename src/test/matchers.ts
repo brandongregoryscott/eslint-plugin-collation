@@ -1,4 +1,4 @@
-import { Node, SourceFile } from "ts-morph";
+import { SourceFile } from "ts-morph";
 import * as tags from "common-tags";
 import { RuleResult } from "../interfaces/rule-result";
 
