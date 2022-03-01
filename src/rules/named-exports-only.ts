@@ -7,11 +7,12 @@ import { Logger } from "../utils/logger";
 import {
     ExportableNode,
     ExportAssignment,
+    ImportDeclaration,
     NameableNode,
     Node,
     SourceFile,
 } from "ts-morph";
-import _ from "lodash";
+import { compact } from "lodash";
 import { withRetry } from "../utils/with-retry";
 
 const _namedExportsOnly: RuleFunction = async (
@@ -54,6 +55,11 @@ const convertDefaultExport = (file: SourceFile): RuleViolation[] => {
     const defaultExportName = getDefaultExportIdentifier(defaultExport);
     const errors = [getRuleViolation(file, defaultExport)];
 
+    replaceDefaultImports(
+        file,
+        (defaultExport as any as NameableNode).getName()!
+    );
+
     defaultExport?.remove();
     file.addExportDeclaration({ namedExports: [defaultExportName] });
 
@@ -73,12 +79,35 @@ const convertInlineExports = (file: SourceFile): RuleViolation[] => {
         return [];
     }
 
+    replaceDefaultImports(
+        file,
+        (defaultExport as any as NameableNode).getName()!
+    );
+
     defaultExport.setIsExported(true);
     return [getRuleViolation(file, defaultExport)];
 };
 
 const getDefaultExportIdentifier = (_export: ExportAssignment): string =>
     _export.getText().replace("export default", "").replace(";", "").trim();
+
+const getDefaultImportDeclarations = (
+    sourceFile: SourceFile,
+    referencingFiles: SourceFile[]
+): ImportDeclaration[] => {
+    const defaultImports = referencingFiles.map((referencingFile) =>
+        referencingFile
+            .getImportDeclarations()
+            .find(
+                (importDeclaration) =>
+                    importDeclaration.getDefaultImport() != null &&
+                    importDeclaration.getModuleSpecifierSourceFile() ===
+                        sourceFile
+            )
+    );
+
+    return compact(defaultImports);
+};
 
 const getRuleViolation = (
     file: SourceFile,
@@ -97,6 +126,26 @@ const getRuleViolation = (
         lineNumber,
         hint: `'${name}' should be a named export instead`,
         rule: RuleName.NamedExportsOnly,
+    });
+};
+
+const replaceDefaultImports = (file: SourceFile, importName: string) => {
+    const referencingSourceFiles = file.getReferencingSourceFiles();
+    const defaultImports = getDefaultImportDeclarations(
+        file,
+        referencingSourceFiles
+    );
+
+    defaultImports.forEach((importDeclaration) => {
+        importDeclaration.set({
+            defaultImport: undefined,
+            namedImports: [
+                importName,
+                ...importDeclaration
+                    .getNamedImports()
+                    .map((importSpecifier) => importSpecifier.getStructure()),
+            ],
+        });
     });
 };
 
