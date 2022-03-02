@@ -55,10 +55,7 @@ const convertDefaultExport = (file: SourceFile): RuleViolation[] => {
     const defaultExportName = getDefaultExportIdentifier(defaultExport);
     const errors = [getRuleViolation(file, defaultExport)];
 
-    replaceDefaultImports(
-        file,
-        (defaultExport as any as NameableNode).getName()!
-    );
+    replaceDefaultImports(file, defaultExportName);
 
     defaultExport?.remove();
     file.addExportDeclaration({ namedExports: [defaultExportName] });
