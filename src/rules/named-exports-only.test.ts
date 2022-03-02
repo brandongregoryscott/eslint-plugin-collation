@@ -81,6 +81,54 @@ describe("namedExportsOnly", () => {
             expect(referencingFile).toMatchSourceFile(expected);
             await result.file.save();
         });
+
+        it("should not remove existing imports from the same file", async () => {
+            // Arrange
+            // We need to use the same Project instance to get referencing source files
+            const project = createInMemoryProject();
+            const options: CreateSourceFileOptions = {
+                project,
+                // There's currently a bug in ts-morph where references won't be returned in .tsx files
+                extension: ".ts",
+            };
+            const input = createSourceFile(
+                `
+                    const noop = () => {};
+                    const log = (message) => console.log(message);
+
+                    export { log };
+                    export default noop;
+                `,
+                options
+            );
+
+            const referencingFile = createSourceFile(
+                `
+                    import noop, { log } from "./${input.getBaseNameWithoutExtension()}";
+
+                    noop();
+                    log("hello");
+                `,
+                options
+            );
+
+            const expected = createSourceFile(
+                `
+                    import { noop, log } from "./${input.getBaseNameWithoutExtension()}";
+
+                    noop();
+                    log("hello");
+                `,
+                options
+            );
+
+            // Act
+            const result = await namedExportsOnly(input);
+
+            // Assert
+            expect(referencingFile).toMatchSourceFile(expected);
+            await result.file.save();
+        });
     });
 
     describe("inline default export", () => {
@@ -140,6 +188,52 @@ describe("namedExportsOnly", () => {
                     import { noop } from "./${input.getBaseNameWithoutExtension()}";
 
                     noop();
+                `,
+                options
+            );
+
+            // Act
+            const result = await namedExportsOnly(input);
+
+            // Assert
+            expect(referencingFile).toMatchSourceFile(expected);
+            await result.file.save();
+        });
+
+        it("should not remove existing imports from the same file", async () => {
+            // Arrange
+            // We need to use the same Project instance to get referencing source files
+            const project = createInMemoryProject();
+            const options: CreateSourceFileOptions = {
+                project,
+                extension: ".ts",
+            };
+            const input = createSourceFile(
+                `
+                    export default function noop() {};
+                    export function log(message) {
+                        console.log(message);
+                    }
+                `,
+                options
+            );
+
+            const referencingFile = createSourceFile(
+                `
+                    import noop, { log } from "./${input.getBaseNameWithoutExtension()}";
+
+                    noop();
+                    log("hello");
+                `,
+                options
+            );
+
+            const expected = createSourceFile(
+                `
+                    import { noop, log } from "./${input.getBaseNameWithoutExtension()}";
+
+                    noop();
+                    log("hello");
                 `,
                 options
             );

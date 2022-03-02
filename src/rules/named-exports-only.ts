@@ -8,12 +8,15 @@ import {
     ExportableNode,
     ExportAssignment,
     ImportDeclaration,
+    ImportSpecifier,
     NameableNode,
     Node,
     SourceFile,
 } from "ts-morph";
 import { compact } from "lodash";
 import { withRetry } from "../utils/with-retry";
+
+type NameableExportableNode = NameableNode & ExportableNode;
 
 const _namedExportsOnly: RuleFunction = async (
     file: SourceFile
@@ -66,7 +69,9 @@ const convertDefaultExport = (file: SourceFile): RuleViolation[] => {
 const convertInlineExports = (file: SourceFile): RuleViolation[] => {
     const exportableNodes = file
         .getDescendants()
-        .filter((node) => Node.isExportable(node)) as any as ExportableNode[];
+        .filter(
+            (node) => Node.isExportable(node) && Node.hasName(node)
+        ) as any as NameableExportableNode[];
 
     const defaultExport = exportableNodes.find((node) =>
         node.hasDefaultKeyword()
@@ -76,19 +81,27 @@ const convertInlineExports = (file: SourceFile): RuleViolation[] => {
         return [];
     }
 
-    replaceDefaultImports(
-        file,
-        (defaultExport as any as NameableNode).getName()!
-    );
+    replaceDefaultImports(file, getDefaultExportIdentifier(defaultExport));
 
     defaultExport.setIsExported(true);
     return [getRuleViolation(file, defaultExport)];
 };
 
-const getDefaultExportIdentifier = (_export: ExportAssignment): string =>
-    _export.getText().replace("export default", "").replace(";", "").trim();
+const getDefaultExportIdentifier = (
+    _export: ExportAssignment | NameableExportableNode
+): string => {
+    if (_export instanceof ExportAssignment) {
+        return _export
+            .getText()
+            .replace("export default", "")
+            .replace(";", "")
+            .trim();
+    }
 
-const getDefaultImportDeclarations = (
+    return _export.getName() ?? "";
+};
+
+const getDefaultImportDeclarationsForFile = (
     sourceFile: SourceFile,
     referencingFiles: SourceFile[]
 ): ImportDeclaration[] => {
@@ -108,12 +121,9 @@ const getDefaultImportDeclarations = (
 
 const getRuleViolation = (
     file: SourceFile,
-    _export: ExportAssignment | ExportableNode
+    _export: ExportAssignment | NameableExportableNode
 ) => {
-    const name =
-        _export instanceof ExportAssignment
-            ? getDefaultExportIdentifier(_export)
-            : (_export as any as NameableNode).getName();
+    const name = getDefaultExportIdentifier(_export);
 
     const lineNumber = (_export as any as Node).getStartLineNumber();
 
@@ -128,21 +138,29 @@ const getRuleViolation = (
 
 const replaceDefaultImports = (file: SourceFile, importName: string) => {
     const referencingSourceFiles = file.getReferencingSourceFiles();
-    const defaultImports = getDefaultImportDeclarations(
+    const defaultImports = getDefaultImportDeclarationsForFile(
         file,
         referencingSourceFiles
     );
 
-    defaultImports.forEach((importDeclaration) => {
-        importDeclaration.set({
-            defaultImport: undefined,
-            namedImports: [
-                importName,
-                ...importDeclaration
-                    .getNamedImports()
-                    .map((importSpecifier) => importSpecifier.getStructure()),
-            ],
-        });
+    defaultImports.forEach((importDeclaration) =>
+        replaceDefaultImport(importName, importDeclaration)
+    );
+};
+
+const replaceDefaultImport = (
+    importName: string,
+    importDeclaration: ImportDeclaration
+) => {
+    const existingNamedImports = importDeclaration
+        .getNamedImports()
+        .map((importSpecifier: ImportSpecifier) =>
+            importSpecifier.getStructure()
+        );
+
+    importDeclaration.set({
+        defaultImport: undefined,
+        namedImports: [importName, ...existingNamedImports],
     });
 };
 
