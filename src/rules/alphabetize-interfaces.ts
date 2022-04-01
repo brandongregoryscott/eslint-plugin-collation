@@ -62,12 +62,13 @@ const alphabetizeInterface = (
             (member) =>
                 !isEmpty(member.getChildrenOfKind(SyntaxKind.TypeLiteral))
         );
+
     const propertyGroups = getNodeCommentGroups<
         InterfaceDeclaration | TypeLiteralNode,
         InterfaceMember
     >(interfaceOrType, {
         getDescendants: hasNestedTypes
-            ? (_interface) => _interface.getMembers()
+            ? (interfaceOrType) => interfaceOrType.getMembers()
             : undefined,
         selector: (node) => Node.hasName(node) && Node.isTypeElement(node),
     });
@@ -79,9 +80,9 @@ const alphabetizeInterface = (
     const nestedTypeLiterals = flatMap(propertyGroups, (group) =>
         group.node.getChildrenOfKind(SyntaxKind.TypeLiteral)
     );
-    let nestedErrors: RuleViolation[] = [];
+    let nestedTypeErrors: RuleViolation[] = [];
     if (!isEmpty(nestedTypeLiterals)) {
-        nestedErrors = flatMap(nestedTypeLiterals, alphabetizeInterface);
+        nestedTypeErrors = flatMap(nestedTypeLiterals, alphabetizeInterface);
     }
 
     if (isEqual(propertyGroups, sorted)) {
@@ -146,7 +147,7 @@ const alphabetizeInterface = (
 
         node.remove();
     });
-    return compact([...errors, ...nestedErrors]);
+    return compact([...errors, ...nestedTypeErrors]);
 };
 
 const getPropertyName = (propertyGroup: NodeCommentGroup<InterfaceMember>) =>

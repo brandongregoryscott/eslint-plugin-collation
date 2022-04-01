@@ -258,4 +258,122 @@ describe("alphabetizeInterfaces", () => {
         expect(result).toMatchSourceFile(expected);
         await result.file.save();
     });
+
+    it("should sort nested types with single-line comments", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                interface Release {
+                    assets: any[];
+                    author: {
+                        // Username
+                        login: string;
+                        id: number;
+                        // Url to user's display picture
+                        avatar_url: string;
+                        gravatar_id: string;
+                        type: string;
+                        site_admin: boolean;
+                    };
+                    html_url: string;
+                    name: string;
+                    id: number;
+                    zipball_url: string;
+                }
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                interface Release {
+                    assets: any[];
+                    author: {
+                        // Url to user's display picture
+                        avatar_url: string;
+                        gravatar_id: string;
+                        id: number;
+                        // Username
+                        login: string;
+                        site_admin: boolean;
+                        type: string;
+                    };
+                    html_url: string;
+                    id: number;
+                    name: string;
+                    zipball_url: string;
+                }
+            `
+        );
+
+        // Act
+        const result = await alphabetizeInterfaces(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+        await result.file.save();
+    });
+
+    it("should sort nested types with multi-line comments", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                interface Release {
+                    assets: any[];
+                    author: {
+                        /*
+                         * Username
+                         */
+                        login: string;
+                        id: number;
+                        /*
+                         * Url to user's display picture
+                         */
+                        avatar_url: string;
+                        gravatar_id: string;
+                        type: string;
+                        site_admin: boolean;
+                    };
+                    html_url: string;
+                    name: string;
+                    id: number;
+                    zipball_url: string;
+                }
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                interface Release {
+                    assets: any[];
+                    author: {
+                        /*
+                         * Url to user's display picture
+                         */
+                        avatar_url: string;
+                        gravatar_id: string;
+                        id: number;
+                        /*
+                         * Username
+                         */
+                        login: string;
+                        site_admin: boolean;
+                        type: string;
+                    };
+                    html_url: string;
+                    id: number;
+                    name: string;
+                    zipball_url: string;
+                }
+            `
+        );
+
+        // Act
+        const result = await alphabetizeInterfaces(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+        await result.file.save();
+    });
 });
