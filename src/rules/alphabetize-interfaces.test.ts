@@ -377,7 +377,7 @@ describe("alphabetizeInterfaces", () => {
         await result.file.save();
     });
 
-    it("should sort nested types with type unions", async () => {
+    it.skip("#43 should sort nested types with type unions", async () => {
         // Arrange
         const input = createSourceFile(
             `
