@@ -376,4 +376,75 @@ describe("alphabetizeInterfaces", () => {
         expect(result).toMatchSourceFile(expected);
         await result.file.save();
     });
+
+    it("should sort nested types with type unions", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                export interface RouteMap extends GenericRouteMap {
+                    root: RouteDefinition & {
+                        routes: {
+                            library: RouteDefinition & {
+                                routes: {
+                                    files: RouteDefinition;
+                                    instruments: RouteDefinition;
+                                };
+                            };
+                            help: RouteDefinition & {
+                                routes: {
+                                    usage: RouteDefinition;
+                                };
+                            };
+                            login: RouteDefinition;
+                            logout: RouteDefinition;
+                            register: RouteDefinition;
+                            workstation: RouteDefinition & {
+                                routes: {
+                                    workstation: RouteDefinition;
+                                };
+                            };
+                        };
+                    };
+                }
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                export interface RouteMap extends GenericRouteMap {
+                    root: RouteDefinition & {
+                        routes: {
+                            library: RouteDefinition & {
+                                routes: {
+                                    files: RouteDefinition;
+                                    instruments: RouteDefinition;
+                                };
+                            };
+                            help: RouteDefinition & {
+                                routes: {
+                                    usage: RouteDefinition;
+                                };
+                            };
+                            login: RouteDefinition;
+                            logout: RouteDefinition;
+                            register: RouteDefinition;
+                            workstation: RouteDefinition & {
+                                routes: {
+                                    workstation: RouteDefinition;
+                                };
+                            };
+                        };
+                    };
+                }
+            `
+        );
+
+        // Act
+        const result = await alphabetizeInterfaces(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+        await result.file.save();
+    });
 });
