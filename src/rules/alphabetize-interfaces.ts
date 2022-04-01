@@ -1,5 +1,5 @@
 import { diffLines } from "diff";
-import { isEqual, sortBy, flatten, compact } from "lodash";
+import { isEqual, sortBy, flatten, compact, isEmpty, flatMap } from "lodash";
 import {
     CallSignatureDeclaration,
     ConstructSignatureDeclaration,
@@ -7,7 +7,10 @@ import {
     InterfaceDeclaration,
     Node,
     SourceFile,
+    SyntaxKind,
+    TypeAliasDeclaration,
     TypeElementTypes,
+    TypeLiteralNode,
 } from "ts-morph";
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
@@ -45,12 +48,27 @@ const _alphabetizeInterfaces: RuleFunction = async (
 _alphabetizeInterfaces.__name = RuleName.AlphabetizeInterfaces;
 
 const alphabetizeInterface = (
-    _interface: InterfaceDeclaration
+    interfaceOrType: InterfaceDeclaration | TypeLiteralNode
 ): RuleViolation[] => {
+    const kindName = interfaceOrType.getKindName();
+    const name =
+        interfaceOrType instanceof InterfaceDeclaration
+            ? interfaceOrType.getName()
+            : "";
+
+    const hasNestedTypes = interfaceOrType
+        .getMembers()
+        .some(
+            (member) =>
+                !isEmpty(member.getChildrenOfKind(SyntaxKind.TypeLiteral))
+        );
     const propertyGroups = getNodeCommentGroups<
-        InterfaceDeclaration,
+        InterfaceDeclaration | TypeLiteralNode,
         InterfaceMember
-    >(_interface, {
+    >(interfaceOrType, {
+        getDescendants: hasNestedTypes
+            ? (_interface) => _interface.getMembers()
+            : undefined,
         selector: (node) => Node.hasName(node) && Node.isTypeElement(node),
     });
 
@@ -58,12 +76,24 @@ const alphabetizeInterface = (
         NodeCommentGroup<InterfaceMember>
     >;
 
+    const nestedTypeLiterals = flatMap(propertyGroups, (group) =>
+        group.node.getChildrenOfKind(SyntaxKind.TypeLiteral)
+    );
+    let nestedErrors: RuleViolation[] = [];
+    if (!isEmpty(nestedTypeLiterals)) {
+        nestedErrors = flatMap(nestedTypeLiterals, alphabetizeInterface);
+    }
+
     if (isEqual(propertyGroups, sorted)) {
-        const lineNumber = _interface.getStartLineNumber();
+        const lineNumber = interfaceOrType.getStartLineNumber();
+        const message =
+            interfaceOrType instanceof InterfaceDeclaration
+                ? `Properties of ${kindName} ${name} are already sorted`
+                : `Properties of ${kindName} are already sorted.`;
         Logger.ruleDebug({
-            file: _interface.getSourceFile(),
+            file: interfaceOrType.getSourceFile(),
             lineNumber,
-            message: `Properties of interface ${_interface.getName()} are already sorted.`,
+            message,
             rule: RuleName.AlphabetizeInterfaces,
         });
 
@@ -80,12 +110,12 @@ const alphabetizeInterface = (
 
         if (comment != null) {
             deletionQueue.push(comment);
-            _interface.insertMember(index, getCommentText(comment));
+            interfaceOrType.insertMember(index, getCommentText(comment));
             index++;
         }
 
         deletionQueue.push(property);
-        _interface.insertMember(index, property.getStructure());
+        interfaceOrType.insertMember(index, property.getStructure());
         index++;
 
         if (currentIndex === expectedIndex) {
@@ -99,11 +129,11 @@ const alphabetizeInterface = (
                 elementTypeName: "property",
                 sorted,
                 original: propertyGroups,
-                parentName: _interface.getName(),
+                parentName: name,
                 getElementName: getPropertyName,
                 getElementStructureName: getPropertyName,
             }),
-            file: _interface.getSourceFile(),
+            file: interfaceOrType.getSourceFile(),
             lineNumber: property.getStartLineNumber(),
             rule: RuleName.AlphabetizeInterfaces,
         });
@@ -116,7 +146,7 @@ const alphabetizeInterface = (
 
         node.remove();
     });
-    return compact(errors);
+    return compact([...errors, ...nestedErrors]);
 };
 
 const getPropertyName = (propertyGroup: NodeCommentGroup<InterfaceMember>) =>

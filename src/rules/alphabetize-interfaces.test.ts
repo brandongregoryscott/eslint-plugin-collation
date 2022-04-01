@@ -208,7 +208,7 @@ describe("alphabetizeInterfaces", () => {
         await result.file.save();
     });
 
-    it.skip("#24 should sort nested object properties", async () => {
+    it("should sort nested types", async () => {
         // Arrange
         const input = createSourceFile(
             `
