@@ -1,16 +1,14 @@
 import { diffLines } from "diff";
-import { isEqual, sortBy, flatten, compact, isEmpty, flatMap } from "lodash";
+import { sortBy, flatten, compact, isEmpty, flatMap, first } from "lodash";
 import {
     CallSignatureDeclaration,
     ConstructSignatureDeclaration,
     IndexSignatureDeclaration,
     InterfaceDeclaration,
     IntersectionTypeNode,
-    KindToNodeMappings,
     Node,
     SourceFile,
     SyntaxKind,
-    TypeAliasDeclaration,
     TypeElementTypes,
     TypeLiteralNode,
 } from "ts-morph";
@@ -20,6 +18,7 @@ import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
 import { NodeCommentGroup } from "../types/node-comment-group";
 import { RuleFunction } from "../types/rule-function";
+import { getChildrenOfKind } from "../utils/children-utils";
 import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
@@ -55,71 +54,42 @@ const _alphabetizeInterfaces: RuleFunction = async (
 _alphabetizeInterfaces.__name = RuleName.AlphabetizeInterfaces;
 
 const alphabetizeInterface = (
-    interfaceOrType: InterfaceDeclaration | TypeLiteralNode
+    interfaceOrType: InterfaceOrType
 ): RuleViolation[] => {
-    const kindName = interfaceOrType.getKindName();
-    const name =
-        interfaceOrType instanceof InterfaceDeclaration
-            ? interfaceOrType.getName()
-            : "";
-
-    const hasNestedTypes = interfaceOrType
-        .getMembers()
-        .some(
-            (member) =>
-                !isEmpty(member.getChildrenOfKind(SyntaxKind.TypeLiteral))
-        );
-
     const propertyGroups = getNodeCommentGroups<
-        InterfaceDeclaration | TypeLiteralNode,
+        InterfaceOrType,
         InterfaceMember
     >(interfaceOrType, {
-        getDescendants: (interfaceOrType) => interfaceOrType.getMembers(),
-        selector: (node) => Node.hasName(node) && Node.isTypeElement(node),
+        getDescendants: getMembers,
+        selector: isInterfaceMember,
     });
 
-    const recursiveMembers = flatMap(interfaceOrType.getMembers(), (member) =>
+    const nestedMembers = flatMap(getMembers(interfaceOrType), (member) =>
         getChildrenOfKind(
             member,
+            SyntaxKind.InterfaceDeclaration,
             SyntaxKind.TypeLiteral,
-            SyntaxKind.TypeAliasDeclaration,
             SyntaxKind.IntersectionType
         )
-    ) as Array<
-        | KindToNodeMappings[SyntaxKind.TypeLiteral]
-        | KindToNodeMappings[SyntaxKind.TypeAliasDeclaration]
-        | KindToNodeMappings[SyntaxKind.IntersectionType]
-    >;
+    );
 
     const sorted = sortBy(propertyGroups, getPropertyName) as Array<
         NodeCommentGroup<InterfaceMember>
     >;
 
-    const nestedTypeLiterals = flatMap(propertyGroups, (group) =>
-        group.node.getChildrenOfKind(SyntaxKind.TypeLiteral)
-    );
-    let nestedTypeErrors: RuleViolation[] = [];
-    if (!isEmpty(nestedTypeLiterals)) {
-        nestedTypeErrors = flatMap(nestedTypeLiterals, alphabetizeInterface);
-    }
-
-    // if (isEqual(propertyGroups, sorted)) {
-    //     const lineNumber = interfaceOrType.getStartLineNumber();
-    //     const message =
-    //         interfaceOrType instanceof InterfaceDeclaration
-    //             ? `Properties of ${kindName} ${name} are already sorted`
-    //             : `Properties of ${kindName} are already sorted.`;
-    //     Logger.ruleDebug({
-    //         file: interfaceOrType.getSourceFile(),
-    //         lineNumber,
-    //         message,
-    //         rule: RuleName.AlphabetizeInterfaces,
-    //     });
-
-    //     return [];
-    // }
+    // Recursively alphabetize in-line types or type unions
+    const nestedErrors: RuleViolation[] = isEmpty(nestedMembers)
+        ? []
+        : flatMap(nestedMembers, alphabetizeInterface);
 
     const deletionQueue: Array<InterfaceMember | Comment> = [];
+
+    const underlyingType = getUnderlyingType(interfaceOrType);
+    const kindName = underlyingType.getKindName();
+    const name =
+        underlyingType instanceof InterfaceDeclaration
+            ? underlyingType.getName()
+            : "";
 
     let index = 0;
     const errors = sorted.map((propertyGroup) => {
@@ -129,12 +99,12 @@ const alphabetizeInterface = (
 
         if (comment != null) {
             deletionQueue.push(comment);
-            interfaceOrType.insertMember(index, getCommentText(comment));
+            underlyingType.insertMember(index, getCommentText(comment));
             index++;
         }
 
         deletionQueue.push(property);
-        interfaceOrType.insertMember(index, property.getStructure());
+        underlyingType.insertMember(index, property.getStructure());
         index++;
 
         if (currentIndex === expectedIndex) {
@@ -165,14 +135,62 @@ const alphabetizeInterface = (
 
         node.remove();
     });
-    return compact([...errors, ...nestedTypeErrors]);
+
+    const concatenatedErrors = compact([...errors, ...nestedErrors]);
+
+    if (isEmpty(concatenatedErrors)) {
+        const lineNumber = underlyingType.getStartLineNumber();
+        const message =
+            interfaceOrType instanceof InterfaceDeclaration
+                ? `Properties of ${kindName} ${name} are already sorted`
+                : `Properties of ${kindName} are already sorted.`;
+        Logger.ruleDebug({
+            file: underlyingType.getSourceFile(),
+            lineNumber,
+            message,
+            rule: RuleName.AlphabetizeInterfaces,
+        });
+    }
+
+    return concatenatedErrors;
 };
 
-const getChildrenOfKind = <T extends SyntaxKind[]>(node: Node, ...kinds: T) =>
-    flatMap(kinds, (kind) => node.getChildrenOfKind(kind));
+const getMembers = (interfaceOrType?: InterfaceOrType): InterfaceMember[] => {
+    if (interfaceOrType == null) {
+        return [];
+    }
+
+    if (interfaceOrType instanceof IntersectionTypeNode) {
+        return getMembers(getUnderlyingType(interfaceOrType));
+    }
+
+    return interfaceOrType.getMembers().filter(isInterfaceMember);
+};
 
 const getPropertyName = (propertyGroup: NodeCommentGroup<InterfaceMember>) =>
     propertyGroup.node.getName();
+
+const getUnderlyingType = (
+    interfaceOrType: InterfaceOrType
+): Exclude<InterfaceOrType, IntersectionTypeNode> => {
+    if (interfaceOrType instanceof IntersectionTypeNode) {
+        return first(
+            getChildrenOfKind(
+                interfaceOrType,
+                SyntaxKind.TypeLiteral,
+                SyntaxKind.InterfaceDeclaration
+            )
+        )!;
+    }
+
+    return interfaceOrType;
+};
+
+const isInterfaceMember = (
+    maybeInterfaceMember: TypeElementTypes | InterfaceOrType
+): maybeInterfaceMember is InterfaceMember =>
+    Node.hasName(maybeInterfaceMember) &&
+    Node.isTypeElement(maybeInterfaceMember);
 
 const alphabetizeInterfaces = withRetry(_alphabetizeInterfaces);
 

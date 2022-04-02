@@ -377,7 +377,7 @@ describe("alphabetizeInterfaces", () => {
         await result.file.save();
     });
 
-    it.skip("#43 should sort nested types with type unions", async () => {
+    it("should sort nested types with type unions", async () => {
         // Arrange
         const input = createSourceFile(
             `
@@ -414,15 +414,15 @@ describe("alphabetizeInterfaces", () => {
                 export interface RouteMap extends GenericRouteMap {
                     root: RouteDefinition & {
                         routes: {
+                            help: RouteDefinition & {
+                                routes: {
+                                    usage: RouteDefinition;
+                                };
+                            };
                             library: RouteDefinition & {
                                 routes: {
                                     files: RouteDefinition;
                                     instruments: RouteDefinition;
-                                };
-                            };
-                            help: RouteDefinition & {
-                                routes: {
-                                    usage: RouteDefinition;
                                 };
                             };
                             login: RouteDefinition;
