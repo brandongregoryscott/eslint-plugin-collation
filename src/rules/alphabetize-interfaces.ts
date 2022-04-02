@@ -18,7 +18,10 @@ import { RuleViolation } from "../models/rule-violation";
 import { Comment } from "../types/comment";
 import { NodeCommentGroup } from "../types/node-comment-group";
 import { RuleFunction } from "../types/rule-function";
-import { getChildrenOfKind } from "../utils/children-utils";
+import {
+    getChildrenOfKind,
+    getFirstChildOfKind,
+} from "../utils/children-utils";
 import { getCommentText, getNodeCommentGroups } from "../utils/comment-utils";
 import { getAlphabeticalMessages } from "../utils/get-alphabetical-messages";
 import { Logger } from "../utils/logger";
@@ -56,15 +59,8 @@ _alphabetizeInterfaces.__name = RuleName.AlphabetizeInterfaces;
 const alphabetizeInterface = (
     interfaceOrType: InterfaceOrType
 ): RuleViolation[] => {
-    const propertyGroups = getNodeCommentGroups<
-        InterfaceOrType,
-        InterfaceMember
-    >(interfaceOrType, {
-        getDescendants: getMembers,
-        selector: isInterfaceMember,
-    });
-
-    const nestedMembers = flatMap(getMembers(interfaceOrType), (member) =>
+    const underlyingType = getUnderlyingType(interfaceOrType);
+    const nestedTypes = flatMap(getMembers(interfaceOrType), (member) =>
         getChildrenOfKind(
             member,
             SyntaxKind.InterfaceDeclaration,
@@ -72,19 +68,30 @@ const alphabetizeInterface = (
             SyntaxKind.IntersectionType
         )
     );
+    const hasNestedTypes = !isEmpty(nestedTypes);
+
+    const propertyGroups = getNodeCommentGroups<
+        InterfaceOrType,
+        InterfaceMember
+    >(interfaceOrType, {
+        getDescendants: (node) =>
+            hasNestedTypes
+                ? getUnderlyingType(node).getMembers()
+                : getUnderlyingType(node).getDescendants(),
+        selector: isInterfaceMember,
+    });
 
     const sorted = sortBy(propertyGroups, getPropertyName) as Array<
         NodeCommentGroup<InterfaceMember>
     >;
 
     // Recursively alphabetize in-line types or type unions
-    const nestedErrors: RuleViolation[] = isEmpty(nestedMembers)
-        ? []
-        : flatMap(nestedMembers, alphabetizeInterface);
+    const nestedErrors: RuleViolation[] = hasNestedTypes
+        ? flatMap(nestedTypes, alphabetizeInterface)
+        : [];
 
     const deletionQueue: Array<InterfaceMember | Comment> = [];
 
-    const underlyingType = getUnderlyingType(interfaceOrType);
     const kindName = underlyingType.getKindName();
     const name =
         underlyingType instanceof InterfaceDeclaration
@@ -174,12 +181,10 @@ const getUnderlyingType = (
     interfaceOrType: InterfaceOrType
 ): Exclude<InterfaceOrType, IntersectionTypeNode> => {
     if (interfaceOrType instanceof IntersectionTypeNode) {
-        return first(
-            getChildrenOfKind(
-                interfaceOrType,
-                SyntaxKind.TypeLiteral,
-                SyntaxKind.InterfaceDeclaration
-            )
+        return getFirstChildOfKind(
+            interfaceOrType,
+            SyntaxKind.TypeLiteral,
+            SyntaxKind.InterfaceDeclaration
         )!;
     }
 
@@ -189,8 +194,8 @@ const getUnderlyingType = (
 const isInterfaceMember = (
     maybeInterfaceMember: TypeElementTypes | InterfaceOrType
 ): maybeInterfaceMember is InterfaceMember =>
-    Node.hasName(maybeInterfaceMember) &&
-    Node.isTypeElement(maybeInterfaceMember);
+    Node.isPropertySignature(maybeInterfaceMember) ||
+    Node.isMethodSignature(maybeInterfaceMember);
 
 const alphabetizeInterfaces = withRetry(_alphabetizeInterfaces);
 
