@@ -377,7 +377,7 @@ describe("alphabetizeInterfaces", () => {
         await result.file.save();
     });
 
-    it.skip("#43 should sort nested types with type unions", async () => {
+    it("should sort nested types with type unions", async () => {
         // Arrange
         const input = createSourceFile(
             `
@@ -414,15 +414,173 @@ describe("alphabetizeInterfaces", () => {
                 export interface RouteMap extends GenericRouteMap {
                     root: RouteDefinition & {
                         routes: {
+                            help: RouteDefinition & {
+                                routes: {
+                                    usage: RouteDefinition;
+                                };
+                            };
                             library: RouteDefinition & {
                                 routes: {
                                     files: RouteDefinition;
                                     instruments: RouteDefinition;
                                 };
                             };
+                            login: RouteDefinition;
+                            logout: RouteDefinition;
+                            register: RouteDefinition;
+                            workstation: RouteDefinition & {
+                                routes: {
+                                    workstation: RouteDefinition;
+                                };
+                            };
+                        };
+                    };
+                }
+            `
+        );
+
+        // Act
+        const result = await alphabetizeInterfaces(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+        await result.file.save();
+    });
+
+    it("should sort nested types with type unions and single-line comments", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                export interface RouteMap extends GenericRouteMap {
+                    root: RouteDefinition & {
+                        routes: {
+                            // Library
+                            library: RouteDefinition & {
+                                routes: {
+                                    files: RouteDefinition;
+                                    instruments: RouteDefinition;
+                                };
+                            };
+                            // Help
                             help: RouteDefinition & {
                                 routes: {
                                     usage: RouteDefinition;
+                                };
+                            };
+                            login: RouteDefinition;
+                            logout: RouteDefinition;
+                            register: RouteDefinition;
+                            workstation: RouteDefinition & {
+                                routes: {
+                                    workstation: RouteDefinition;
+                                };
+                            };
+                        };
+                    };
+                }
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                export interface RouteMap extends GenericRouteMap {
+                    root: RouteDefinition & {
+                        routes: {
+                            // Help
+                            help: RouteDefinition & {
+                                routes: {
+                                    usage: RouteDefinition;
+                                };
+                            };
+                            // Library
+                            library: RouteDefinition & {
+                                routes: {
+                                    files: RouteDefinition;
+                                    instruments: RouteDefinition;
+                                };
+                            };
+                            login: RouteDefinition;
+                            logout: RouteDefinition;
+                            register: RouteDefinition;
+                            workstation: RouteDefinition & {
+                                routes: {
+                                    workstation: RouteDefinition;
+                                };
+                            };
+                        };
+                    };
+                }
+            `
+        );
+
+        // Act
+        const result = await alphabetizeInterfaces(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+        await result.file.save();
+    });
+
+    it("should sort nested types with type unions and multi-line comments", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                export interface RouteMap extends GenericRouteMap {
+                    root: RouteDefinition & {
+                        routes: {
+                            /*
+                             * Library
+                             */
+                            library: RouteDefinition & {
+                                routes: {
+                                    files: RouteDefinition;
+                                    instruments: RouteDefinition;
+                                };
+                            };
+                            /*
+                             * Help
+                             */
+                            help: RouteDefinition & {
+                                routes: {
+                                    usage: RouteDefinition;
+                                };
+                            };
+                            login: RouteDefinition;
+                            logout: RouteDefinition;
+                            register: RouteDefinition;
+                            workstation: RouteDefinition & {
+                                routes: {
+                                    workstation: RouteDefinition;
+                                };
+                            };
+                        };
+                    };
+                }
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                export interface RouteMap extends GenericRouteMap {
+                    root: RouteDefinition & {
+                        routes: {
+                            /*
+                             * Help
+                             */
+                            help: RouteDefinition & {
+                                routes: {
+                                    usage: RouteDefinition;
+                                };
+                            };
+                            /*
+                             * Library
+                             */
+                            library: RouteDefinition & {
+                                routes: {
+                                    files: RouteDefinition;
+                                    instruments: RouteDefinition;
                                 };
                             };
                             login: RouteDefinition;
