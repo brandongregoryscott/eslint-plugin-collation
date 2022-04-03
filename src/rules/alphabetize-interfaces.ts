@@ -75,9 +75,7 @@ const alphabetizeInterface = (
         InterfaceMember
     >(interfaceOrType, {
         getDescendants: (node) =>
-            hasNestedTypes
-                ? getUnderlyingType(node).getMembers()
-                : getUnderlyingType(node).getDescendants(),
+            getUnderlyingType(node).getMembersWithComments(),
         selector: isInterfaceMember,
     });
 
