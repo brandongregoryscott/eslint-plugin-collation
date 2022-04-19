@@ -34,7 +34,7 @@ const _alphabetizeEnums: RuleFunction = async (
     };
 };
 
-_alphabetizeEnums.__name = RuleName.AlphabetizeEnums;
+_alphabetizeEnums._name = RuleName.AlphabetizeEnums;
 
 const alphabetizeEnum = (_enum: EnumDeclaration): RuleViolation[] => {
     const members = _enum.getMembers();

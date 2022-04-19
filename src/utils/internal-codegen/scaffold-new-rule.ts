@@ -55,6 +55,8 @@ const addRuleFunction = (project: Project, name: string) => {
                 };
             };
 
+            ${functionName}._name = ${getFullyQualifiedEnumValue(name)};
+
             const stub = (): RuleViolation[] => {
                 return [];
             }

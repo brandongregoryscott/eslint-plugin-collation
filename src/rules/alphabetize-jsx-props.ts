@@ -50,7 +50,7 @@ const _alphabetizeJsxProps: RuleFunction = async (
     };
 };
 
-_alphabetizeJsxProps.__name = RuleName.AlphabetizeJsxProps;
+_alphabetizeJsxProps._name = RuleName.AlphabetizeJsxProps;
 
 const alphabetizePropsByJsxElement = (
     jsxElement: JsxElement
