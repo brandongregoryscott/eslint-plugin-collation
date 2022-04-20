@@ -4,16 +4,11 @@ import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
 import { Logger } from "../utils/logger";
-import {
-    ExportedDeclarations,
-    Node,
-    SourceFile,
-    SyntaxKind,
-    VariableStatement,
-} from "ts-morph";
-import { flatMap, isEmpty } from "lodash";
+import { Node, SourceFile } from "ts-morph";
+import { isEmpty } from "lodash";
+import { withRetry } from "../utils/with-retry";
 
-const exportsAtEof: RuleFunction = async (
+const _exportsAtEof: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
@@ -27,7 +22,7 @@ const exportsAtEof: RuleFunction = async (
     };
 };
 
-exportsAtEof._name = RuleName.ExportsAtEof;
+_exportsAtEof._name = RuleName.ExportsAtEof;
 
 const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
     const errors: RuleViolation[] = [];
@@ -76,5 +71,7 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
 
     return errors;
 };
+
+const exportsAtEof = withRetry(_exportsAtEof);
 
 export { exportsAtEof };

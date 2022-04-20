@@ -41,7 +41,7 @@ const addRuleFunction = (project: Project, name: string) => {
     const file = project.createSourceFile(
         `src/rules/${name}.ts`,
         tags.stripIndent`
-            const ${functionName}: RuleFunction = async (
+            const _${functionName}: RuleFunction = async (
                 file: SourceFile
             ): Promise<RuleResult> => {
                 const originalFileContent = file.getText();
@@ -55,11 +55,13 @@ const addRuleFunction = (project: Project, name: string) => {
                 };
             };
 
-            ${functionName}._name = ${getFullyQualifiedEnumValue(name)};
+            _${functionName}._name = ${getFullyQualifiedEnumValue(name)};
 
             const stub = (): RuleViolation[] => {
                 return [];
             }
+
+            const ${functionName} = withRetry(_${functionName});
         `
     );
 
@@ -80,6 +82,7 @@ const addRuleFunction = (project: Project, name: string) => {
         },
         { namedImports: ["Logger"], moduleSpecifier: "../utils/logger" },
         { namedImports: ["SourceFile"], moduleSpecifier: "ts-morph" },
+        { namedImports: ["withRetry"], moduleSpecifier: "../utils/with-retry" },
     ]);
 
     file.addExportDeclaration({ namedExports: [functionName] });
