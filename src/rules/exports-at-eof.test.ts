@@ -171,4 +171,49 @@ describe("exportsAtEof", () => {
             expect(referencingSourceFile).toMatchSourceFile(expected);
         });
     });
+
+    describe("type only exports", () => {
+        it("should not attach non-type exports to type export", async () => {
+            // Arrange
+            const input = createSourceFile(
+                `
+                interface UseInputOptions {
+                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                    value?: string;
+                }
+
+                export const useInput = (options?: UseInputOptions) => {
+                    // ...implementation
+                }
+
+                export type { UseInputOptions };
+            `
+            );
+
+            const expected = createSourceFile(
+                `
+                interface UseInputOptions {
+                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                    value?: string;
+                }
+
+                const useInput = (options?: UseInputOptions) => {
+                    // ...implementation
+                }
+
+                export type { UseInputOptions };
+                export { useInput }
+            `
+            );
+
+            // Act
+            const result = await exportsAtEof(input);
+
+            // Assert
+            expect(result).toHaveErrors();
+            expect(result).toMatchSourceFile(expected);
+        });
+    });
 });
+
+export {};
