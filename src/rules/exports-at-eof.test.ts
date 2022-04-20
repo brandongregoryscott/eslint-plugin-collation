@@ -84,6 +84,31 @@ describe("exportsAtEof", () => {
         expect(result).toMatchSourceFile(expected);
     });
 
+    it("should not return errors when exports are already at end of file", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                interface UseInputOptions {
+                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                    value?: string;
+                }
+
+                const useInput = (options?: UseInputOptions) => {
+                    // ...implementation
+                }
+
+                export { useInput, UseInputOptions };
+            `
+        );
+
+        // Act
+        const result = await exportsAtEof(input);
+
+        // Assert
+        expect(result).not.toHaveErrors();
+        expect(result).toMatchSourceFile(input);
+    });
+
     describe("default exports", () => {
         it("should convert default exports to named exports", async () => {
             // Arrange
@@ -216,4 +241,5 @@ describe("exportsAtEof", () => {
     });
 });
 
+export {};
 export {};
