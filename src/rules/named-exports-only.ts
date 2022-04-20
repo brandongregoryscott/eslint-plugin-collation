@@ -15,6 +15,7 @@ import {
 } from "ts-morph";
 import { compact } from "lodash";
 import { withRetry } from "../utils/with-retry";
+import { replaceDefaultImports } from "../utils/import-utils";
 
 type NameableExportableNode = NameableNode & ExportableNode;
 
@@ -101,24 +102,6 @@ const getDefaultExportIdentifier = (
     return _export.getName() ?? "";
 };
 
-const getDefaultImportDeclarationsForFile = (
-    sourceFile: SourceFile,
-    referencingFiles: SourceFile[]
-): ImportDeclaration[] => {
-    const defaultImports = referencingFiles.map((referencingFile) =>
-        referencingFile
-            .getImportDeclarations()
-            .find(
-                (importDeclaration) =>
-                    importDeclaration.getDefaultImport() != null &&
-                    importDeclaration.getModuleSpecifierSourceFile() ===
-                        sourceFile
-            )
-    );
-
-    return compact(defaultImports);
-};
-
 const getRuleViolation = (
     file: SourceFile,
     _export: ExportAssignment | NameableExportableNode
@@ -133,34 +116,6 @@ const getRuleViolation = (
         lineNumber,
         hint: `'${name}' should be a named export instead`,
         rule: RuleName.NamedExportsOnly,
-    });
-};
-
-const replaceDefaultImports = (file: SourceFile, importName: string) => {
-    const referencingSourceFiles = file.getReferencingSourceFiles();
-    const defaultImports = getDefaultImportDeclarationsForFile(
-        file,
-        referencingSourceFiles
-    );
-
-    defaultImports.forEach((importDeclaration) =>
-        replaceDefaultImport(importName, importDeclaration)
-    );
-};
-
-const replaceDefaultImport = (
-    importName: string,
-    importDeclaration: ImportDeclaration
-) => {
-    const existingNamedImports = importDeclaration
-        .getNamedImports()
-        .map((importSpecifier: ImportSpecifier) =>
-            importSpecifier.getStructure()
-        );
-
-    importDeclaration.set({
-        defaultImport: undefined,
-        namedImports: [importName, ...existingNamedImports],
     });
 };
 

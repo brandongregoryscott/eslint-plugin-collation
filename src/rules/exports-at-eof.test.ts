@@ -1,5 +1,9 @@
 import { exportsAtEof } from "./exports-at-eof";
-import { createSourceFile } from "../test/test-utils";
+import {
+    createInMemoryProject,
+    createSourceFile,
+    CreateSourceFileOptions,
+} from "../test/test-utils";
 
 describe("exportsAtEof", () => {
     it("should move in-line exports to end of file", async () => {
@@ -78,5 +82,93 @@ describe("exportsAtEof", () => {
         // Assert
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
+    });
+
+    describe("default exports", () => {
+        it("should convert default exports to named exports", async () => {
+            // Arrange
+            const input = createSourceFile(
+                `
+                    interface UseInputOptions {
+                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                        value?: string;
+                    }
+
+                    export default function useInput(options?: UseInputOptions) {
+                        // ...implementation
+                    }
+
+                    export { UseInputOptions };
+                `
+            );
+
+            const expected = createSourceFile(
+                `
+                    interface UseInputOptions {
+                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                        value?: string;
+                    }
+
+                    function useInput(options?: UseInputOptions) {
+                        // ...implementation
+                    }
+
+                    export { UseInputOptions, useInput };
+                `
+            );
+
+            // Act
+            const result = await exportsAtEof(input);
+
+            // Assert
+            expect(result).toHaveErrors();
+            expect(result).toMatchSourceFile(expected);
+        });
+
+        it("should update referencing SourceFiles to use named import", async () => {
+            // Arrange
+            // We need to use the same Project instance to get referencing source files
+            const project = createInMemoryProject();
+            const options: CreateSourceFileOptions = {
+                project,
+                // There's currently a bug in ts-morph where references won't be returned in .tsx files
+                extension: ".ts",
+            };
+
+            const input = createSourceFile(
+                `
+                    interface UseInputOptions {
+                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                        value?: string;
+                    }
+
+                    export default function useInput(options?: UseInputOptions) {
+                        // ...implementation
+                    }
+
+                    export { UseInputOptions };
+                `,
+                options
+            );
+            const referencingSourceFile = createSourceFile(
+                `
+                    import useInput from "./${input.getBaseNameWithoutExtension()}";
+                `,
+                options
+            );
+
+            const expected = createSourceFile(
+                `
+                    import { useInput } from "./${input.getBaseNameWithoutExtension()}";
+                `,
+                options
+            );
+
+            // Act
+            await exportsAtEof(input);
+
+            // Assert
+            expect(referencingSourceFile).toMatchSourceFile(expected);
+        });
     });
 });

@@ -7,6 +7,7 @@ import { Logger } from "../utils/logger";
 import { ExportDeclaration, ExportSpecifier, Node, SourceFile } from "ts-morph";
 import { castArray, flatMap, intersection, isEmpty, uniq } from "lodash";
 import { withRetry } from "../utils/with-retry";
+import { replaceDefaultImports } from "../utils/import-utils";
 
 const _exportsAtEof: RuleFunction = async (
     file: SourceFile
@@ -69,6 +70,10 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
                     exportedDeclaration
                 );
                 return;
+            }
+
+            if (exportedNode.isDefaultExport()) {
+                replaceDefaultImports(file, name!);
             }
 
             exportedNode.setIsExported(false);
