@@ -4,8 +4,8 @@ import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
 import { Logger } from "../utils/logger";
-import { Node, SourceFile } from "ts-morph";
-import { isEmpty } from "lodash";
+import { ExportDeclaration, ExportSpecifier, Node, SourceFile } from "ts-morph";
+import { castArray, flatMap, intersection, isEmpty, uniq } from "lodash";
 import { withRetry } from "../utils/with-retry";
 
 const _exportsAtEof: RuleFunction = async (
@@ -23,6 +23,17 @@ const _exportsAtEof: RuleFunction = async (
 };
 
 _exportsAtEof._name = RuleName.ExportsAtEof;
+
+const getNamedExports = (
+    exportDeclarations: ExportDeclaration[] | ExportDeclaration
+): string[] =>
+    flatMap(castArray(exportDeclarations), (exportDeclaration) =>
+        exportDeclaration
+            .getNamedExports()
+            .map((exportSpecifier: ExportSpecifier) =>
+                exportSpecifier.getName()
+            )
+    );
 
 const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
     const errors: RuleViolation[] = [];
@@ -62,11 +73,36 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
 
             exportedNode.setIsExported(false);
             exports.push(name!);
+            errors.push(
+                new RuleViolation({
+                    message: `Expected exported node '${name}' to appear at the end of the file.`,
+                    lineNumber: exportedNode.getStartLineNumber(),
+                    file,
+                    rule: RuleName.ExportsAtEof,
+                })
+            );
         });
     });
 
-    file.addExportDeclaration({
-        namedExports: exports,
+    const exportDeclarations = file.getExportDeclarations();
+
+    // Attempt to attach the exports to an existing declaration, even if only partially matching
+    const exportDeclaration = exportDeclarations.find(
+        (exportDeclaration) =>
+            !isEmpty(intersection(getNamedExports(exportDeclaration), exports))
+    );
+
+    if (exportDeclaration == null) {
+        file.addExportDeclaration({
+            namedExports: uniq(exports),
+        });
+
+        return errors;
+    }
+
+    const existingExports = getNamedExports(exportDeclaration);
+    exportDeclaration.set({
+        namedExports: uniq([...existingExports, ...exports]),
     });
 
     return errors;

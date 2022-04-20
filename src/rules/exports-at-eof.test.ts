@@ -39,4 +39,44 @@ describe("exportsAtEof", () => {
         expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
     });
+
+    it("should update existing export when there is one", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                export interface UseInputOptions {
+                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                    value?: string;
+                }
+
+                const useInput = (options?: UseInputOptions) => {
+                    // ...implementation
+                }
+
+                export { useInput };
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                interface UseInputOptions {
+                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                    value?: string;
+                }
+
+                const useInput = (options?: UseInputOptions) => {
+                    // ...implementation
+                }
+
+                export { useInput, UseInputOptions };
+            `
+        );
+
+        // Act
+        const result = await exportsAtEof(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
 });
