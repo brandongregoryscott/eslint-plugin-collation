@@ -11,4 +11,5 @@ module.exports = {
     restoreMocks: true,
     setupFilesAfterEnv: ["./src/test/setup.ts"],
     testEnvironment: "node",
+    silent: false,
 };
