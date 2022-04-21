@@ -202,33 +202,32 @@ describe("exportsAtEof", () => {
             // Arrange
             const input = createSourceFile(
                 `
-                interface UseInputOptions {
-                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                    value?: string;
-                }
+                    interface UseInputOptions {
+                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                        value?: string;
+                    }
 
-                export const useInput = (options?: UseInputOptions) => {
-                    // ...implementation
-                }
+                    export const useInput = (options?: UseInputOptions) => {
+                        // ...implementation
+                    }
 
-                export type { UseInputOptions };
-            `
+                    export type { UseInputOptions };
+                `
             );
 
             const expected = createSourceFile(
                 `
-                interface UseInputOptions {
-                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                    value?: string;
-                }
+                    interface UseInputOptions {
+                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                        value?: string;
+                    }
 
-                const useInput = (options?: UseInputOptions) => {
-                    // ...implementation
-                }
+                    const useInput = (options?: UseInputOptions) => {
+                        // ...implementation
+                    }
 
-                export type { UseInputOptions };
-                export { useInput }
-            `
+                    export { UseInputOptions, useInput };
+                `
             );
 
             // Act
@@ -241,5 +240,4 @@ describe("exportsAtEof", () => {
     });
 });
 
-export {};
 export {};

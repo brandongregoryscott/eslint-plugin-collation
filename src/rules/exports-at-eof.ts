@@ -4,10 +4,23 @@ import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
 import { Logger } from "../utils/logger";
-import { ExportDeclaration, ExportSpecifier, Node, SourceFile } from "ts-morph";
-import { castArray, flatMap, intersection, isEmpty, uniq } from "lodash";
+import {
+    ExportableNode,
+    ExportDeclaration,
+    ExportSpecifier,
+    NameableNode,
+    Node,
+    SourceFile,
+    VariableDeclaration,
+} from "ts-morph";
+import { castArray, flatMap, isEmpty, last, uniq } from "lodash";
 import { withRetry } from "../utils/with-retry";
 import { replaceDefaultImports } from "../utils/import-utils";
+
+interface Export {
+    isType: boolean;
+    name: string;
+}
 
 const _exportsAtEof: RuleFunction = async (
     file: SourceFile
@@ -38,7 +51,7 @@ const getNamedExports = (
 
 const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
     const errors: RuleViolation[] = [];
-    const exports: string[] = [];
+    const exports: Export[] = [];
     const exportMap = file.getExportedDeclarations();
 
     exportMap.forEach((exportedDeclarations) => {
@@ -47,6 +60,10 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
                 !Node.isExportable(exportedDeclaration) &&
                 !Node.isVariableDeclaration(exportedDeclaration)
             ) {
+                return;
+            }
+
+            if (isEndOfFileExport(file, exportedDeclaration)) {
                 return;
             }
 
@@ -77,7 +94,12 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
             }
 
             exportedNode.setIsExported(false);
-            exports.push(name!);
+            exports.push({
+                name: name!,
+                isType:
+                    Node.isInterfaceDeclaration(exportedNode) ||
+                    Node.isTypeAliasDeclaration(exportedNode),
+            });
             errors.push(
                 new RuleViolation({
                     message: `Expected exported node '${name}' to appear at the end of the file.`,
@@ -91,15 +113,12 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
 
     const exportDeclarations = file.getExportDeclarations();
 
-    // Attempt to attach the exports to an existing declaration, even if only partially matching
-    const exportDeclaration = exportDeclarations.find(
-        (exportDeclaration) =>
-            !isEmpty(intersection(getNamedExports(exportDeclaration), exports))
-    );
+    // Attempt to attach the exports to the last declaration, if one exists
+    const exportDeclaration = last(exportDeclarations);
 
     if (exportDeclaration == null) {
         file.addExportDeclaration({
-            namedExports: uniq(exports),
+            namedExports: uniq(exports.map((_export) => _export.name)),
         });
 
         return errors;
@@ -107,10 +126,35 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
 
     const existingExports = getNamedExports(exportDeclaration);
     exportDeclaration.set({
-        namedExports: uniq([...existingExports, ...exports]),
+        namedExports: uniq([
+            ...existingExports,
+            ...exports.map((_export) => _export.name),
+        ]),
+        // Take away type keyword if any of the exports are non-type exports - and leave it as-is if not
+        isTypeOnly: exports.some((_export) => !_export.isType)
+            ? false
+            : exportDeclaration.isTypeOnly(),
     });
 
     return errors;
+};
+
+const isEndOfFileExport = (
+    file: SourceFile,
+    exportedNode: ExportableNode | VariableDeclaration
+): boolean => {
+    const lastStatement = last(file.getStatements());
+    if (
+        !Node.isExportDeclaration(lastStatement) ||
+        !Node.hasName(exportedNode as Node)
+    ) {
+        return false;
+    }
+
+    const exportNames = getNamedExports(lastStatement);
+    return exportNames.includes(
+        (exportedNode as any as NameableNode).getName()!
+    );
 };
 
 const exportsAtEof = withRetry(_exportsAtEof);
