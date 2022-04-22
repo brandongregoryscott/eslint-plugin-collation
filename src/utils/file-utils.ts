@@ -19,6 +19,10 @@ const safelySaveChanges = async (fileOrProject: SourceFile | Project) => {
 
     if (isEmpty(diagnostics)) {
         await fileOrProject.save();
+        if (isSourceFile(fileOrProject)) {
+            await fileOrProject.refreshFromFileSystem();
+        }
+
         return;
     }
 
