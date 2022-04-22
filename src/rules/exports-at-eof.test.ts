@@ -239,5 +239,3 @@ describe("exportsAtEof", () => {
         });
     });
 });
-
-export {};

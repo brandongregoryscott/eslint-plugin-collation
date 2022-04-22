@@ -4,6 +4,7 @@ import { RuleMap } from "../constants/rule-map";
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { Context } from "../models/context";
+import { safelySafeChangesFromResult } from "./file-utils";
 import { Logger } from "./logger";
 import { printRuleResults } from "./print-rule-results";
 
@@ -30,7 +31,9 @@ const ruleRunner = async (files: SourceFile[]): Promise<RuleResult[]> => {
         flatten(
             rules.map((rule) => {
                 const ruleFunction = RuleMap[rule];
-                return files.map(ruleFunction);
+                return files.map((file) =>
+                    ruleFunction(file).then(safelySafeChangesFromResult)
+                );
             })
         )
     );

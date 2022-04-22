@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { Project } from "ts-morph";
 import { CliOptions } from "../interfaces/cli-options";
+import { safelySaveChanges } from "../utils/file-utils";
 import { Logger } from "../utils/logger";
 
 interface ContextOptions {
@@ -52,7 +53,7 @@ class Context {
             return;
         }
 
-        await this.project.save();
+        safelySaveChanges(this.project);
     }
 
     private throwIfUninitialized(): Context | never {

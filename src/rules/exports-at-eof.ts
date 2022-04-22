@@ -13,7 +13,7 @@ import {
     SourceFile,
     VariableDeclaration,
 } from "ts-morph";
-import { castArray, flatMap, isEmpty, last, uniq } from "lodash";
+import { castArray, flatMap, isEmpty, last, takeRight, uniq } from "lodash";
 import { withRetry } from "../utils/with-retry";
 import { replaceDefaultImports } from "../utils/import-utils";
 
@@ -111,11 +111,27 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
         });
     });
 
+    if (isEmpty(exports)) {
+        if (!isEmpty(errors)) {
+            Logger.debug(
+                "Exports collection was empty but errors were not",
+                exports,
+                errors
+            );
+        }
+        return errors;
+    }
+
     const exportDeclarations = file.getExportDeclarations();
 
     // Attempt to attach the exports to the last declaration, if one exists
     const exportDeclaration = last(exportDeclarations);
 
+    file.addVariableStatement({
+        declarations: [
+            { name: "test", initializer: "{ size: 123 name: 'abc' }" },
+        ],
+    });
     if (exportDeclaration == null) {
         file.addExportDeclaration({
             namedExports: uniq(exports.map((_export) => _export.name)),
@@ -143,15 +159,23 @@ const isEndOfFileExport = (
     file: SourceFile,
     exportedNode: ExportableNode | VariableDeclaration
 ): boolean => {
-    const lastStatement = last(file.getStatements());
+    if (!Node.hasName(exportedNode as Node)) {
+        return false;
+    }
+
+    const lastStatements = takeRight(file.getStatements(), 2);
+
     if (
-        !Node.isExportDeclaration(lastStatement) ||
-        !Node.hasName(exportedNode as Node)
+        lastStatements.every(
+            (statement) => !Node.isExportDeclaration(statement)
+        )
     ) {
         return false;
     }
 
-    const exportNames = getNamedExports(lastStatement);
+    const exportNames = getNamedExports(
+        lastStatements.filter(Node.isExportDeclaration)
+    );
     return exportNames.includes(
         (exportedNode as any as NameableNode).getName()!
     );
