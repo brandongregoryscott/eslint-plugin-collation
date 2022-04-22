@@ -237,5 +237,148 @@ describe("exportsAtEof", () => {
             expect(result).toHaveErrors();
             expect(result).toMatchSourceFile(expected);
         });
+
+        describe("when isolatedModules is true", () => {
+            it("should create both type and non-type exports", async () => {
+                // Arrange
+                const project = createInMemoryProject({
+                    compilerOptions: { isolatedModules: true },
+                });
+                const input = createSourceFile(
+                    `
+                        export interface UseInputOptions {
+                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                            value?: string;
+                        }
+
+                        export const useInput = (options?: UseInputOptions) => {
+                            // ...implementation
+                        }
+                    `,
+                    { project }
+                );
+
+                const expected = createSourceFile(
+                    `
+                        interface UseInputOptions {
+                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                            value?: string;
+                        }
+
+                        const useInput = (options?: UseInputOptions) => {
+                            // ...implementation
+                        }
+
+                        export type { UseInputOptions };
+                        export { useInput };
+                    `,
+                    { project }
+                );
+
+                // Act
+                const result = await exportsAtEof(input);
+
+                // Assert
+                expect(result).toHaveErrors();
+                expect(result).toMatchSourceFile(expected);
+            });
+
+            it("should create separate type export when existing non-type export exists", async () => {
+                // Arrange
+                const project = createInMemoryProject({
+                    compilerOptions: { isolatedModules: true },
+                });
+                const input = createSourceFile(
+                    `
+                        export interface UseInputOptions {
+                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                            value?: string;
+                        }
+
+                        const useInput = (options?: UseInputOptions) => {
+                            // ...implementation
+                        }
+
+                        export { useInput };
+                    `,
+                    { project }
+                );
+
+                const expected = createSourceFile(
+                    `
+                        interface UseInputOptions {
+                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                            value?: string;
+                        }
+
+                        const useInput = (options?: UseInputOptions) => {
+                            // ...implementation
+                        }
+
+                        export type { UseInputOptions };
+                        export { useInput };
+                    `,
+                    { project }
+                );
+
+                // Act
+                const result = await exportsAtEof(input);
+
+                // Assert
+                expect(result).toHaveErrors();
+                expect(result).toMatchSourceFile(expected);
+            });
+
+            it("should update existing type export", async () => {
+                // Arrange
+                const project = createInMemoryProject({
+                    compilerOptions: { isolatedModules: true },
+                });
+
+                const input = createSourceFile(
+                    `
+                        type Example = string | number;
+
+                        export interface UseInputOptions {
+                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                            value?: string;
+                        }
+
+                        export const useInput = (options?: UseInputOptions) => {
+                            // ...implementation
+                        }
+
+                        export type { Example };
+                    `,
+                    { project }
+                );
+
+                const expected = createSourceFile(
+                    `
+                        type Example = string | number;
+
+                        interface UseInputOptions {
+                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+                            value?: string;
+                        }
+
+                        const useInput = (options?: UseInputOptions) => {
+                            // ...implementation
+                        }
+
+                        export type { Example, UseInputOptions };
+                        export { useInput };
+                    `,
+                    { project }
+                );
+
+                // Act
+                const result = await exportsAtEof(input);
+
+                // Assert
+                expect(result).toHaveErrors();
+                expect(result).toMatchSourceFile(expected);
+            });
+        });
     });
 });
