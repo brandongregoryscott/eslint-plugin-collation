@@ -4,7 +4,7 @@ import { RuleMap } from "../constants/rule-map";
 import { RuleName } from "../enums/rule-name";
 import { RuleResult } from "../interfaces/rule-result";
 import { Context } from "../models/context";
-import { safelySafeChangesFromResult } from "./file-utils";
+import { safelySafeChangesFromResult } from "./safely-save-changes";
 import { Logger } from "./logger";
 import { printRuleResults } from "./print-rule-results";
 

@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { Project } from "ts-morph";
 import { CliOptions } from "../interfaces/cli-options";
-import { safelySaveChanges } from "../utils/file-utils";
+import { safelySaveChanges } from "../utils/safely-save-changes";
 import { Logger } from "../utils/logger";
 
 interface ContextOptions {

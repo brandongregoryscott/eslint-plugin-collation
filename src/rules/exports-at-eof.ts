@@ -32,8 +32,8 @@ interface Export {
 }
 
 interface MoveExportDeclarationsToEofResult {
-    export: Export;
     error: RuleViolation;
+    export: Export;
 }
 
 const _exportsAtEof: RuleFunction = async (

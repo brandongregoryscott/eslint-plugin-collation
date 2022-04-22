@@ -6,7 +6,7 @@ import { Logger } from "./logger";
 const safelySafeChangesFromResult = async (
     result: RuleResult
 ): Promise<RuleResult> => {
-    safelySaveChanges(result.file);
+    await safelySaveChanges(result.file);
     return result;
 };
 
@@ -19,10 +19,6 @@ const safelySaveChanges = async (fileOrProject: SourceFile | Project) => {
 
     if (isEmpty(diagnostics)) {
         await fileOrProject.save();
-        if (isSourceFile(fileOrProject)) {
-            await fileOrProject.refreshFromFileSystem();
-        }
-
         return;
     }
 
