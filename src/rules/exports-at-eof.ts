@@ -4,27 +4,16 @@ import { RuleResult } from "../interfaces/rule-result";
 import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
 import { Logger } from "../utils/logger";
-import {
-    ExportableNode,
-    ExportDeclaration,
-    ExportedDeclarations,
-    ExportSpecifier,
-    NameableNode,
-    Node,
-    SourceFile,
-    VariableDeclaration,
-} from "ts-morph";
-import {
-    castArray,
-    compact,
-    flatMap,
-    isEmpty,
-    last,
-    takeRight,
-    uniq,
-} from "lodash";
+import { ExportedDeclarations, NameableNode, Node, SourceFile } from "ts-morph";
+import { compact, flatMap, isEmpty, last, takeRight, uniq } from "lodash";
 import { withRetry } from "../utils/with-retry";
 import { replaceDefaultImports } from "../utils/import-utils";
+import {
+    asExportedNode,
+    getExportedDeclarations,
+} from "../utils/exported-declarations-utils";
+import { getExportNames } from "../utils/export-declaration-utils";
+import { ExportedNode } from "../types/exported-node";
 
 interface Export {
     isType: boolean;
@@ -52,30 +41,9 @@ const _exportsAtEof: RuleFunction = async (
 
 _exportsAtEof._name = RuleName.ExportsAtEof;
 
-const getNamedExports = (
-    exportDeclarations: ExportDeclaration[] | ExportDeclaration
-): string[] =>
-    flatMap(castArray(exportDeclarations), (exportDeclaration) =>
-        exportDeclaration
-            .getNamedExports()
-            .map((exportSpecifier: ExportSpecifier) =>
-                exportSpecifier.getName()
-            )
-    );
-
-const getExportedDeclarations = (file: SourceFile): ExportedDeclarations[] => {
-    const exportMap = file.getExportedDeclarations();
-    const aggregatedExportedDeclarations: ExportedDeclarations[] = [];
-    exportMap.forEach((exportedDeclarations) => {
-        aggregatedExportedDeclarations.push(...exportedDeclarations);
-    });
-
-    return aggregatedExportedDeclarations;
-};
-
 const isEndOfFileExport = (
     file: SourceFile,
-    exportedNode: ExportableNode | VariableDeclaration
+    exportedNode: ExportedNode
 ): boolean => {
     if (!Node.hasName(exportedNode as Node)) {
         return false;
@@ -86,7 +54,7 @@ const isEndOfFileExport = (
         Node.isExportDeclaration
     );
 
-    const exportNames = getNamedExports(lastStatements);
+    const exportNames = getExportNames(lastStatements);
     return exportNames.includes(
         (exportedNode as any as NameableNode).getName()!
     );
@@ -124,7 +92,7 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
         return errors;
     }
 
-    const existingExports = getNamedExports(exportDeclaration);
+    const existingExports = getExportNames(exportDeclaration);
     exportDeclaration.set({
         namedExports: uniq([
             ...existingExports,
@@ -143,31 +111,16 @@ const moveExportedDeclarationsToEof = (
     exportedDeclaration: ExportedDeclarations
 ): MoveExportDeclarationsToEofResult | undefined => {
     const file = exportedDeclaration.getSourceFile();
-
-    if (
-        !Node.isExportable(exportedDeclaration) &&
-        !Node.isVariableDeclaration(exportedDeclaration)
-    ) {
-        return;
-    }
-
-    if (isEndOfFileExport(file, exportedDeclaration)) {
-        return;
-    }
-
-    const exportedNode = Node.isVariableDeclaration(exportedDeclaration)
-        ? exportedDeclaration.getVariableStatement()
-        : exportedDeclaration;
-
+    const exportedNode = asExportedNode(exportedDeclaration);
     if (exportedNode == null) {
-        Logger.warn(
-            "Found VariableDeclaration without a VariableStatement to remove the export keyword from.",
-            exportedDeclaration.getFullText()
-        );
         return;
     }
 
-    const name = exportedDeclaration.getName();
+    if (isEndOfFileExport(file, exportedNode)) {
+        return;
+    }
+
+    const name = (exportedDeclaration as NameableNode).getName();
 
     if (isEmpty(name)) {
         Logger.warn(
