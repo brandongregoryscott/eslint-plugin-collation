@@ -109,6 +109,71 @@ describe("exportsAtEof", () => {
         expect(result).toMatchSourceFile(input);
     });
 
+    it("should move existing named exports to end of file when they appear before", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                const add = (x: number, y: number) => x + y;
+
+                const subtract = (x: number, y: number) => x - y;
+
+                export { add, subtract };
+
+                const multiply = (x: number, y: number) => x * y;
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                const add = (x: number, y: number) => x + y;
+
+                const subtract = (x: number, y: number) => x - y;
+
+                const multiply = (x: number, y: number) => x * y;
+
+                export { add, subtract };
+            `
+        );
+
+        // Act
+        const result = await exportsAtEof(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
+    it("should consolidate exports when multiple statements exist", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                const add = (x: number, y: number) => x + y;
+
+                const subtract = (x: number, y: number) => x - y;
+
+                export { add };
+                export { subtract };
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                const add = (x: number, y: number) => x + y;
+
+                const subtract = (x: number, y: number) => x - y;
+
+                export { add, subtract };
+            `
+        );
+
+        // Act
+        const result = await exportsAtEof(input);
+
+        // Assert
+        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
     describe("default exports", () => {
         it("should convert default exports to named exports", async () => {
             // Arrange
