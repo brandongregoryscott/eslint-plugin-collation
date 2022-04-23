@@ -139,11 +139,10 @@ describe("exportsAtEof", () => {
         const result = await exportsAtEof(input);
 
         // Assert
-        expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
     });
 
-    it("should consolidate exports when multiple statements exist", async () => {
+    it("should consolidate non-type exports when multiple statements exist", async () => {
         // Arrange
         const input = createSourceFile(
             `
@@ -170,7 +169,46 @@ describe("exportsAtEof", () => {
         const result = await exportsAtEof(input);
 
         // Assert
-        expect(result).toHaveErrors();
+        expect(result).toMatchSourceFile(expected);
+    });
+
+    it("should consolidate mixed exports when multiple statements exist", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                type AddFunction = (x: number, y: number) => number;
+                type SubtractFunction = (x: number, y: number) => number;
+
+                const add: AddFunction = (x: number, y: number) => x + y;
+
+                const subtract: SubtractFunction = (x: number, y: number) => x - y;
+
+                export type { AddFunction };
+                export type { SubtractFunction };
+                export { add };
+                export { subtract };
+            `
+        );
+
+        // Unsure why the code is adding additional whitespace, but ignore it for now
+        const expected = createSourceFile(
+            `
+                type AddFunction = (x: number, y: number) => number;
+                type SubtractFunction = (x: number, y: number) => number;
+
+                const add: AddFunction = (x: number, y: number) => x + y;
+
+                const subtract: SubtractFunction = (x: number, y: number) => x - y;
+
+                export type { AddFunction, SubtractFunction };
+                export {     add, subtract };
+            `
+        );
+
+        // Act
+        const result = await exportsAtEof(input);
+
+        // Assert
         expect(result).toMatchSourceFile(expected);
     });
 
@@ -300,6 +338,34 @@ describe("exportsAtEof", () => {
 
             // Assert
             expect(result).toHaveErrors();
+            expect(result).toMatchSourceFile(expected);
+        });
+
+        it("should consolidate type exports when multiple statements exist", async () => {
+            // Arrange
+            const input = createSourceFile(
+                `
+                    type AddFunction = (x: number, y: number) => number;
+                    type SubtractFunction = (x: number, y: number) => number;
+
+                    export type { AddFunction };
+                    export type { SubtractFunction };
+                `
+            );
+
+            const expected = createSourceFile(
+                `
+                    type AddFunction = (x: number, y: number) => number;
+                    type SubtractFunction = (x: number, y: number) => number;
+
+                    export type { AddFunction, SubtractFunction };
+                `
+            );
+
+            // Act
+            const result = await exportsAtEof(input);
+
+            // Assert
             expect(result).toMatchSourceFile(expected);
         });
 

@@ -5,14 +5,18 @@ import { RuleViolation } from "../models/rule-violation";
 import { RuleFunction } from "../types/rule-function";
 import { Logger } from "../utils/logger";
 import { ExportedDeclarations, NameableNode, Node, SourceFile } from "ts-morph";
-import { compact, flatMap, isEmpty, last, takeRight, uniq } from "lodash";
+import { compact, flatMap, isEmpty, last, takeRight, trim, uniq } from "lodash";
 import { withRetry } from "../utils/with-retry";
 import { replaceDefaultImports } from "../utils/import-utils";
 import {
     asExportedNode,
     getExportedDeclarations,
 } from "../utils/exported-declarations-utils";
-import { getExportNames } from "../utils/export-declaration-utils";
+import {
+    getExportNames,
+    moveExportsToEof as _moveExportsToEof,
+    mergeExportDeclarationsByFile,
+} from "../utils/export-declaration-utils";
 import { ExportedNode } from "../types/exported-node";
 
 interface Export {
@@ -29,6 +33,8 @@ const _exportsAtEof: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
+    _moveExportsToEof(file);
+    mergeExportDeclarationsByFile(file);
     const errors = moveExportsToEof(file);
     const endingFileContent = file.getText();
 
@@ -86,7 +92,9 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
 
     if (exportDeclaration == null) {
         file.addExportDeclaration({
-            namedExports: uniq(exports.map((_export) => _export.name)),
+            namedExports: uniq(exports.map((_export) => _export.name)).map(
+                trim
+            ),
         });
 
         return errors;
@@ -97,7 +105,7 @@ const moveExportsToEof = (file: SourceFile): RuleViolation[] => {
         namedExports: uniq([
             ...existingExports,
             ...exports.map((_export) => _export.name),
-        ]),
+        ]).map(trim),
         // Take away type keyword if any of the exports are non-type exports - and leave it as-is if not
         isTypeOnly: exports.some((_export) => !_export.isType)
             ? false
