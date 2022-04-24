@@ -40,7 +40,6 @@ describe("exportsAtEof", () => {
         const result = await exportsAtEof(input);
 
         // Assert
-        expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
     });
 
@@ -80,7 +79,6 @@ describe("exportsAtEof", () => {
         const result = await exportsAtEof(input);
 
         // Assert
-        expect(result).toHaveErrors();
         expect(result).toMatchSourceFile(expected);
     });
 
@@ -190,7 +188,6 @@ describe("exportsAtEof", () => {
             `
         );
 
-        // Unsure why the code is adding additional whitespace, but ignore it for now
         const expected = createSourceFile(
             `
                 type AddFunction = (x: number, y: number) => number;
@@ -201,7 +198,7 @@ describe("exportsAtEof", () => {
                 const subtract: SubtractFunction = (x: number, y: number) => x - y;
 
                 export type { AddFunction, SubtractFunction };
-                export {     add, subtract };
+                export { add, subtract };
             `
         );
 
@@ -249,7 +246,6 @@ describe("exportsAtEof", () => {
             const result = await exportsAtEof(input);
 
             // Assert
-            expect(result).toHaveErrors();
             expect(result).toMatchSourceFile(expected);
         });
 
@@ -329,7 +325,8 @@ describe("exportsAtEof", () => {
                         // ...implementation
                     }
 
-                    export { UseInputOptions, useInput };
+                    export type { UseInputOptions };
+                    export { useInput };
                 `
             );
 
@@ -337,7 +334,6 @@ describe("exportsAtEof", () => {
             const result = await exportsAtEof(input);
 
             // Assert
-            expect(result).toHaveErrors();
             expect(result).toMatchSourceFile(expected);
         });
 
@@ -410,7 +406,6 @@ describe("exportsAtEof", () => {
                 const result = await exportsAtEof(input);
 
                 // Assert
-                expect(result).toHaveErrors();
                 expect(result).toMatchSourceFile(expected);
             });
 
@@ -456,7 +451,6 @@ describe("exportsAtEof", () => {
                 const result = await exportsAtEof(input);
 
                 // Assert
-                expect(result).toHaveErrors();
                 expect(result).toMatchSourceFile(expected);
             });
 
@@ -507,7 +501,6 @@ describe("exportsAtEof", () => {
                 const result = await exportsAtEof(input);
 
                 // Assert
-                expect(result).toHaveErrors();
                 expect(result).toMatchSourceFile(expected);
             });
         });
