@@ -5,13 +5,10 @@ import {
     first,
     flatMap,
     flatten,
-    intersection,
     intersectionBy,
     isEmpty,
     takeRight,
     uniq,
-    uniqBy,
-    uniqWith,
 } from "lodash";
 import {
     ExportDeclaration,
@@ -22,7 +19,7 @@ import {
     OptionalKind,
     SourceFile,
 } from "ts-morph";
-import { countBy, filterNot } from "./collection-utils";
+import { filterNot } from "./collection-utils";
 
 const dedupeExportDeclarationStructuresByName = (
     structures: ExportDeclarationStructure[]

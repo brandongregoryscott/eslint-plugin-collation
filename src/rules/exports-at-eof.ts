@@ -16,6 +16,7 @@ import {
 } from "../utils/export-declaration-utils";
 import {
     getExportedNodeName,
+    isInlineExportedNode,
     toNamedExportStructure,
 } from "../utils/exported-node-utils";
 import { NamedExportStructure } from "../types/named-export-structure";
@@ -47,7 +48,7 @@ const removeInlineExports = (file: SourceFile): RuleViolation[] => {
     const exportedDeclarations = getExportedDeclarations(file);
     const inlineExportedNodes = compact(
         exportedDeclarations.map(asExportedNode)
-    );
+    ).filter(isInlineExportedNode);
 
     if (isEmpty(inlineExportedNodes)) {
         return [];
@@ -57,13 +58,20 @@ const removeInlineExports = (file: SourceFile): RuleViolation[] => {
         inlineExportedNodes.map(toNamedExportStructure)
     );
 
-    inlineExportedNodes.forEach((exportedNode) => {
+    const errors = inlineExportedNodes.map((exportedNode) => {
         const name = getExportedNodeName(exportedNode);
         if (exportedNode.isDefaultExport() && name != null) {
             replaceDefaultImports(file, name);
         }
 
         exportedNode.setIsExported(false);
+
+        return new RuleViolation({
+            file,
+            lineNumber: exportedNode.getStartLineNumber(),
+            rule: RuleName.ExportsAtEof,
+            message: `Expected ${name} to be exported at the end of the file.`,
+        });
     });
 
     const { isolatedModules = false } = file.getProject().getCompilerOptions();
@@ -91,14 +99,14 @@ const removeInlineExports = (file: SourceFile): RuleViolation[] => {
                 isTypeOnly: false,
             });
         }
-        return [];
+        return errors;
     }
 
     file.addExportDeclaration({
         namedExports: exportStructures.map(getExportStructureName),
     });
 
-    return [];
+    return errors;
 };
 
 const exportsAtEof = withRetry(_exportsAtEof);

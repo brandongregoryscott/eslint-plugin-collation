@@ -22,7 +22,8 @@ const getExportedNodeName = (
 };
 
 const isEofExportedNode = (exportedNode: ExportedNode): boolean => {
-    if (!Node.hasName(exportedNode)) {
+    const name = getExportedNodeName(exportedNode);
+    if (name == null) {
         return false;
     }
 
@@ -30,7 +31,7 @@ const isEofExportedNode = (exportedNode: ExportedNode): boolean => {
     const eofStatements = getEofExportDeclarations(file);
     const exportNames = getExportNames(eofStatements);
 
-    return exportNames.includes(exportedNode.getName());
+    return exportNames.includes(name);
 };
 
 const isInlineExportedNode = (exportedNode: ExportedNode): boolean =>
