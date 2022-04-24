@@ -10,29 +10,50 @@ describe("exportsAtEof", () => {
         // Arrange
         const input = createSourceFile(
             `
-                export interface UseInputOptions {
-                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                    value?: string;
-                }
+                export type AddFunction = (x: number, y: number) => number;
 
-                export const useInput = (options?: UseInputOptions) => {
-                    // ...implementation
-                }
+                export const add: AddFunction = (x: number, y: number) => x + y;
             `
         );
 
         const expected = createSourceFile(
             `
-                interface UseInputOptions {
-                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                    value?: string;
-                }
+                type AddFunction = (x: number, y: number) => number;
 
-                const useInput = (options?: UseInputOptions) => {
-                    // ...implementation
-                }
+                const add: AddFunction = (x: number, y: number) => x + y;
 
-                export { UseInputOptions, useInput };
+                export { AddFunction, add };
+            `
+        );
+
+        // Act
+        const result = await exportsAtEof(input);
+
+        // Assert
+        expect(result).toMatchSourceFile(expected);
+    });
+
+    it("should move type exports above non-type exports", async () => {
+        // Arrange
+        const input = createSourceFile(
+            `
+                type AddFunction = (x: number, y: number) => number;
+
+                const add: AddFunction = (x: number, y: number) => x + y;
+
+                export { add };
+                export type { AddFunction };
+            `
+        );
+
+        const expected = createSourceFile(
+            `
+                type AddFunction = (x: number, y: number) => number;
+
+                const add: AddFunction = (x: number, y: number) => x + y;
+
+                export type { AddFunction };
+                export { add };
             `
         );
 
@@ -47,31 +68,21 @@ describe("exportsAtEof", () => {
         // Arrange
         const input = createSourceFile(
             `
-                export interface UseInputOptions {
-                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                    value?: string;
-                }
+                export type AddFunction = (x: number, y: number) => number;
 
-                const useInput = (options?: UseInputOptions) => {
-                    // ...implementation
-                }
+                const add: AddFunction = (x: number, y: number) => x + y;
 
-                export { useInput };
+                export { add };
             `
         );
 
         const expected = createSourceFile(
             `
-                interface UseInputOptions {
-                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                    value?: string;
-                }
+                type AddFunction = (x: number, y: number) => number;
 
-                const useInput = (options?: UseInputOptions) => {
-                    // ...implementation
-                }
+                const add: AddFunction = (x: number, y: number) => x + y;
 
-                export { useInput, UseInputOptions };
+                export { add, AddFunction };
             `
         );
 
@@ -86,16 +97,11 @@ describe("exportsAtEof", () => {
         // Arrange
         const input = createSourceFile(
             `
-                interface UseInputOptions {
-                    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                    value?: string;
-                }
+                type AddFunction = (x: number, y: number) => number;
 
-                const useInput = (options?: UseInputOptions) => {
-                    // ...implementation
-                }
+                const add: AddFunction = (x: number, y: number) => x + y;
 
-                export { useInput, UseInputOptions };
+                export { add, AddFunction };
             `
         );
 
@@ -214,31 +220,25 @@ describe("exportsAtEof", () => {
             // Arrange
             const input = createSourceFile(
                 `
-                    interface UseInputOptions {
-                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                        value?: string;
+                    type AddFunction = (x: number, y: number) => number;
+
+                    export default function add(x: number, y: number) {
+                        return x + y;
                     }
 
-                    export default function useInput(options?: UseInputOptions) {
-                        // ...implementation
-                    }
-
-                    export { UseInputOptions };
+                    export { AddFunction };
                 `
             );
 
             const expected = createSourceFile(
                 `
-                    interface UseInputOptions {
-                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                        value?: string;
+                    type AddFunction = (x: number, y: number) => number;
+
+                    function add(x: number, y: number) {
+                        return x + y;
                     }
 
-                    function useInput(options?: UseInputOptions) {
-                        // ...implementation
-                    }
-
-                    export { UseInputOptions, useInput };
+                    export { AddFunction, add };
                 `
             );
 
@@ -261,29 +261,26 @@ describe("exportsAtEof", () => {
 
             const input = createSourceFile(
                 `
-                    interface UseInputOptions {
-                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                        value?: string;
+                    type AddFunction = (x: number, y: number) => number;
+
+                    export default function add(x: number, y: number) {
+                        return x + y;
                     }
 
-                    export default function useInput(options?: UseInputOptions) {
-                        // ...implementation
-                    }
-
-                    export { UseInputOptions };
+                    export { AddFunction };
                 `,
                 options
             );
             const referencingSourceFile = createSourceFile(
                 `
-                    import useInput from "./${input.getBaseNameWithoutExtension()}";
+                    import add from "./${input.getBaseNameWithoutExtension()}";
                 `,
                 options
             );
 
             const expected = createSourceFile(
                 `
-                    import { useInput } from "./${input.getBaseNameWithoutExtension()}";
+                    import { add } from "./${input.getBaseNameWithoutExtension()}";
                 `,
                 options
             );
@@ -301,32 +298,22 @@ describe("exportsAtEof", () => {
             // Arrange
             const input = createSourceFile(
                 `
-                    interface UseInputOptions {
-                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                        value?: string;
-                    }
+                    type AddFunction = (x: number, y: number) => number;
 
-                    export const useInput = (options?: UseInputOptions) => {
-                        // ...implementation
-                    }
+                    export const add: AddFunction = (x: number, y: number) => x + y;
 
-                    export type { UseInputOptions };
+                    export type { AddFunction };
                 `
             );
 
             const expected = createSourceFile(
                 `
-                    interface UseInputOptions {
-                        onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                        value?: string;
-                    }
+                    type AddFunction = (x: number, y: number) => number;
 
-                    const useInput = (options?: UseInputOptions) => {
-                        // ...implementation
-                    }
+                    const add: AddFunction = (x: number, y: number) => x + y;
 
-                    export type { UseInputOptions };
-                    export { useInput };
+                    export type { AddFunction };
+                    export { add };
                 `
             );
 
@@ -373,31 +360,21 @@ describe("exportsAtEof", () => {
                 });
                 const input = createSourceFile(
                     `
-                        export interface UseInputOptions {
-                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                            value?: string;
-                        }
+                        export type AddFunction = (x: number, y: number) => number;
 
-                        export const useInput = (options?: UseInputOptions) => {
-                            // ...implementation
-                        }
+                        export const add: AddFunction = (x: number, y: number) => x + y;
                     `,
                     { project }
                 );
 
                 const expected = createSourceFile(
                     `
-                        interface UseInputOptions {
-                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                            value?: string;
-                        }
+                        type AddFunction = (x: number, y: number) => number;
 
-                        const useInput = (options?: UseInputOptions) => {
-                            // ...implementation
-                        }
+                        const add: AddFunction = (x: number, y: number) => x + y;
 
-                        export type { UseInputOptions };
-                        export { useInput };
+                        export type { AddFunction };
+                        export { add };
                     `,
                     { project }
                 );
@@ -416,33 +393,23 @@ describe("exportsAtEof", () => {
                 });
                 const input = createSourceFile(
                     `
-                        export interface UseInputOptions {
-                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                            value?: string;
-                        }
+                        export type AddFunction = (x: number, y: number) => number;
 
-                        const useInput = (options?: UseInputOptions) => {
-                            // ...implementation
-                        }
+                        const add: AddFunction = (x: number, y: number) => x + y;
 
-                        export { useInput };
+                        export { add };
                     `,
                     { project }
                 );
 
                 const expected = createSourceFile(
                     `
-                        interface UseInputOptions {
-                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                            value?: string;
-                        }
+                        type AddFunction = (x: number, y: number) => number;
 
-                        const useInput = (options?: UseInputOptions) => {
-                            // ...implementation
-                        }
+                        const add: AddFunction = (x: number, y: number) => x + y;
 
-                        export type { UseInputOptions };
-                        export { useInput };
+                        export type { AddFunction };
+                        export { add };
                     `,
                     { project }
                 );
@@ -462,37 +429,26 @@ describe("exportsAtEof", () => {
 
                 const input = createSourceFile(
                     `
-                        type Example = string | number;
+                        type AddFunction = (x: number, y: number) => number;
+                        export type SubtractFunction = (x: number, y: number) => number;
 
-                        export interface UseInputOptions {
-                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                            value?: string;
-                        }
+                        const add: AddFunction = (x: number, y: number) => x + y;
 
-                        export const useInput = (options?: UseInputOptions) => {
-                            // ...implementation
-                        }
-
-                        export type { Example };
+                        export type { AddFunction };
+                        export { add };
                     `,
                     { project }
                 );
 
                 const expected = createSourceFile(
                     `
-                        type Example = string | number;
+                        type AddFunction = (x: number, y: number) => number;
+                        type SubtractFunction = (x: number, y: number) => number;
 
-                        interface UseInputOptions {
-                            onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-                            value?: string;
-                        }
+                        const add: AddFunction = (x: number, y: number) => x + y;
 
-                        const useInput = (options?: UseInputOptions) => {
-                            // ...implementation
-                        }
-
-                        export type { Example, UseInputOptions };
-                        export { useInput };
+                        export type { AddFunction, SubtractFunction };
+                        export { add };
                     `,
                     { project }
                 );

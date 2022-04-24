@@ -147,27 +147,24 @@ const mergeExportDeclarationsByFile = (file: SourceFile): void => {
         (exportDeclaration) => exportDeclaration.hasNamedExports()
     );
 
-    const typeExportCount = countBy(
+    const typeExports = exportDeclarations.filter(isTypeExportDeclaration);
+    const nonTypeExports = filterNot(
         exportDeclarations,
         isTypeExportDeclaration
     );
-    const nonTypeExportCount = exportDeclarations.length - typeExportCount;
+
+    const { length: typeExportCount } = typeExports;
+    const { length: nonTypeExportCount } = nonTypeExports;
 
     if (typeExportCount <= 1 && nonTypeExportCount <= 1) {
         return;
     }
 
     if (typeExportCount > 1) {
-        const typeExports = exportDeclarations.filter(isTypeExportDeclaration);
         mergeExportDeclarations(file, typeExports);
     }
 
     if (nonTypeExportCount > 1) {
-        const nonTypeExports = filterNot(
-            exportDeclarations,
-            isTypeExportDeclaration
-        );
-
         mergeExportDeclarations(file, nonTypeExports);
     }
 };
