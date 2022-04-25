@@ -26,14 +26,14 @@ const _exportsAtEof: RuleFunction = async (
     file: SourceFile
 ): Promise<RuleResult> => {
     const originalFileContent = file.getText();
-    const errors = removeInlineExports(file);
+    const inlineExportErrors = removeInlineExports(file);
     mergeExportDeclarationsByFile(file);
-    moveExportsToEofByFile(file);
+    const outOfOrderExportErrors = moveExportsToEofByFile(file);
 
     const endingFileContent = file.getText();
 
     return {
-        errors,
+        errors: [...inlineExportErrors, ...outOfOrderExportErrors],
         diff: diffLines(originalFileContent, endingFileContent),
         file,
     };

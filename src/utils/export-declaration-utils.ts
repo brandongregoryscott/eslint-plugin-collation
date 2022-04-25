@@ -7,6 +7,7 @@ import {
     flatten,
     intersectionBy,
     isEmpty,
+    last,
     takeRight,
     uniq,
 } from "lodash";
@@ -19,11 +20,18 @@ import {
     OptionalKind,
     SourceFile,
 } from "ts-morph";
+import { RuleName } from "../enums/rule-name";
+import { RuleViolation } from "../models/rule-violation";
 import { filterNot } from "./collection-utils";
 
+interface ExportDeclarationStructureWithLineNumber
+    extends ExportDeclarationStructure {
+    lineNumber: number;
+}
+
 const dedupeExportDeclarationStructuresByName = (
-    structures: ExportDeclarationStructure[]
-): ExportDeclarationStructure[] => {
+    structures: ExportDeclarationStructureWithLineNumber[]
+): ExportDeclarationStructureWithLineNumber[] => {
     const typeExportSpecifiers = flatten(
         structures
             .filter(isTypeExportDeclaration)
@@ -68,8 +76,15 @@ const getDuplicateExportSpecifiers = (
         (exportSpecifier) => exportSpecifier.name
     );
 
-const getEofExportDeclarations = (file: SourceFile): ExportDeclaration[] =>
-    takeRight(file.getStatements(), 2).filter(Node.isExportDeclaration);
+const getEofExportDeclarations = (file: SourceFile): ExportDeclaration[] => {
+    const maybeEofExportDeclarations = takeRight(file.getStatements(), 2);
+
+    if (!Node.isExportDeclaration(last(maybeEofExportDeclarations))) {
+        return [];
+    }
+
+    return maybeEofExportDeclarations.filter(Node.isExportDeclaration);
+};
 
 const getExportDeclarations = (file: SourceFile): ExportDeclaration[] =>
     file.getStatements().filter(Node.isExportDeclaration);
@@ -97,6 +112,19 @@ const getExportSpecifierStructures = (
 const getInlineExportDeclarations = (file: SourceFile): ExportDeclaration[] =>
     difference(getExportDeclarations(file), getEofExportDeclarations(file));
 
+const getEofRuleViolation = (
+    file: SourceFile,
+    structure: ExportDeclarationStructureWithLineNumber
+): RuleViolation =>
+    new RuleViolation({
+        file,
+        message: `Expected export of '${getExportSpecifierStructures(
+            structure
+        ).join(", ")}' to appear at the end of the file.`,
+        lineNumber: structure.lineNumber,
+        rule: RuleName.ExportsAtEof,
+    });
+
 const hasDuplicateExportSpecifiers = (
     left:
         | OptionalKind<ExportSpecifierStructure>
@@ -113,10 +141,27 @@ const isDuplicateExportSpecifier = (
 
 const isEofExportDeclaration = (
     exportDeclaration: ExportDeclaration
-): boolean =>
-    getEofExportDeclarations(exportDeclaration.getSourceFile()).includes(
-        exportDeclaration
+): boolean => {
+    const eofDeclarations = getEofExportDeclarations(
+        exportDeclaration.getSourceFile()
     );
+
+    if (
+        eofDeclarations.length === 1 &&
+        eofDeclarations.includes(exportDeclaration)
+    ) {
+        return true;
+    }
+
+    const isNonTypeEofExport =
+        !exportDeclaration.isTypeOnly() &&
+        exportDeclaration === last(eofDeclarations);
+    const isTypeEofExport =
+        exportDeclaration.isTypeOnly() &&
+        exportDeclaration === eofDeclarations[1];
+
+    return isNonTypeEofExport || isTypeEofExport;
+};
 
 const isTypeExportDeclaration = (
     exportDeclaration: ExportDeclaration | ExportDeclarationStructure
@@ -169,17 +214,25 @@ const mergeExportDeclarationsByFile = (file: SourceFile): void => {
 /**
  * Removes and re-adds `ExportDeclaration` statements at the end of a `SourceFile`
  */
-const moveExportsToEof = (exportDeclarations: ExportDeclaration[]): void => {
-    const file = first(exportDeclarations)?.getSourceFile();
-    if (file == null) {
-        return;
+const moveExportsToEof = (
+    exportDeclarations: ExportDeclaration[]
+): RuleViolation[] => {
+    if (exportDeclarations.every(isEofExportDeclaration)) {
+        return [];
     }
 
-    const structures = dedupeExportDeclarationStructuresByName(
-        exportDeclarations.map((exportDeclaration) =>
-            exportDeclaration.getStructure()
-        )
-    );
+    const file = first(exportDeclarations)?.getSourceFile();
+    if (file == null) {
+        return [];
+    }
+
+    const structures: ExportDeclarationStructureWithLineNumber[] =
+        dedupeExportDeclarationStructuresByName(
+            exportDeclarations.map((exportDeclaration) => ({
+                ...exportDeclaration.getStructure(),
+                lineNumber: exportDeclaration.getStartLineNumber(),
+            }))
+        );
 
     const typeExportStructures = structures.filter(isTypeExportDeclaration);
     const nonTypeExportStructures = difference(
@@ -191,22 +244,29 @@ const moveExportsToEof = (exportDeclarations: ExportDeclaration[]): void => {
 
     if (isEmpty(typeExportStructures)) {
         file.addExportDeclarations(structures);
-        return;
+        return structures.map((structure) =>
+            getEofRuleViolation(file, structure)
+        );
     }
 
     // Always add type exports above non-type exports
-    file.addExportDeclarations([
+    const sortedStructures = [
         ...typeExportStructures,
         ...nonTypeExportStructures,
-    ]);
+    ];
+    file.addExportDeclarations(sortedStructures);
+
+    return sortedStructures.map((structure) =>
+        getEofRuleViolation(file, structure)
+    );
 };
 
 /**
  * Removes and re-adds `ExportDeclaration` statements at the end of a `SourceFile`
  */
-const moveExportsToEofByFile = (file: SourceFile): void => {
+const moveExportsToEofByFile = (file: SourceFile): RuleViolation[] => {
     const exportDeclarations = getExportDeclarations(file);
-    moveExportsToEof(exportDeclarations);
+    return moveExportsToEof(exportDeclarations);
 };
 
 /**
@@ -214,9 +274,9 @@ const moveExportsToEofByFile = (file: SourceFile): void => {
  * the structure is not returned since it has no use.
  */
 const removeDuplicateExportSpecifiers = (
-    structure: ExportDeclarationStructure,
+    structure: ExportDeclarationStructureWithLineNumber,
     duplicateExportSpecifiers: Array<OptionalKind<ExportSpecifierStructure>>
-): ExportDeclarationStructure | undefined => {
+): ExportDeclarationStructureWithLineNumber | undefined => {
     // As a first pass we're more concerned about removing duplicate type exports from non-type export structures
     if (structure.isTypeOnly) {
         return structure;

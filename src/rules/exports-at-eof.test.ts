@@ -31,6 +31,7 @@ describe("exportsAtEof", () => {
 
         // Assert
         expect(result).toMatchSourceFile(expected);
+        expect(result).toHaveErrors();
     });
 
     it("should move type exports above non-type exports", async () => {
@@ -62,6 +63,7 @@ describe("exportsAtEof", () => {
 
         // Assert
         expect(result).toMatchSourceFile(expected);
+        expect(result).toHaveErrors();
     });
 
     it("should update existing export when there is one", async () => {
@@ -91,6 +93,7 @@ describe("exportsAtEof", () => {
 
         // Assert
         expect(result).toMatchSourceFile(expected);
+        expect(result).toHaveErrors();
     });
 
     it("should not return errors when exports are already at end of file", async () => {
@@ -109,8 +112,8 @@ describe("exportsAtEof", () => {
         const result = await exportsAtEof(input);
 
         // Assert
-        expect(result).not.toHaveErrors();
         expect(result).toMatchSourceFile(input);
+        expect(result).not.toHaveErrors();
     });
 
     it("should move existing named exports to end of file when they appear before", async () => {
@@ -142,8 +145,10 @@ describe("exportsAtEof", () => {
         // Act
         const result = await exportsAtEof(input);
 
+        console.log(result.file.getFullText());
         // Assert
         expect(result).toMatchSourceFile(expected);
+        expect(result).toHaveErrors();
     });
 
     it("should consolidate non-type exports when multiple statements exist", async () => {
@@ -247,6 +252,7 @@ describe("exportsAtEof", () => {
 
             // Assert
             expect(result).toMatchSourceFile(expected);
+            expect(result).toHaveErrors();
         });
 
         it("should update referencing SourceFiles to use named import", async () => {
@@ -322,6 +328,7 @@ describe("exportsAtEof", () => {
 
             // Assert
             expect(result).toMatchSourceFile(expected);
+            expect(result).toHaveErrors();
         });
 
         it("should consolidate type exports when multiple statements exist", async () => {
@@ -384,6 +391,7 @@ describe("exportsAtEof", () => {
 
                 // Assert
                 expect(result).toMatchSourceFile(expected);
+                expect(result).toHaveErrors();
             });
 
             it("should create separate type export when existing non-type export exists", async () => {
@@ -419,6 +427,7 @@ describe("exportsAtEof", () => {
 
                 // Assert
                 expect(result).toMatchSourceFile(expected);
+                expect(result).toHaveErrors();
             });
 
             it("should update existing type export", async () => {
@@ -458,6 +467,7 @@ describe("exportsAtEof", () => {
 
                 // Assert
                 expect(result).toMatchSourceFile(expected);
+                expect(result).toHaveErrors();
             });
         });
     });
