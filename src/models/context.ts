@@ -53,7 +53,7 @@ class Context {
             return;
         }
 
-        safelySaveChanges(this.project);
+        await safelySaveChanges(this.project);
     }
 
     private throwIfUninitialized(): Context | never {
