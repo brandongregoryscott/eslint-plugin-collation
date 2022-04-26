@@ -9,7 +9,7 @@ import chalk from "chalk";
  */
 const withRetry = (rule: RuleFunction) =>
     (async (file: SourceFile) => {
-        const ruleName = chalk.magenta(rule.__name);
+        const ruleName = chalk.magenta(rule._name);
         const fileName = chalk.bold(file.getBaseName());
         for (let i = 0; i < 3; i++) {
             try {

@@ -5,12 +5,14 @@ import { alphabetizeInterfaces } from "../rules/alphabetize-interfaces";
 import { alphabetizeJsxProps } from "../rules/alphabetize-jsx-props";
 import { RuleFunction } from "../types/rule-function";
 import { namedExportsOnly } from "../rules/named-exports-only";
+import { exportsAtEof } from "../rules/exports-at-eof";
 
 const RuleMap: Record<RuleName, RuleFunction> = {
     [RuleName.AlphabetizeDependencyLists]: alphabetizeDependencyLists,
     [RuleName.AlphabetizeEnums]: alphabetizeEnums,
     [RuleName.AlphabetizeInterfaces]: alphabetizeInterfaces,
     [RuleName.AlphabetizeJsxProps]: alphabetizeJsxProps,
+    [RuleName.ExportsAtEof]: exportsAtEof,
     [RuleName.NamedExportsOnly]: namedExportsOnly,
 };
 

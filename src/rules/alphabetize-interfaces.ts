@@ -54,7 +54,7 @@ const _alphabetizeInterfaces: RuleFunction = async (
     };
 };
 
-_alphabetizeInterfaces.__name = RuleName.AlphabetizeInterfaces;
+_alphabetizeInterfaces._name = RuleName.AlphabetizeInterfaces;
 
 const alphabetizeInterface = (
     interfaceOrType: InterfaceOrType
