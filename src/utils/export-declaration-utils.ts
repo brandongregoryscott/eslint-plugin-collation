@@ -134,6 +134,9 @@ const hasDuplicateExportSpecifiers = (
         | Array<OptionalKind<ExportSpecifierStructure>>
 ): boolean => !isEmpty(getDuplicateExportSpecifiers(left, right));
 
+const hasNamedExport = (file: SourceFile, exportName: string): boolean =>
+    getExportNames(getExportDeclarations(file)).includes(exportName);
+
 const isDuplicateExportSpecifier = (
     exportSpecifier: OptionalKind<ExportSpecifierStructure>,
     exportSpecifiers: Array<OptionalKind<ExportSpecifierStructure>>
@@ -315,6 +318,7 @@ export {
     getEofExportDeclarations,
     getExportDeclarations,
     getExportNames,
+    hasNamedExport,
     isEofExportDeclaration,
     mergeExportDeclarationsByFile,
     moveExportsToEofByFile,

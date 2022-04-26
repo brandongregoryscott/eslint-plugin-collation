@@ -7,15 +7,13 @@ import { Logger } from "../utils/logger";
 import {
     ExportableNode,
     ExportAssignment,
-    ImportDeclaration,
-    ImportSpecifier,
     NameableNode,
     Node,
     SourceFile,
 } from "ts-morph";
-import { compact } from "lodash";
 import { withRetry } from "../utils/with-retry";
 import { replaceDefaultImports } from "../utils/import-utils";
+import { hasNamedExport } from "../utils/export-declaration-utils";
 
 type NameableExportableNode = NameableNode & ExportableNode;
 
@@ -62,6 +60,11 @@ const convertDefaultExport = (file: SourceFile): RuleViolation[] => {
     replaceDefaultImports(file, defaultExportName);
 
     defaultExport?.remove();
+
+    if (hasNamedExport(file, defaultExportName)) {
+        return errors;
+    }
+
     file.addExportDeclaration({ namedExports: [defaultExportName] });
 
     return errors;
@@ -82,10 +85,16 @@ const convertInlineExports = (file: SourceFile): RuleViolation[] => {
         return [];
     }
 
-    replaceDefaultImports(file, getDefaultExportIdentifier(defaultExport));
+    const errors = [getRuleViolation(file, defaultExport)];
+    const defaultExportName = getDefaultExportIdentifier(defaultExport);
+    replaceDefaultImports(file, defaultExportName);
+
+    if (hasNamedExport(file, defaultExportName)) {
+        return errors;
+    }
 
     defaultExport.setIsExported(true);
-    return [getRuleViolation(file, defaultExport)];
+    return errors;
 };
 
 const getDefaultExportIdentifier = (
