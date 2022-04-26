@@ -115,15 +115,18 @@ const getInlineExportDeclarations = (file: SourceFile): ExportDeclaration[] =>
 const getEofRuleViolation = (
     file: SourceFile,
     structure: ExportDeclarationStructureWithLineNumber
-): RuleViolation =>
-    new RuleViolation({
+): RuleViolation => {
+    const exportSpecifiers = getExportSpecifierStructures(structure)
+        .map((exportSpecifier) => exportSpecifier.name)
+        .join(", ");
+
+    return new RuleViolation({
         file,
-        message: `Expected export of '${getExportSpecifierStructures(
-            structure
-        ).join(", ")}' to appear at the end of the file.`,
+        message: `Expected export of '${exportSpecifiers}' to appear at the end of the file.`,
         lineNumber: structure.lineNumber,
         rule: RuleName.ExportsAtEof,
     });
+};
 
 const hasDuplicateExportSpecifiers = (
     left:
