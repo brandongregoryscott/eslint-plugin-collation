@@ -3,36 +3,20 @@
         "name": "Brandon Scott",
         "url": "https://github.com/brandongregoryscott"
     },
-    "bin": {
-        "collation": "dist/collation.js"
-    },
     "dependencies": {
-        "chalk": "4.0.0",
-        "commander": "8.3.0",
-        "diff": "5.0.0",
-        "fuzzaldrin": "2.1.0",
-        "lodash": "4.17.21",
-        "source-map-support": "^0.5.21",
-        "ts-morph": "13.0.3"
+        "@typescript-eslint/utils": "5.27.0"
     },
-    "description": "Code linting/manipulation tools to make your TypeScript code easier to read",
+    "description": "ESLint plugin for making your code easier to read",
     "devDependencies": {
-        "@types/common-tags": "1.8.1",
-        "@types/diff": "5.0.1",
-        "@types/fuzzaldrin": "2.1.4",
-        "@types/jest": "27.0.3",
-        "@types/lodash": "4.14.178",
-        "@types/react": "17.0.37",
-        "common-tags": "1.8.2",
-        "esbuild": "0.14.5",
-        "husky": "7.0.4",
-        "jest": "27.4.5",
-        "jest-extended": "1.2.0",
-        "prettier": "2.5.1",
-        "rimraf": "3.0.2",
-        "ts-jest": "27.1.2",
-        "ts-node": "10.4.0",
-        "typescript": "4.6.3"
+        "@swc/cli": "0.1.57",
+        "@swc/core": "1.2.196",
+        "@types/jest": "27.5.1",
+        "@typescript-eslint/parser": "5.27.0",
+        "eslint": "8.16.0",
+        "jest": "28.1.0",
+        "prettier": "2.6.2",
+        "ts-jest": "28.0.3",
+        "typescript": "4.7.2"
     },
     "engines": {
         "node": ">=14"
@@ -41,39 +25,34 @@
         "dist"
     ],
     "keywords": [
-        "code-style",
-        "codegen",
-        "codemod",
-        "format",
         "lint",
+        "code-style",
+        "typescript",
+        "eslint",
         "react",
-        "typescript"
+        "react-hooks",
+        "hooks",
+        "eslint-plugin",
+        "eslintplugin"
     ],
     "license": "Apache-2.0",
-    "main": "dist/collation.js",
-    "name": "collation",
+    "main": "dist/index.js",
+    "name": "eslint-plugin-collation",
+    "peerDependencies": {
+        "@typescript-eslint/parser": ">=5",
+        "eslint": ">=8"
+    },
     "repository": {
         "type": "git",
-        "url": "git@github.com:brandongregoryscott/collation.git"
+        "url": "git@github.com:brandongregoryscott/eslint-plugin-collation.git"
     },
     "scripts": {
-        "build": "npm run esbuild -- --external:commander --external:lodash --external:shelljs --external:ts-morph --external:fuzzaldrin",
-        "build:dist": "npm run esbuild -- --minify",
-        "build:watch": "npm run esbuild -- --watch",
-        "clean": "rimraf dist",
+        "build": "swc src -d dist",
+        "clean": "rm -rf dist",
         "deploy:docs": "cd documentation && yarn install && USE_SSH=true yarn deploy",
-        "esbuild": "tsc --noEmit && esbuild src/collation.ts --bundle --outfile=dist/collation.js --platform=node --sourcemap --external:ts-morph",
-        "format": "prettier --write",
-        "internal-codegen": "ts-node src/utils/internal-codegen/main.ts",
-        "prebuild": "npm run clean",
-        "prebuild:dist": "npm run clean",
-        "prebuild:watch": "npm run clean",
-        "prepublishOnly": "npm run build:dist",
-        "prepare": "husky install",
-        "prestart": "npm run build",
-        "start": "./dist/collation.js",
+        "prepublishOnly": "npm run clean && npm run build",
         "test": "jest",
         "test:watch": "jest --watch"
     },
-    "version": "0.9.0"
+    "version": "1.0.0"
 }
