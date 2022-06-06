@@ -1,25 +1,30 @@
-import {
-    AST_NODE_TYPES,
-    ESLintUtils,
-    TSESTree,
-} from "@typescript-eslint/utils";
+import { AST_NODE_TYPES, TSESTree } from "@typescript-eslint/utils";
 import {
     RuleContext,
     RuleFix,
     RuleFixer,
 } from "@typescript-eslint/utils/dist/ts-eslint";
+import { RuleName } from "../enums/rule-name";
+import { createRule } from "../utils/rule-utils";
 
 const callExpressionNames = ["useCallback", "useEffect", "useMemo"];
-const callExpressionsWithDependencies: TSESTree.CallExpression[] = [];
 
-const sortDependencyList = ESLintUtils.RuleCreator.withoutDocs({
-    create(context) {
+const sortDependencyList = createRule({
+    create: (context) => {
+        const callExpressions: TSESTree.CallExpression[] = [];
+
         return {
-            ArrayExpression: (node) =>
-                handleVisitArrayExpression(node, context),
-            CallExpression: handleVisitCallExpression,
+            ArrayExpression: (arrayExpression) =>
+                handleVisitArrayExpression(
+                    arrayExpression,
+                    callExpressions,
+                    context
+                ),
+            CallExpression: (callExpression) =>
+                handleVisitCallExpression(callExpression, callExpressions),
         };
     },
+    defaultOptions: [],
     meta: {
         docs: {
             description: "Sorts React dependency lists",
@@ -29,10 +34,10 @@ const sortDependencyList = ESLintUtils.RuleCreator.withoutDocs({
         messages: {
             sortDependencyList: "Expected dependency list to be sorted",
         },
-        type: "suggestion",
         schema: [],
+        type: "suggestion",
     },
-    defaultOptions: [],
+    name: RuleName.SortDependencyList,
 });
 
 /**
@@ -89,15 +94,14 @@ const getMemberExpressionName = (member: TSESTree.MemberExpression): string => {
 
 const handleVisitArrayExpression = (
     arrayExpression: TSESTree.ArrayExpression,
+    callExpressions: TSESTree.CallExpression[],
     context: RuleContext<"sortDependencyList", never[]>
 ): void => {
     if (arrayExpression.parent?.type !== AST_NODE_TYPES.CallExpression) {
         return;
     }
 
-    const isDependencyList = callExpressionsWithDependencies.includes(
-        arrayExpression.parent
-    );
+    const isDependencyList = callExpressions.includes(arrayExpression.parent);
 
     if (!isDependencyList) {
         return;
@@ -148,13 +152,14 @@ const fixUnsortedDependencyList = (
     );
 
 const handleVisitCallExpression = (
-    callExpression: TSESTree.CallExpression
+    callExpression: TSESTree.CallExpression,
+    callExpressions: TSESTree.CallExpression[]
 ): void => {
     if (!isCallExpressionWithDependencyList(callExpression)) {
         return;
     }
 
-    callExpressionsWithDependencies.push(callExpression);
+    callExpressions.push(callExpression);
 };
 
 /**

@@ -10,8 +10,10 @@
     "devDependencies": {
         "@swc/cli": "0.1.57",
         "@swc/core": "1.2.196",
+        "@types/common-tags": "1.8.1",
         "@types/jest": "27.5.1",
         "@typescript-eslint/parser": "5.27.0",
+        "common-tags": "1.8.2",
         "eslint": "8.16.0",
         "jest": "28.1.0",
         "prettier": "2.6.2",
