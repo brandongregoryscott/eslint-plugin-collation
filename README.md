@@ -9,6 +9,9 @@
     <a href="https://github.com/brandongregoryscott/collation/actions/workflows/build.yaml">
         <img alt="build status" src="https://github.com/brandongregoryscott/collation/actions/workflows/build.yaml/badge.svg"/>
     </a>
+    <a href="https://github.com/brandongregoryscott/collation/actions/workflows/smoke-test.yaml">
+        <img alt="smoke test status" src="https://github.com/brandongregoryscott/collation/actions/workflows/smoke-test.yaml/badge.svg"/>
+    </a>
     <a href="https://github.com/prettier/prettier">
         <img alt="code style: prettier" src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square"/>
     </a>
@@ -34,8 +37,10 @@ Add `collation` to the plugins and rules section of your `.eslintrc` configurati
     "parser": "@typescript-eslint/parser",
     "plugins": ["collation"],
     "rules": {
-        "collation/no-default-export": "warning",
-        "collation/sort-dependency-list": "warning"
+        "collation/group-exports": "warn",
+        "collation/no-default-export": "warn",
+        "collation/no-inline-export": "warn",
+        "collation/sort-dependency-list": "warn"
     }
 }
 ```
