@@ -36,4 +36,8 @@ const isDeclaration = (node: TSESTree.Node): node is Declaration =>
         AST_NODE_TYPES.VariableDeclaration,
     ].includes(node.type);
 
-export { getName, isDeclaration };
+const isInlineExport = (
+    namedExport: TSESTree.ExportNamedDeclaration
+): boolean => namedExport.specifiers.length === 0;
+
+export { getName, isDeclaration, isInlineExport };

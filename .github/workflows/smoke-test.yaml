@@ -4,8 +4,6 @@ on:
     workflow_dispatch:
     schedule:
         - cron: "0 4 * * *" # Every day at 04:00 AM
-    push:
-        branches: ["*"]
 
 jobs:
     test:

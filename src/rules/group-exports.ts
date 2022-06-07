@@ -6,6 +6,7 @@ import {
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { last, takeRight } from "../utils/core-utils";
+import { isInlineExport } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 
 const groupExports = createRule({
@@ -14,6 +15,10 @@ const groupExports = createRule({
 
         return {
             ExportNamedDeclaration: (namedExport) => {
+                if (isInlineExport(namedExport)) {
+                    return;
+                }
+
                 exports.push(namedExport);
             },
             "Program:exit": () => {

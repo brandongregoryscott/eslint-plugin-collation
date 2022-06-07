@@ -23,6 +23,15 @@ ruleTester.run("groupExports", groupExports, {
                 export { foo, bar };
             `,
         },
+        {
+            name: "should not report errors for namespace export with multiple in-line exports",
+            code: stripIndent`
+                export namespace Hello {
+                    export interface World {}
+                    export interface Foo {}
+                }
+            `,
+        },
     ],
     invalid: [
         {

@@ -6,7 +6,7 @@ import {
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { last } from "../utils/core-utils";
-import { getName } from "../utils/node-utils";
+import { getName, isInlineExport } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 
 const noInlineExport = createRule({
@@ -26,8 +26,7 @@ const noInlineExport = createRule({
                 });
             },
             ExportNamedDeclaration: (namedExport) => {
-                // The presence of `ExportSpecifiers` means it is a separate export statement
-                if (hasSpecifiers(namedExport)) {
+                if (!isInlineExport(namedExport)) {
                     return;
                 }
 
@@ -88,9 +87,6 @@ const fixInlineExport = (
         fixer.insertTextAfter(lastStatement, exportStatement),
     ];
 };
-
-const hasSpecifiers = (namedExport: TSESTree.ExportNamedDeclaration): boolean =>
-    namedExport.specifiers.length > 0;
 
 const isInlineDefaultExport = (
     defaultExport: TSESTree.ExportDefaultDeclaration,
