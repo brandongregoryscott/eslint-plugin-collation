@@ -3,9 +3,6 @@
         "name": "Brandon Scott",
         "url": "https://github.com/brandongregoryscott"
     },
-    "dependencies": {
-        "@typescript-eslint/utils": "5.27.0"
-    },
     "description": "ESLint plugin for making your code easier to read",
     "devDependencies": {
         "@swc/cli": "0.1.57",
@@ -13,6 +10,7 @@
         "@types/common-tags": "1.8.1",
         "@types/jest": "27.5.1",
         "@typescript-eslint/parser": "5.27.0",
+        "@typescript-eslint/utils": "5.27.0",
         "common-tags": "1.8.2",
         "eslint": "8.16.0",
         "eslint-remote-tester": "2.1.4",
@@ -44,6 +42,7 @@
     "name": "eslint-plugin-collation",
     "peerDependencies": {
         "@typescript-eslint/parser": ">=5",
+        "@typescript-eslint/utils": ">=5",
         "eslint": ">=8"
     },
     "repository": {
