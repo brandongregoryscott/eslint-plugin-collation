@@ -1,12 +1,12 @@
-# Alphabetize Dependency Lists
+# Sort Dependency List
 
 ## Name
 
-`alphabetize-dependency-lists`
+`sort-dependency-list`
 
 ## Description
 
-Alphabetizes React dependency lists.
+Sorts React dependency lists
 
 ## Example
 

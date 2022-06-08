@@ -1,8 +1,8 @@
 <p align="center">
-    <a href="https://collation.brandonscott.me/#gh-light-mode-only">
+    <a href="https://eslint-plugin-collation.brandonscott.me/#gh-light-mode-only">
         <img src="https://raw.githubusercontent.com/brandongregoryscott/collation/main/documentation/static/img/collation-hero-light.png" width="75%" height="75%"/>
     </a>
-        <a href="https://collation.brandonscott.me/#gh-dark-mode-only">
+        <a href="https://eslint-plugin-collation.brandonscott.me/#gh-dark-mode-only">
         <img src="https://raw.githubusercontent.com/brandongregoryscott/collation/main/documentation/static/img/collation-hero-dark.png" width="75%" height="75%"/>
     </a>
     <br/>
@@ -45,6 +45,15 @@ Add `collation` to the plugins and rules section of your `.eslintrc` configurati
 }
 ```
 
+> :warning: You will need to specify `@typescript-eslint/parser` in your `.eslintrc` file even if you aren't using TypeScript.
+
 ## Rules
 
-For documentation on the available rules, see [Rules](https://brandongregoryscott.github.io/collation/docs/rules)
+| Rule                                                                                                              | Description                                       | Fixable  |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | -------- |
+| [collation/group-exports](https://eslint-plugin-collation.brandonscott.me/docs/rules/group-exports)               | Consolidates multiple export statements           | :wrench: |
+| [collation/no-default-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)        | Enforces exports to be named                      | :wrench: |
+| [collation/no-inline-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)         | Enforces exports to appear at the end of the file | :wrench: |
+| [collation/sort-dependency-list](https://eslint-plugin-collation.brandonscott.me/docs/rules/sort-dependency-list) | Sorts React dependency lists                      | :wrench: |
+
+For documentation and examples for the available rules, see [Rules](https://eslint-plugin-collation.brandonscott.me/docs/rules/)

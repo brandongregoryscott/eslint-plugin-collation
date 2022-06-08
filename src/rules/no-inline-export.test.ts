@@ -60,5 +60,24 @@ ruleTester.run("noInlineExport", noInlineExport, {
             `,
             errors: [{ messageId: "noInlineExport" }],
         },
+        {
+            name: "should move inline exports to end of file when statements exist between",
+            code: stripIndent`
+                export const noop = () => {};
+
+                const foo = () => {};
+
+                const bar = () => {};
+            `,
+            output: stripIndent`
+                const noop = () => {};
+
+                const foo = () => {};
+
+                const bar = () => {};
+                export { noop };
+            `,
+            errors: [{ messageId: "noInlineExport" }],
+        },
     ],
 });

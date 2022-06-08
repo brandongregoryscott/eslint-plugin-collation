@@ -4,6 +4,15 @@ sidebar_position: 1
 
 # Rules
 
-This project implements various different rules to make your code more consistent and easier to read - similar to tools like `ESLint`, with the idea that **all rules should be fixable without intervention**.
+This plugin implements various different rules to make your code more consistent and easier to read, with the idea that **all rules should be fixable**.
 
-Rules are custom functions that implement a common interface, [`RuleFunction`](../../../src/types/rule-function.ts), and return a [`RuleResult`](../../../src/interfaces/rule-result.ts) containing any errors and a diff of the changes.
+:wrench: if some problems reported by the rule are automatically fixable by the `--fix` command line option
+
+:warning: if some problems reported by the rule are manually fixable by editor suggestions
+
+| Rule                                                                                                              | Description                                       | Fixable  |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | -------- |
+| [collation/group-exports](https://eslint-plugin-collation.brandonscott.me/docs/rules/group-exports)               | Consolidates multiple export statements           | :wrench: |
+| [collation/no-default-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)        | Enforces exports to be named                      | :wrench: |
+| [collation/no-inline-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)         | Enforces exports to appear at the end of the file | :wrench: |
+| [collation/sort-dependency-list](https://eslint-plugin-collation.brandonscott.me/docs/rules/sort-dependency-list) | Sorts React dependency lists                      | :wrench: |
