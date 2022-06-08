@@ -1,10 +1,8 @@
 enum RuleName {
-    AlphabetizeDependencyLists = "alphabetize-dependency-lists",
-    AlphabetizeEnums = "alphabetize-enums",
-    AlphabetizeInterfaces = "alphabetize-interfaces",
-    AlphabetizeJsxProps = "alphabetize-jsx-props",
-    ExportsAtEof = "exports-at-eof",
-    NamedExportsOnly = "named-exports-only",
+    GroupExports = "group-exports",
+    NoDefaultExport = "no-default-export",
+    NoInlineExport = "no-inline-export",
+    SortDependencyList = "sort-dependency-list",
 }
 
 export { RuleName };

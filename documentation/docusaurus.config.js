@@ -9,7 +9,7 @@ const config = {
     title: "collation",
     tagline:
         "Code linting/manipulation tools to make your TypeScript code easier to read",
-    url: "https://collation.brandonscott.me/",
+    url: "https://eslint-plugin-collation.brandonscott.me/",
     baseUrl: "/",
     onBrokenLinks: "throw",
     onBrokenMarkdownLinks: "warn",
@@ -26,7 +26,7 @@ const config = {
                     sidebarPath: require.resolve("./sidebars.js"),
                     // Please change this to your repo.
                     editUrl:
-                        "https://github.com/brandongregoryscott/collation/tree/main/documentation/",
+                        "https://github.com/brandongregoryscott/eslint-plugin-collation/tree/main/documentation/",
                 },
                 theme: {
                     customCss: require.resolve("./src/css/custom.css"),
@@ -52,7 +52,7 @@ const config = {
                         label: "Docs",
                     },
                     {
-                        href: "https://github.com/brandongregoryscott/collation",
+                        href: "https://github.com/brandongregoryscott/eslint-plugin-collation",
                         label: "GitHub",
                         position: "right",
                     },
@@ -69,10 +69,6 @@ const config = {
                                 to: "/docs/intro",
                             },
                             {
-                                label: "CLI Options",
-                                to: "/docs/cli/options",
-                            },
-                            {
                                 label: "Rules",
                                 to: "/docs/rules",
                             },
@@ -83,11 +79,11 @@ const config = {
                         items: [
                             {
                                 label: "GitHub",
-                                href: "https://github.com/brandongregoryscott/collation",
+                                href: "https://github.com/brandongregoryscott/eslint-plugin-collation",
                             },
                             {
                                 label: "npm",
-                                href: "https://www.npmjs.com/package/collation",
+                                href: "https://www.npmjs.com/package/eslint-plugin-collation",
                             },
                         ],
                     },
