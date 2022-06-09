@@ -35,6 +35,11 @@ Add `collation` to the plugins and rules section of your `.eslintrc` configurati
 ```json
 {
     "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
     "plugins": ["collation"],
     "rules": {
         "collation/group-exports": "warn",

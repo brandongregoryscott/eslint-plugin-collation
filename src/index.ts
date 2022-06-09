@@ -6,6 +6,12 @@ import { sortDependencyList } from "./rules/sort-dependency-list";
 
 const configs = {
     recommended: {
+        parser: "@typescript-eslint/parser",
+        parserOptions: {
+            ecmaFeatures: {
+                jsx: true,
+            },
+        },
         plugins: ["collation"],
         rules: {
             "collation/group-exports": "warn",
@@ -15,6 +21,12 @@ const configs = {
         },
     },
     strict: {
+        parser: "@typescript-eslint/parser",
+        parserOptions: {
+            ecmaFeatures: {
+                jsx: true,
+            },
+        },
         plugins: ["collation"],
         rules: {
             "collation/group-exports": "error",
