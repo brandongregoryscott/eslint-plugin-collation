@@ -28,6 +28,18 @@ const getName = (node?: TSESTree.Node | null): string | undefined => {
     }
 };
 
+const isChildOf = (child: TSESTree.Node, parent: TSESTree.Node): boolean => {
+    let currentNode: TSESTree.Node = child;
+    let isChild = false;
+
+    while (currentNode.parent != null && !isChild) {
+        isChild = currentNode.parent === parent;
+        currentNode = currentNode.parent;
+    }
+
+    return isChild;
+};
+
 const isDeclaration = (node: TSESTree.Node): node is Declaration =>
     [
         AST_NODE_TYPES.ClassDeclaration,
@@ -40,4 +52,4 @@ const isInlineExport = (
     namedExport: TSESTree.ExportNamedDeclaration
 ): boolean => namedExport.specifiers.length === 0;
 
-export { getName, isDeclaration, isInlineExport };
+export { getName, isChildOf, isDeclaration, isInlineExport };
