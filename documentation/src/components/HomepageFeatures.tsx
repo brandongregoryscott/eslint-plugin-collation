@@ -1,6 +1,7 @@
 import React from "react";
 import styles from "./HomepageFeatures.module.css";
 import { Feature, FeatureProps } from "@site/src/components/Feature";
+import clsx from "clsx";
 
 const FeatureList: FeatureProps[] = [
     {
@@ -23,23 +24,13 @@ const FeatureList: FeatureProps[] = [
             </>
         ),
     },
-    {
-        title: "Plug & Play",
-        image: "img/undraw_docusaurus_react.svg",
-        description: (
-            <>
-                Pick and choose the rules that you want to use, run on specific
-                files only, or use it as a linter to fail CI builds
-            </>
-        ),
-    },
 ];
 
 export default function HomepageFeatures(): JSX.Element {
     return (
         <section className={styles.features}>
             <div className="container">
-                <div className="row">
+                <div className={clsx("row", styles.row)}>
                     {FeatureList.map((props, idx) => (
                         <Feature key={idx} {...props} />
                     ))}

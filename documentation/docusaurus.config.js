@@ -7,15 +7,14 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 /** @type {import('@docusaurus/types').Config} */
 const config = {
     title: "collation",
-    tagline:
-        "Code linting/manipulation tools to make your TypeScript code easier to read",
+    tagline: "ESLint plugin for making your code easier to read",
     url: "https://eslint-plugin-collation.brandonscott.me/",
     baseUrl: "/",
     onBrokenLinks: "throw",
     onBrokenMarkdownLinks: "warn",
     favicon: "img/favicon.ico",
     organizationName: "brandongregoryscott", // Usually your GitHub org/user name.
-    projectName: "collation", // Usually your repo name.
+    projectName: "eslint-plugin-collation", // Usually your repo name.
 
     presets: [
         [
