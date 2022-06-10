@@ -186,8 +186,9 @@ const hasOnlyIdentifiers = (
 ): boolean =>
     arrayExpression.elements.every(
         (element) =>
-            element.type === AST_NODE_TYPES.Identifier ||
-            element.type === AST_NODE_TYPES.MemberExpression
+            element != null &&
+            (element.type === AST_NODE_TYPES.Identifier ||
+                element.type === AST_NODE_TYPES.MemberExpression)
     );
 
 /**

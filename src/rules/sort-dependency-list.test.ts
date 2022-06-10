@@ -55,6 +55,11 @@ ruleTester.run("sortDependencyList", sortDependencyList, {
             name: "should not report errors for useCallback with sorted dependency list",
             code: "useCallback(() => {}, [hasValues, isLoading])",
         },
+        {
+            // See: https://github.com/brandongregoryscott/eslint-plugin-collation/issues/52#issuecomment-1151937166
+            name: "should not crash on sparse array",
+            code: "useEffect(redirectUnauthenticatedUser, [,user])",
+        },
     ],
     invalid: [
         {
