@@ -21,6 +21,6 @@ module.exports = {
     repositories: getRepositories({
         randomize: true,
     }),
-    // 30 minutes
-    timeLimit: 0.5 * 60 * 60,
+    // 4 hours
+    timeLimit: 4 * 60 * 60,
 };

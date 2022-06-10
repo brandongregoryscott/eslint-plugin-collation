@@ -43,7 +43,7 @@
     "peerDependencies": {
         "@typescript-eslint/parser": ">=5",
         "@typescript-eslint/utils": ">=5",
-        "eslint": ">=8"
+        "eslint": ">=6"
     },
     "repository": {
         "type": "git",
