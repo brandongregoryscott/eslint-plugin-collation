@@ -43,7 +43,7 @@
     "peerDependencies": {
         "@typescript-eslint/parser": ">=5",
         "@typescript-eslint/utils": ">=5",
-        "eslint": ">=8"
+        "eslint": ">=6"
     },
     "repository": {
         "type": "git",
@@ -58,5 +58,5 @@
         "test": "jest",
         "test:watch": "jest --watch"
     },
-    "version": "1.0.0"
+    "version": "1.0.2"
 }
