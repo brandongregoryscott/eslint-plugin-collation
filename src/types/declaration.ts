@@ -1,9 +1,9 @@
-import { TSESTree } from "@typescript-eslint/utils";
+import type { TSESTree } from "@typescript-eslint/utils";
 
 type Declaration =
     | TSESTree.ClassDeclaration
-    | TSESTree.TSEnumDeclaration
     | TSESTree.FunctionDeclaration
+    | TSESTree.TSEnumDeclaration
     | TSESTree.VariableDeclaration;
 
 export type { Declaration };

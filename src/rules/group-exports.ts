@@ -1,5 +1,5 @@
-import { TSESTree } from "@typescript-eslint/utils";
-import {
+import type { TSESTree } from "@typescript-eslint/utils";
+import type {
     RuleContext,
     RuleFix,
     RuleFixer,
@@ -15,14 +15,14 @@ const groupExports = createRule({
         const exports: TSESTree.ExportNamedDeclaration[] = [];
 
         return {
-            ExportNamedDeclaration: (namedExport) => {
+            ExportNamedDeclaration: (namedExport): void => {
                 if (isInlineExport(namedExport)) {
                     return;
                 }
 
                 exports.push(namedExport);
             },
-            "Program:exit": () => {
+            "Program:exit": (): void => {
                 reportErrors(exports, context);
             },
         };

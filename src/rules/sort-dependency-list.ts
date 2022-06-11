@@ -1,5 +1,6 @@
-import { AST_NODE_TYPES, TSESTree } from "@typescript-eslint/utils";
-import {
+import type { TSESTree } from "@typescript-eslint/utils";
+import { AST_NODE_TYPES } from "@typescript-eslint/utils";
+import type {
     RuleContext,
     RuleFix,
     RuleFixer,
@@ -14,13 +15,13 @@ const sortDependencyList = createRule({
         const callExpressions: TSESTree.CallExpression[] = [];
 
         return {
-            ArrayExpression: (arrayExpression) =>
+            ArrayExpression: (arrayExpression): void =>
                 handleVisitArrayExpression(
                     arrayExpression,
                     callExpressions,
                     context
                 ),
-            CallExpression: (callExpression) =>
+            CallExpression: (callExpression): void =>
                 handleVisitCallExpression(callExpression, callExpressions),
         };
     },
@@ -66,7 +67,7 @@ const getCallExpressionName = (
  * Returns the underlying name from the `Identifier` or `MemberExpression` node
  */
 const getIdentifierName = (
-    identifier: TSESTree.MemberExpression | TSESTree.Identifier
+    identifier: TSESTree.Identifier | TSESTree.MemberExpression
 ): string =>
     identifier.type === AST_NODE_TYPES.Identifier
         ? identifier.name

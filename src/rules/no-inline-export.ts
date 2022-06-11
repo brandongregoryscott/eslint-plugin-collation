@@ -1,5 +1,6 @@
-import { AST_NODE_TYPES, TSESTree } from "@typescript-eslint/utils";
-import {
+import type { TSESTree } from "@typescript-eslint/utils";
+import { AST_NODE_TYPES } from "@typescript-eslint/utils";
+import type {
     RuleFix,
     RuleFixer,
     SourceCode,
@@ -12,7 +13,7 @@ import { createRule } from "../utils/rule-utils";
 const noInlineExport = createRule({
     create: (context) => {
         return {
-            ExportDefaultDeclaration: (defaultExport) => {
+            ExportDefaultDeclaration: (defaultExport): void => {
                 const sourceCode = context.getSourceCode();
                 if (!isInlineDefaultExport(defaultExport, sourceCode)) {
                     return;
@@ -25,7 +26,7 @@ const noInlineExport = createRule({
                         fixInlineExport(fixer, defaultExport, sourceCode),
                 });
             },
-            ExportNamedDeclaration: (namedExport) => {
+            ExportNamedDeclaration: (namedExport): void => {
                 if (!isInlineExport(namedExport)) {
                     return;
                 }
@@ -60,8 +61,8 @@ const noInlineExport = createRule({
 const fixInlineExport = (
     fixer: RuleFixer,
     exportDeclaration:
-        | TSESTree.ExportNamedDeclaration
-        | TSESTree.ExportDefaultDeclaration,
+        | TSESTree.ExportDefaultDeclaration
+        | TSESTree.ExportNamedDeclaration,
     sourceCode: SourceCode
 ): RuleFix | RuleFix[] => {
     const { declaration } = exportDeclaration;

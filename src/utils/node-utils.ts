@@ -1,5 +1,6 @@
-import { AST_NODE_TYPES, TSESTree } from "@typescript-eslint/utils";
-import { Declaration } from "../types/declaration";
+import type { TSESTree } from "@typescript-eslint/utils";
+import { AST_NODE_TYPES } from "@typescript-eslint/utils";
+import type { Declaration } from "../types/declaration";
 
 const getName = (node?: TSESTree.Node | null): string | undefined => {
     if (node == null) {

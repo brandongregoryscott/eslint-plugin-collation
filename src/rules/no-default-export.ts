@@ -1,12 +1,13 @@
-import { AST_NODE_TYPES, TSESTree } from "@typescript-eslint/utils";
-import {
+import type { TSESTree } from "@typescript-eslint/utils";
+import { AST_NODE_TYPES } from "@typescript-eslint/utils";
+import type {
     RuleContext,
     RuleFix,
     RuleFixer,
     SourceCode,
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
-import { Declaration } from "../types/declaration";
+import type { Declaration } from "../types/declaration";
 import { getName, isDeclaration } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 
@@ -15,20 +16,24 @@ const noDefaultExport = createRule({
         const declarations: Declaration[] = [];
 
         return {
-            ClassDeclaration: (classDeclaration) =>
-                handleVisitDeclaration(classDeclaration, declarations),
-            ExportDefaultDeclaration: (defaultExport) =>
+            ClassDeclaration: (classDeclaration): void => {
+                declarations.push(classDeclaration);
+            },
+            ExportDefaultDeclaration: (defaultExport): void =>
                 handleVisitExportDefaultDeclaration(
                     declarations,
                     defaultExport,
                     context
                 ),
-            FunctionDeclaration: (functionDeclaration) =>
-                handleVisitDeclaration(functionDeclaration, declarations),
-            TSEnumDeclaration: (enumDeclaration) =>
-                handleVisitDeclaration(enumDeclaration, declarations),
-            VariableDeclaration: (variableDeclaration) =>
-                handleVisitDeclaration(variableDeclaration, declarations),
+            FunctionDeclaration: (functionDeclaration): void => {
+                declarations.push(functionDeclaration);
+            },
+            TSEnumDeclaration: (enumDeclaration): void => {
+                declarations.push(enumDeclaration);
+            },
+            VariableDeclaration: (variableDeclaration): void => {
+                declarations.push(variableDeclaration);
+            },
         };
     },
     defaultOptions: [],
@@ -81,13 +86,6 @@ const fixDefaultExport = (
 
     const nodeText = sourceCode.getText(declaration);
     return fixer.replaceText(defaultExport, `export ${nodeText}`);
-};
-
-const handleVisitDeclaration = (
-    declaration: Declaration,
-    declarations: Declaration[]
-): void => {
-    declarations.push(declaration);
 };
 
 const handleVisitExportDefaultDeclaration = (
