@@ -11,6 +11,7 @@
         "@types/lodash": "4.14.182",
         "@types/common-tags": "1.8.1",
         "@types/jest": "27.5.1",
+        "@types/node": "^17.0.42",
         "@typescript-eslint/parser": "5.27.0",
         "@typescript-eslint/utils": "5.27.0",
         "common-tags": "1.8.2",

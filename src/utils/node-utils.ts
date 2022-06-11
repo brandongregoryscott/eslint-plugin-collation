@@ -1,5 +1,6 @@
 import { AST_NODE_TYPES, TSESTree } from "@typescript-eslint/utils";
 import { Declaration } from "../types/declaration";
+import compact from "lodash/compact";
 
 const getName = (node?: TSESTree.Node | null): string | undefined => {
     if (node == null) {
@@ -7,26 +8,34 @@ const getName = (node?: TSESTree.Node | null): string | undefined => {
     }
 
     switch (node.type) {
+        case AST_NODE_TYPES.Identifier:
+            return node.name;
         case AST_NODE_TYPES.ClassDeclaration:
         case AST_NODE_TYPES.FunctionDeclaration:
         case AST_NODE_TYPES.TSEnumDeclaration:
         case AST_NODE_TYPES.TSInterfaceDeclaration:
         case AST_NODE_TYPES.TSTypeAliasDeclaration:
-            return node.id?.name;
+            return getName(node.id);
         case AST_NODE_TYPES.VariableDeclaration:
             const declarator = node.declarations.find(
                 (declarator) => declarator.id.type === AST_NODE_TYPES.Identifier
             );
 
-            if (declarator == null) {
-                return undefined;
-            }
-
-            return (declarator.id as TSESTree.Identifier).name;
+            return getName(declarator?.id as TSESTree.Identifier | undefined);
+        case AST_NODE_TYPES.ExportDefaultDeclaration:
+            return getName(node.declaration);
+        case AST_NODE_TYPES.ExportNamedDeclaration:
+            // Named exports may contain multiple identifiers, so we'll assume this is a single/inline export
+            return getName(node.declaration);
         default:
             return undefined;
     }
 };
+
+const getExportSpecifiers = (node: TSESTree.ExportNamedDeclaration): string[] =>
+    compact(
+        node.specifiers.map((exportSpecifier) => getName(exportSpecifier.local))
+    );
 
 const isChildOf = (child: TSESTree.Node, parent: TSESTree.Node): boolean => {
     let currentNode: TSESTree.Node = child;
@@ -52,4 +61,10 @@ const isInlineExport = (
     namedExport: TSESTree.ExportNamedDeclaration
 ): boolean => namedExport.specifiers.length === 0;
 
-export { getName, isChildOf, isDeclaration, isInlineExport };
+export {
+    getExportSpecifiers,
+    getName,
+    isChildOf,
+    isDeclaration,
+    isInlineExport,
+};

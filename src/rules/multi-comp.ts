@@ -1,7 +1,9 @@
 import { TSESTree } from "@typescript-eslint/utils";
 import { RuleName } from "../enums/rule-name";
-import { isComponent } from "../utils/component-utils";
+import { isComponent, isPrimaryComponent } from "../utils/component-utils";
 import { createRule } from "../utils/rule-utils";
+import { RuleFix, RuleFixer } from "@typescript-eslint/utils/dist/ts-eslint";
+import { ComponentType } from "../types/component-type";
 
 type MessageIds = "multiComp";
 
@@ -37,13 +39,24 @@ const multiComp = createRule<never[], MessageIds>({
                     return;
                 }
 
-                // TODO: Report errors on the non-primary component
-                components.forEach((component) => {
-                    context.report({
-                        node: component,
-                        messageId: "multiComp",
+                components
+                    .filter(
+                        (component) =>
+                            !isPrimaryComponent(
+                                component,
+                                components,
+                                context,
+                                defaultExports,
+                                namedExports
+                            )
+                    )
+                    .forEach((component) => {
+                        context.report({
+                            node: component,
+                            messageId: "multiComp",
+                            fix: (fixer) => fixMultiComp(fixer, component),
+                        });
                     });
-                });
             },
         };
     },
@@ -62,5 +75,12 @@ const multiComp = createRule<never[], MessageIds>({
     },
     name: RuleName.MultiComp,
 });
+
+const fixMultiComp = (
+    fixer: RuleFixer,
+    component: ComponentType
+): RuleFix | RuleFix[] => {
+    return [];
+};
 
 export { multiComp };
