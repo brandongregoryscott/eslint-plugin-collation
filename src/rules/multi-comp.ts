@@ -2,12 +2,21 @@ import { TSESTree } from "@typescript-eslint/utils";
 import { RuleName } from "../enums/rule-name";
 import { isComponent, isPrimaryComponent } from "../utils/component-utils";
 import { createRule } from "../utils/rule-utils";
-import { RuleFix, RuleFixer } from "@typescript-eslint/utils/dist/ts-eslint";
+import {
+    RuleContext,
+    RuleFix,
+    RuleFixer,
+} from "@typescript-eslint/utils/dist/ts-eslint";
 import { ComponentType } from "../types/component-type";
 
-type MessageIds = "multiComp";
+export interface MultiCompContext
+    extends RuleContext<MultiCompMessageIds, MultiCompOptions> {}
 
-const multiComp = createRule<never[], MessageIds>({
+type MultiCompOptions = never[];
+
+type MultiCompMessageIds = "multiComp";
+
+const multiComp = createRule<MultiCompOptions, MultiCompMessageIds>({
     create: (context) => {
         const namedExports: TSESTree.ExportNamedDeclaration[] = [];
         const defaultExports: TSESTree.ExportDefaultDeclaration[] = [];
@@ -54,6 +63,7 @@ const multiComp = createRule<never[], MessageIds>({
                         context.report({
                             node: component,
                             messageId: "multiComp",
+                            suggest: [],
                             fix: (fixer) => fixMultiComp(fixer, component),
                         });
                     });
