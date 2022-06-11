@@ -5,7 +5,7 @@ import {
     SourceCode,
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
-import { last } from "../utils/core-utils";
+import last from "lodash/last";
 import { getName, isInlineExport } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 

@@ -5,9 +5,10 @@ import {
     RuleFixer,
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
-import { last, takeRight } from "../utils/core-utils";
+import last from "lodash/last";
 import { isInlineExport } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
+import dropRight from "lodash/dropRight";
 
 const groupExports = createRule({
     create: (context) => {
@@ -70,7 +71,7 @@ const getFixesForExports = (
     }
 
     const lastExport = last(exports)!;
-    const extraExports = takeRight(exports, 1);
+    const extraExports = dropRight(exports, 1);
     const specifiers = getSpecifiers(lastExport).concat(
         extraExports.flatMap(getSpecifiers)
     );
@@ -119,7 +120,7 @@ const reportErrorsForExtraExports = (
         return;
     }
 
-    const extraExports = takeRight(typeOrValueExports, 1);
+    const extraExports = dropRight(typeOrValueExports, 1);
     extraExports.forEach((namedExport) => {
         context.report({
             node: namedExport,

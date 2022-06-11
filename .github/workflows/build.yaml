@@ -23,8 +23,8 @@ jobs:
             - name: npm install
               run: npm install
 
-            - name: npm run build
-              run: npm run build
+            - name: npm run build:dist
+              run: npm run build:dist
 
             - name: npm test
               run: npm test

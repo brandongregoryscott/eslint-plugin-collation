@@ -3,15 +3,18 @@
         "name": "Brandon Scott",
         "url": "https://github.com/brandongregoryscott"
     },
+    "dependencies": {
+        "lodash": "4.17.21"
+    },
     "description": "ESLint plugin for making your code easier to read",
     "devDependencies": {
-        "@swc/cli": "0.1.57",
-        "@swc/core": "1.2.196",
+        "@types/lodash": "4.14.182",
         "@types/common-tags": "1.8.1",
         "@types/jest": "27.5.1",
         "@typescript-eslint/parser": "5.27.0",
         "@typescript-eslint/utils": "5.27.0",
         "common-tags": "1.8.2",
+        "esbuild": "0.14.43",
         "eslint": "8.16.0",
         "eslint-remote-tester": "2.1.4",
         "eslint-remote-tester-repositories": "0.0.5",
@@ -50,10 +53,13 @@
         "url": "git@github.com:brandongregoryscott/eslint-plugin-collation.git"
     },
     "scripts": {
-        "build": "swc src -d dist",
+        "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --external:eslint --external:@typescript-eslint/utils",
+        "build:dist": "tsc --noEmit && npm run build -- --minify",
+        "build:watch": "npm run build -- --watch",
         "clean": "rm -rf dist",
         "deploy:docs": "cd documentation && yarn install && USE_SSH=true yarn deploy",
         "lint:remote": "eslint-remote-tester",
+        "postpublish": "npm run deploy:docs",
         "prepublishOnly": "npm run clean && npm run build",
         "test": "jest",
         "test:watch": "jest --watch"
