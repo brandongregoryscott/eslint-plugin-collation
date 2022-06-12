@@ -17,7 +17,8 @@ jobs:
 
             - run: npm install
             - run: npm install -g yalc
-            - run: yalc publish
+            - run: npm run build
+            - run: yalc publish --no-scripts
             - run: yalc add eslint-plugin-collation
 
             - uses: AriPerkkio/eslint-remote-tester-run-action@v3
