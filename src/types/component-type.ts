@@ -1,8 +1,6 @@
-import { TSESTree } from "@typescript-eslint/utils";
+import type { TSESTree } from "@typescript-eslint/utils";
 
 type ComponentType =
-    | TSESTree.FunctionDeclaration
-    | TSESTree.VariableDeclaration
-    | TSESTree.ClassDeclaration;
+    TSESTree.ClassDeclaration | TSESTree.FunctionDeclaration | TSESTree.VariableDeclaration;
 
-export { ComponentType };
+export type { ComponentType };

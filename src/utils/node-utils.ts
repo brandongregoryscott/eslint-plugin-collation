@@ -35,7 +35,9 @@ const getName = (node?: TSESTree.Node | null): string | undefined => {
 
 const getExportSpecifiers = (node: TSESTree.ExportNamedDeclaration): string[] =>
     compact(
-        node.specifiers.map((exportSpecifier) => getName(exportSpecifier.local))
+        node.specifiers?.map((exportSpecifier) =>
+            getName(exportSpecifier.local)
+        ) ?? []
     );
 
 const isChildOf = (child: TSESTree.Node, parent: TSESTree.Node): boolean => {

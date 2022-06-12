@@ -123,7 +123,6 @@ ruleTester.run("multiComp", multiComp, {
         },
 
         {
-            only: true,
             name: "should report error on non-primary component when it appears in export statement",
             code: stripIndent`
                 const App = () => {
