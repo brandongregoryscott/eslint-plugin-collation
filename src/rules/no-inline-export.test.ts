@@ -22,6 +22,18 @@ ruleTester.run("noInlineExport", noInlineExport, {
                 export default foo;
             `,
         },
+        {
+            name: "should not report errors for empty module export at end of file",
+            code: stripIndent`
+                declare global {
+                    interface Window {
+                        analytics: import("@segment/analytics-next").Analytics;
+                    }
+                }
+
+                export {};
+            `,
+        },
     ],
     invalid: [
         {

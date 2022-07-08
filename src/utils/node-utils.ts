@@ -1,5 +1,6 @@
 import type { TSESTree } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
+import { isEmpty } from "lodash";
 import type { Declaration } from "../types/declaration";
 
 const getName = (node?: TSESTree.Node | null): string | undefined => {
@@ -39,6 +40,7 @@ const isDeclaration = (node: TSESTree.Node): node is Declaration =>
 
 const isInlineExport = (
     namedExport: TSESTree.ExportNamedDeclaration
-): boolean => namedExport.specifiers.length === 0;
+): boolean =>
+    isEmpty(namedExport.specifiers) && namedExport.declaration != null;
 
 export { getName, isDeclaration, isInlineExport };
