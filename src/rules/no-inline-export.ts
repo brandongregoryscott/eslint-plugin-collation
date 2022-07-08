@@ -68,7 +68,8 @@ const fixInlineExport = (
     const { declaration } = exportDeclaration;
     const isDefault =
         exportDeclaration.type === AST_NODE_TYPES.ExportDefaultDeclaration;
-    const lastStatement = last(sourceCode.ast.body);
+    const lastStatement = getLastStatement(exportDeclaration, sourceCode);
+
     const name = getName(declaration);
 
     if (lastStatement == null || declaration == null || name == null) {
@@ -108,6 +109,21 @@ const isInlineDefaultExport = (
         declarationLine != null &&
         lines.indexOf(exportLine) === lines.indexOf(declarationLine)
     );
+};
+
+const getLastStatement = (
+    exportDeclaration:
+        | TSESTree.ExportDefaultDeclaration
+        | TSESTree.ExportNamedDeclaration,
+    sourceCode: SourceCode
+): TSESTree.Node | undefined => {
+    const lastStatementInFile = last(sourceCode.ast.body);
+    const { parent } = exportDeclaration;
+    if (parent?.type === AST_NODE_TYPES.TSModuleBlock) {
+        return last(parent.body);
+    }
+
+    return lastStatementInFile;
 };
 
 export { noInlineExport };
