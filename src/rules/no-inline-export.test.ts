@@ -79,5 +79,55 @@ ruleTester.run("noInlineExport", noInlineExport, {
             `,
             errors: [{ messageId: "noInlineExport" }],
         },
+        {
+            name: "should move inline export to end of module scope in declarations file",
+            code: stripIndent`
+                declare module "opus-media-recorder" {
+                    export interface OpusMediaRecorderWorkerOptions {
+                        OggOpusEncoderWasmPath: string;
+                        WebMOpusEncoderWasmPath: string;
+                        encoderWorkerFactory: () => Worker;
+                    }
+                }
+            `,
+            output: stripIndent`
+            declare module "opus-media-recorder" {
+                interface OpusMediaRecorderWorkerOptions {
+                    OggOpusEncoderWasmPath: string;
+                    WebMOpusEncoderWasmPath: string;
+                    encoderWorkerFactory: () => Worker;
+                }
+            export { OpusMediaRecorderWorkerOptions };
+            }
+            `,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
+            name: "should move inline exports to end of respective module scope in declarations file",
+            code: stripIndent`
+                declare module "foo" {
+                    export interface Foo {}
+                }
+
+                declare module "bar" {
+                    export interface Bar {}
+                }
+            `,
+            output: stripIndent`
+            declare module "foo" {
+                interface Foo {}
+            export { Foo };
+            }
+
+            declare module "bar" {
+                interface Bar {}
+            export { Bar };
+            }
+            `,
+            errors: [
+                { messageId: "noInlineExport" },
+                { messageId: "noInlineExport" },
+            ],
+        },
     ],
 });
