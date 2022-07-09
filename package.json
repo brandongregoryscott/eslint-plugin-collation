@@ -14,15 +14,20 @@
         "@typescript-eslint/eslint-plugin": "5.27.1",
         "@typescript-eslint/parser": "5.27.1",
         "@typescript-eslint/utils": "5.27.1",
+        "commitizen": "4.2.4",
         "common-tags": "1.8.2",
+        "cz-conventional-changelog": "3.3.0",
         "esbuild": "0.14.43",
         "eslint": "8.16.0",
         "eslint-plugin-collation": "1.0.2",
         "eslint-plugin-typescript-sort-keys": "2.1.0",
         "eslint-remote-tester": "2.1.4",
         "eslint-remote-tester-repositories": "0.0.5",
+        "husky": "7.0.4",
         "jest": "28.1.0",
+        "lint-staged": "13.0.3",
         "prettier": "2.6.2",
+        "semantic-release": "19.0.3",
         "ts-jest": "28.0.3",
         "typescript": "4.7.2"
     },
@@ -43,6 +48,10 @@
         "eslint-plugin",
         "eslintplugin"
     ],
+    "lint-staged": {
+        "*.{ts,tsx,json,md}": "prettier --ignore-unknown --write",
+        "*.{ts,tsx}": "eslint --cache --fix"
+    },
     "license": "Apache-2.0",
     "main": "dist/index.js",
     "name": "eslint-plugin-collation",
@@ -53,7 +62,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git@github.com:brandongregoryscott/eslint-plugin-collation.git"
+        "url": "https://github.com/brandongregoryscott/eslint-plugin-collation.git"
     },
     "scripts": {
         "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --external:eslint --external:@typescript-eslint/utils",
@@ -61,13 +70,17 @@
         "build:watch": "npm run build -- --watch",
         "clean": "rm -rf dist",
         "deploy:docs": "cd documentation && yarn install && USE_SSH=true yarn deploy",
+        "format:check": "prettier src --ignore-unknown --check",
+        "format:fix": "prettier src --ignore-unknown --write",
         "lint": "eslint 'src/**/*.{ts,tsx}'",
         "lint:fix": "npm run lint -- --fix",
         "lint:remote": "eslint-remote-tester",
+        "prepare": "husky install",
         "postpublish": "[[ $(git branch --show-current) == $git_main_branch ]] && npm run deploy:docs || echo \"Skipping deploy:docs\"",
         "prepublishOnly": "npm run clean && npm run build",
+        "semantic-release": "semantic-release",
         "test": "jest",
         "test:watch": "jest --watch"
     },
-    "version": "1.0.3"
+    "version": "0.0.0-development"
 }
