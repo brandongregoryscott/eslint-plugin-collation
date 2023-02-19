@@ -32,6 +32,14 @@ ruleTester.run("groupExports", groupExports, {
                 }
             `,
         },
+        {
+            name: "should not report errors for exports from separate modules",
+            code: stripIndent`
+                export { default as useSiteMetadata } from "./use-site-metadata";
+                export { default as useCategoriesList } from "./use-categories-list";
+                export { default as useTagsList } from "./use-tags-list";
+            `,
+        },
     ],
     invalid: [
         {
@@ -91,6 +99,34 @@ ruleTester.run("groupExports", groupExports, {
 
                 export type { Bar, Foo };
                 export { bar, foo };
+            `,
+            errors: [
+                { messageId: "groupExports" },
+                { messageId: "groupExports" },
+            ],
+        },
+        {
+            name: "should maintain modules",
+            code: stripIndent`
+                export { isEmpty } from "./utils";
+                export { hasValues } from "./utils";
+            `,
+            output: stripIndent`
+                export { isEmpty, hasValues } from "./utils";
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "should maintain modules from separate modules",
+            code: stripIndent`
+                export { isEmpty } from "./collection-utils";
+                export { isPositive } from "./number-utils";
+                export { hasValues } from "./collection-utils";
+                export { isNegative } from "./number-utils";
+            `,
+            output: stripIndent`
+                export { isEmpty, hasValues } from "./collection-utils";
+                export { isPositive, isNegative } from "./number-utils";
             `,
             errors: [
                 { messageId: "groupExports" },
