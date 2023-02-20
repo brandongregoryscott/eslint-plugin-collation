@@ -31,9 +31,8 @@ const groupExports = createRule({
                 exports.push(toNamedExport(_export));
             },
             "Program:exit": (): void => {
-                const sourceCode = context.getSourceCode();
                 const groupedExports = groupExportsByTypeAndModule(exports);
-                reportErrors(groupedExports, sourceCode, context);
+                reportErrors(context, groupedExports);
             },
         };
     },
@@ -99,11 +98,11 @@ const groupExportsByTypeAndModule = (
     groupBy(exports, (_export) => [_export.kind, _export.module].join());
 
 const reportErrorsForExtraExports = (
+    context: RuleContext<"groupExports", never[]>,
     exports: NamedExport[],
-    groupedExports: Record<string, NamedExport[]>,
-    sourceCode: SourceCode,
-    context: RuleContext<"groupExports", never[]>
+    groupedExports: Record<string, NamedExport[]>
 ): void => {
+    const sourceCode = context.getSourceCode();
     const extraExports = dropRight(exports, 1);
     extraExports.forEach((_export) => {
         context.report({
@@ -116,17 +115,11 @@ const reportErrorsForExtraExports = (
 };
 
 const reportErrors = (
-    groupedExports: Record<string, NamedExport[]>,
-    sourceCode: SourceCode,
-    context: RuleContext<"groupExports", never[]>
+    context: RuleContext<"groupExports", never[]>,
+    groupedExports: Record<string, NamedExport[]>
 ): void => {
     Object.values(groupedExports).forEach((exports) =>
-        reportErrorsForExtraExports(
-            exports,
-            groupedExports,
-            sourceCode,
-            context
-        )
+        reportErrorsForExtraExports(context, exports, groupedExports)
     );
 };
 
