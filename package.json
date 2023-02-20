@@ -20,6 +20,7 @@
         "esbuild": "0.14.43",
         "eslint": "8.16.0",
         "eslint-plugin-collation": "1.0.2",
+        "eslint-plugin-import": "2.27.5",
         "eslint-plugin-typescript-sort-keys": "2.1.0",
         "eslint-remote-tester": "2.1.4",
         "eslint-remote-tester-repositories": "0.0.5",

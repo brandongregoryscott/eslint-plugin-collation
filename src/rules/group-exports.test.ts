@@ -1,6 +1,6 @@
 import { ESLintUtils } from "@typescript-eslint/utils";
 import { groupExports } from "./group-exports";
-import { stripIndent } from "common-tags";
+import { codeBlock } from "common-tags";
 
 const ruleTester = new ESLintUtils.RuleTester({
     parser: "@typescript-eslint/parser",
@@ -10,14 +10,14 @@ ruleTester.run("groupExports", groupExports, {
     valid: [
         {
             name: "should not report errors for single export",
-            code: stripIndent`
+            code: codeBlock`
                 const foo = 5;
                 export { foo };
             `,
         },
         {
             name: "should not report errors for export statement with multiple specifiers",
-            code: stripIndent`
+            code: codeBlock`
                 const foo = 5;
                 const bar = 4;
                 export { foo, bar };
@@ -25,7 +25,7 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "should not report errors for namespace export with multiple in-line exports",
-            code: stripIndent`
+            code: codeBlock`
                 export namespace Hello {
                     export interface World {}
                     export interface Foo {}
@@ -34,7 +34,7 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "should not report errors for exports from separate modules",
-            code: stripIndent`
+            code: codeBlock`
                 export { default as useSiteMetadata } from "./use-site-metadata";
                 export { default as useCategoriesList } from "./use-categories-list";
                 export { default as useTagsList } from "./use-tags-list";
@@ -44,13 +44,13 @@ ruleTester.run("groupExports", groupExports, {
     invalid: [
         {
             name: "should consolidate multiple export statements into one",
-            code: stripIndent`
+            code: codeBlock`
                 const foo = 5;
                 const bar = 4;
                 export { foo };
                 export { bar };
             `,
-            output: stripIndent`
+            output: codeBlock`
                 const foo = 5;
                 const bar = 4;
                 export { foo, bar };
@@ -59,13 +59,13 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "should consolidate multiple type export statements into one",
-            code: stripIndent`
+            code: codeBlock`
                 type Foo = number;
                 type Bar = string;
                 export type { Foo };
                 export type { Bar };
             `,
-            output: stripIndent`
+            output: codeBlock`
                 type Foo = number;
                 type Bar = string;
                 export type { Foo, Bar };
@@ -74,7 +74,7 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "should consolidate mixed export statements into two separate exports",
-            code: stripIndent`
+            code: codeBlock`
                 type Foo = number;
                 const foo: Foo = 5;
 
@@ -86,7 +86,7 @@ ruleTester.run("groupExports", groupExports, {
                 export type { Bar };
                 export { bar };
             `,
-            output: stripIndent`
+            output: codeBlock`
                 type Foo = number;
                 const foo: Foo = 5;
 
@@ -103,24 +103,24 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "should maintain modules",
-            code: stripIndent`
+            code: codeBlock`
                 export { isEmpty } from "./utils";
                 export { hasValues } from "./utils";
             `,
-            output: stripIndent`
+            output: codeBlock`
 
                 export { isEmpty, hasValues } from "./utils";`,
             errors: [{ messageId: "groupExports" }],
         },
         {
             name: "should maintain modules from separate modules",
-            code: stripIndent`
+            code: codeBlock`
                 export { isEmpty } from "./collection-utils";
                 export { isPositive } from "./number-utils";
                 export { hasValues } from "./collection-utils";
                 export { isNegative } from "./number-utils";
             `,
-            output: stripIndent`
+            output: codeBlock`
                 export { isEmpty, hasValues } from "./collection-utils";
                 export { isPositive, isNegative } from "./number-utils";
             `,
@@ -131,11 +131,11 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "should maintain aliases",
-            code: stripIndent`
+            code: codeBlock`
                 export { default as isEmpty };
                 export { isNilOrEmpty };
             `,
-            output: stripIndent`
+            output: codeBlock`
                 export { default as isEmpty, isNilOrEmpty };
             `,
             errors: [{ messageId: "groupExports" }],

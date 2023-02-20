@@ -10,7 +10,12 @@
         },
         "project": "./tsconfig.json"
     },
-    "plugins": ["collation", "typescript-sort-keys", "@typescript-eslint"],
+    "plugins": [
+        "collation",
+        "import",
+        "typescript-sort-keys",
+        "@typescript-eslint"
+    ],
     "rules": {
         "@typescript-eslint/consistent-type-definitions": [
             "error",
@@ -31,6 +36,7 @@
             }
         ],
         "typescript-sort-keys/interface": "error",
-        "typescript-sort-keys/string-enum": "error"
+        "typescript-sort-keys/string-enum": "error",
+        "import/no-duplicates": "error"
     }
 }

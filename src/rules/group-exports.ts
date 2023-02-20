@@ -1,4 +1,3 @@
-import type { TSESTree } from "@typescript-eslint/utils";
 import type {
     RuleContext,
     RuleFix,
@@ -7,41 +6,33 @@ import type {
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import last from "lodash/last";
-import { isInlineExport } from "../utils/node-utils";
+import {
+    isInlineExport,
+    consolidateExports,
+    exportToString,
+    toNamedExport,
+} from "../utils/export-utils";
 import { createRule } from "../utils/rule-utils";
 import dropRight from "lodash/dropRight";
 import groupBy from "lodash/groupBy";
-import isEmpty from "lodash/isEmpty";
 import { removeNodeAndNewLine } from "../utils/fixer-utils";
-
-interface NamedExport {
-    kind: "type" | "value";
-    module: string | undefined;
-    reference: TSESTree.ExportNamedDeclaration;
-    specifiers: string[];
-}
+import type { NamedExport } from "../types/named-export";
 
 const groupExports = createRule({
     create: (context) => {
         const exports: NamedExport[] = [];
 
         return {
-            ExportNamedDeclaration: (namedExport): void => {
-                if (isInlineExport(namedExport)) {
+            ExportNamedDeclaration: (_export): void => {
+                if (isInlineExport(_export)) {
                     return;
                 }
 
-                exports.push({
-                    kind: namedExport.exportKind,
-                    module: namedExport.source?.value,
-                    reference: namedExport,
-                    specifiers: getSpecifiers(namedExport),
-                });
+                exports.push(toNamedExport(_export));
             },
             "Program:exit": (): void => {
-                const sourceCode = context.getSourceCode();
                 const groupedExports = groupExportsByTypeAndModule(exports);
-                reportErrors(groupedExports, sourceCode, context);
+                reportErrors(context, groupedExports);
             },
         };
     },
@@ -61,28 +52,6 @@ const groupExports = createRule({
     name: RuleName.GroupExports,
 });
 
-/**
- * Converts multiple named exports into a string representation of a single export. This function
- * assumes the exports are all the same kind, for the same module and the array contains at least two entries
- */
-const consolidateExportsToString = (exports: NamedExport[]): string => {
-    const _export = last(exports)!;
-    _export.specifiers = exports.flatMap((_export) => _export.specifiers);
-
-    return exportToString(_export);
-};
-
-const exportToString = (_export: NamedExport): string => {
-    const { kind, module } = _export;
-
-    const exportKeyword = kind === "type" ? "export type" : "export";
-    const specifierList = _export.specifiers.join(", ");
-
-    const moduleSpecifier = isEmpty(module) ? "" : ` from "${module}"`;
-
-    return `${exportKeyword} { ${specifierList} }${moduleSpecifier};`;
-};
-
 const fixUngroupedExports = (
     fixer: RuleFixer,
     exports: Record<string, NamedExport[]>,
@@ -95,17 +64,6 @@ const fixUngroupedExports = (
     return fixes;
 };
 
-const getSpecifiers = (
-    namedExport: TSESTree.ExportNamedDeclaration
-): string[] =>
-    namedExport.specifiers.map((specifier) => {
-        const { exported, local } = specifier;
-        if (exported.name !== local.name) {
-            return `${local.name} as ${exported.name}`;
-        }
-        return local.name;
-    });
-
 const getFixesForExports = (
     fixer: RuleFixer,
     exports: NamedExport[],
@@ -116,9 +74,12 @@ const getFixesForExports = (
     }
 
     const lastExport = last(exports)!;
-    const consolidatedExport = consolidateExportsToString(exports);
+    const consolidatedExport = consolidateExports(exports);
     return [
-        fixer.insertTextAfter(lastExport.reference, consolidatedExport),
+        fixer.insertTextAfter(
+            lastExport.reference,
+            exportToString(consolidatedExport)
+        ),
         ...exports.flatMap((_export, index) =>
             index === exports.length - 1
                 ? fixer.remove(_export.reference)
@@ -137,11 +98,11 @@ const groupExportsByTypeAndModule = (
     groupBy(exports, (_export) => [_export.kind, _export.module].join());
 
 const reportErrorsForExtraExports = (
+    context: RuleContext<"groupExports", never[]>,
     exports: NamedExport[],
-    groupedExports: Record<string, NamedExport[]>,
-    sourceCode: SourceCode,
-    context: RuleContext<"groupExports", never[]>
+    groupedExports: Record<string, NamedExport[]>
 ): void => {
+    const sourceCode = context.getSourceCode();
     const extraExports = dropRight(exports, 1);
     extraExports.forEach((_export) => {
         context.report({
@@ -154,17 +115,11 @@ const reportErrorsForExtraExports = (
 };
 
 const reportErrors = (
-    groupedExports: Record<string, NamedExport[]>,
-    sourceCode: SourceCode,
-    context: RuleContext<"groupExports", never[]>
+    context: RuleContext<"groupExports", never[]>,
+    groupedExports: Record<string, NamedExport[]>
 ): void => {
     Object.values(groupedExports).forEach((exports) =>
-        reportErrorsForExtraExports(
-            exports,
-            groupedExports,
-            sourceCode,
-            context
-        )
+        reportErrorsForExtraExports(context, exports, groupedExports)
     );
 };
 
