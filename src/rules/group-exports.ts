@@ -6,17 +6,17 @@ import type {
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import last from "lodash/last";
-import { isInlineExport } from "../utils/node-utils";
+import {
+    isInlineExport,
+    consolidateExports,
+    exportToString,
+    toNamedExport,
+} from "../utils/export-utils";
 import { createRule } from "../utils/rule-utils";
 import dropRight from "lodash/dropRight";
 import groupBy from "lodash/groupBy";
 import { removeNodeAndNewLine } from "../utils/fixer-utils";
 import type { NamedExport } from "../types/named-export";
-import {
-    consolidateExports,
-    exportToString,
-    toNamedExport,
-} from "../utils/export-utils";
 
 const groupExports = createRule({
     create: (context) => {
