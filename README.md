@@ -46,7 +46,8 @@ Add `collation` to the plugins and rules section of your `.eslintrc` configurati
         "collation/group-exports": "warn",
         "collation/no-default-export": "warn",
         "collation/no-inline-export": "warn",
-        "collation/sort-dependency-list": "warn"
+        "collation/sort-dependency-list": "warn",
+        "collation/sort-exports": "warn"
     }
 }
 ```
@@ -61,5 +62,6 @@ Add `collation` to the plugins and rules section of your `.eslintrc` configurati
 | [collation/no-default-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)        | Enforces exports to be named                      | :wrench: |
 | [collation/no-inline-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)         | Enforces exports to appear at the end of the file | :wrench: |
 | [collation/sort-dependency-list](https://eslint-plugin-collation.brandonscott.me/docs/rules/sort-dependency-list) | Sorts React dependency lists                      | :wrench: |
+| [collation/sort-exports](https://eslint-plugin-collation.brandonscott.me/docs/rules/sort-exports)                 | Sorts specifiers in an export statement           | :wrench: |
 
 For documentation and examples for the available rules, see [Rules](https://eslint-plugin-collation.brandonscott.me/docs/rules/)

@@ -3,6 +3,7 @@ import { groupExports } from "./rules/group-exports";
 import { noDefaultExport } from "./rules/no-default-export";
 import { noInlineExport } from "./rules/no-inline-export";
 import { sortDependencyList } from "./rules/sort-dependency-list";
+import { sortExports } from "./rules/sort-exports";
 
 const configs = {
     recommended: {
@@ -12,6 +13,7 @@ const configs = {
             "collation/no-default-export": "warn",
             "collation/no-inline-export": "warn",
             "collation/sort-dependency-list": "warn",
+            "collation/sort-exports": "warn",
         },
     },
     strict: {
@@ -21,6 +23,7 @@ const configs = {
             "collation/no-default-export": "error",
             "collation/no-inline-export": "error",
             "collation/sort-dependency-list": "error",
+            "collation/sort-exports": "error",
         },
     },
 };
@@ -30,6 +33,7 @@ const rules = {
     [RuleName.NoDefaultExport]: noDefaultExport,
     [RuleName.NoInlineExport]: noInlineExport,
     [RuleName.SortDependencyList]: sortDependencyList,
+    [RuleName.SortExports]: sortExports,
 };
 
 export { configs, rules };
