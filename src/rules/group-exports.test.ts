@@ -129,5 +129,16 @@ ruleTester.run("groupExports", groupExports, {
                 { messageId: "groupExports" },
             ],
         },
+        {
+            name: "should maintain aliases",
+            code: stripIndent`
+                export { default as isEmpty };
+                export { isNilOrEmpty };
+            `,
+            output: stripIndent`
+                export { default as isEmpty, isNilOrEmpty };
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
     ],
 });

@@ -94,7 +94,14 @@ const fixUngroupedExports = (
 
 const getSpecifiers = (
     namedExport: TSESTree.ExportNamedDeclaration
-): string[] => namedExport.specifiers.map((specifier) => specifier.local.name);
+): string[] =>
+    namedExport.specifiers.map((specifier) => {
+        const { exported, local } = specifier;
+        if (exported.name !== local.name) {
+            return `${local.name} as ${exported.name}`;
+        }
+        return local.name;
+    });
 
 const getFixesForExports = (
     fixer: RuleFixer,
