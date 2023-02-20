@@ -53,8 +53,7 @@ ruleTester.run("groupExports", groupExports, {
             output: stripIndent`
                 const foo = 5;
                 const bar = 4;
-
-                export { bar, foo };
+                export { foo, bar };
             `,
             errors: [{ messageId: "groupExports" }],
         },
@@ -69,8 +68,7 @@ ruleTester.run("groupExports", groupExports, {
             output: stripIndent`
                 type Foo = number;
                 type Bar = string;
-
-                export type { Bar, Foo };
+                export type { Foo, Bar };
             `,
             errors: [{ messageId: "groupExports" }],
         },
@@ -95,10 +93,8 @@ ruleTester.run("groupExports", groupExports, {
                 type Bar = string;
                 const bar: Bar = "bar";
 
-
-
-                export type { Bar, Foo };
-                export { bar, foo };
+                export type { Foo, Bar };
+                export { foo, bar };
             `,
             errors: [
                 { messageId: "groupExports" },
@@ -112,8 +108,8 @@ ruleTester.run("groupExports", groupExports, {
                 export { hasValues } from "./utils";
             `,
             output: stripIndent`
-                export { isEmpty, hasValues } from "./utils";
-            `,
+
+                export { isEmpty, hasValues } from "./utils";`,
             errors: [{ messageId: "groupExports" }],
         },
         {

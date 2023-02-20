@@ -1,18 +1,29 @@
 import type { TSESTree } from "@typescript-eslint/utils";
+import { parseForESLint } from "@typescript-eslint/parser";
 import type {
     RuleContext,
     RuleFix,
     RuleFixer,
+    SourceCode,
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import last from "lodash/last";
 import { isInlineExport } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 import dropRight from "lodash/dropRight";
+import { groupBy, isEmpty } from "lodash";
+import { removeNodeAndNewLine } from "../utils/fixer-utils";
+
+interface NamedExport {
+    kind: "type" | "value";
+    module: string | undefined;
+    reference: TSESTree.ExportNamedDeclaration;
+    specifiers: string[];
+}
 
 const groupExports = createRule({
     create: (context) => {
-        const exports: TSESTree.ExportNamedDeclaration[] = [];
+        const exports: NamedExport[] = [];
 
         return {
             ExportNamedDeclaration: (namedExport): void => {
@@ -20,10 +31,17 @@ const groupExports = createRule({
                     return;
                 }
 
-                exports.push(namedExport);
+                exports.push({
+                    kind: namedExport.exportKind,
+                    module: namedExport.source?.value,
+                    reference: namedExport,
+                    specifiers: getSpecifiers(namedExport),
+                });
             },
             "Program:exit": (): void => {
-                reportErrors(exports, context);
+                const sourceCode = context.getSourceCode();
+                const groupedExports = groupExportsByTypeAndModule(exports);
+                reportErrors(groupedExports, sourceCode, context);
             },
         };
     },
@@ -43,91 +61,101 @@ const groupExports = createRule({
     name: RuleName.GroupExports,
 });
 
-const fixUngroupedExports = (
-    fixer: RuleFixer,
-    exports: TSESTree.ExportNamedDeclaration[]
-): RuleFix[] => {
-    const valueExports = getExportsByKind(exports, "value");
-    const typeExports = getExportsByKind(exports, "type");
+/**
+ * Converts multiple named exports into a string representation of a single export
+ */
+const consolidateExportsToString = (exports: NamedExport[]): string => {
+    // Pull the module and kind from the last export in the list. We can safely assume that they
+    // are all the same module/kind at this point, and the array contains at least two entries
+    const lastExport = last(exports)!;
+    const { kind, module } = lastExport;
 
-    return [
-        ...getFixesForExports(fixer, valueExports),
-        ...getFixesForExports(fixer, typeExports),
-    ];
+    const exportKeyword = kind === "type" ? "export type" : "export";
+    const specifierList = exports
+        .flatMap((_export) => _export.specifiers)
+        .join(", ");
+
+    const moduleSpecifier = isEmpty(module) ? "" : ` from "${module}"`;
+
+    return `${exportKeyword} { ${specifierList} }${moduleSpecifier};`;
 };
 
-const getExportsByKind = (
-    exports: TSESTree.ExportNamedDeclaration[],
-    kind: TSESTree.ExportNamedDeclaration["exportKind"]
-): TSESTree.ExportNamedDeclaration[] =>
-    exports.filter((namedExport) => namedExport.exportKind === kind);
-
-const getFixesForExports = (
+const fixUngroupedExports = (
     fixer: RuleFixer,
-    exports: TSESTree.ExportNamedDeclaration[]
+    exports: Record<string, NamedExport[]>,
+    sourceCode: SourceCode
 ): RuleFix[] => {
-    if (!hasMultipleExports(exports)) {
-        return [];
-    }
-
-    const lastExport = last(exports)!;
-    const extraExports = dropRight(exports, 1);
-    const specifiers = getSpecifiers(lastExport).concat(
-        extraExports.flatMap(getSpecifiers)
+    const fixes = Object.values(exports).flatMap((exports) =>
+        getFixesForExports(fixer, exports, sourceCode)
     );
 
-    const exportKeyword =
-        lastExport.exportKind === "type" ? "export type" : "export";
-
-    return [
-        ...extraExports.map((namedExport) => fixer.remove(namedExport)),
-        fixer.replaceText(
-            lastExport,
-            `${exportKeyword} { ${specifiers.join(", ")} };`
-        ),
-    ];
+    return fixes;
 };
 
 const getSpecifiers = (
     namedExport: TSESTree.ExportNamedDeclaration
 ): string[] => namedExport.specifiers.map((specifier) => specifier.local.name);
 
-const hasMultipleExports = (
-    exports: TSESTree.ExportNamedDeclaration[]
-): boolean => exports.length > 1;
+const getFixesForExports = (
+    fixer: RuleFixer,
+    exports: NamedExport[],
+    sourceCode: SourceCode
+): RuleFix[] => {
+    if (exports.length < 2) {
+        return [];
+    }
 
-const reportErrors = (
-    exports: TSESTree.ExportNamedDeclaration[],
-    context: RuleContext<"groupExports", never[]>
-): void => {
-    const valueExports = getExportsByKind(exports, "value");
-    const typeExports = getExportsByKind(exports, "type");
-
-    reportErrorsForExtraExports(exports, valueExports, context);
-    reportErrorsForExtraExports(exports, typeExports, context);
+    const lastExport = last(exports)!;
+    const consolidatedExport = consolidateExportsToString(exports);
+    return [
+        fixer.insertTextAfter(lastExport.reference, consolidatedExport),
+        ...exports.flatMap((_export, index) =>
+            index === exports.length - 1
+                ? fixer.remove(_export.reference)
+                : removeNodeAndNewLine(fixer, _export.reference, sourceCode)
+        ),
+    ];
 };
 
 /**
- * Reports errors for extra exports in the `typeOrValueExports` collection. The entire collection of
- * exports is needed for the fix to apply for both type AND value exports in one pass.
+ * Group exports by kind (type or value) as well as the module they are exported from
+ *  ny groups that contain more than 1 export will have their specifiers consolidated into one
  */
+const groupExportsByTypeAndModule = (
+    exports: NamedExport[]
+): Record<string, NamedExport[]> =>
+    groupBy(exports, (_export) => [_export.kind, _export.module].join());
+
 const reportErrorsForExtraExports = (
-    allExports: TSESTree.ExportNamedDeclaration[],
-    typeOrValueExports: TSESTree.ExportNamedDeclaration[],
+    exports: NamedExport[],
+    groupedExports: Record<string, NamedExport[]>,
+    sourceCode: SourceCode,
     context: RuleContext<"groupExports", never[]>
 ): void => {
-    if (!hasMultipleExports(typeOrValueExports)) {
-        return;
-    }
-
-    const extraExports = dropRight(typeOrValueExports, 1);
-    extraExports.forEach((namedExport) => {
+    const extraExports = dropRight(exports, 1);
+    extraExports.forEach((_export) => {
         context.report({
-            node: namedExport,
+            node: _export.reference,
             messageId: "groupExports",
-            fix: (fixer) => fixUngroupedExports(fixer, allExports),
+            fix: (fixer) =>
+                fixUngroupedExports(fixer, groupedExports, sourceCode),
         });
     });
+};
+
+const reportErrors = (
+    groupedExports: Record<string, NamedExport[]>,
+    sourceCode: SourceCode,
+    context: RuleContext<"groupExports", never[]>
+): void => {
+    Object.values(groupedExports).forEach((exports) =>
+        reportErrorsForExtraExports(
+            exports,
+            groupedExports,
+            sourceCode,
+            context
+        )
+    );
 };
 
 export { groupExports };
