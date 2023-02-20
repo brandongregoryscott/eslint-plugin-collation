@@ -37,7 +37,8 @@ Add `collation` to the plugins and rules section of your `.eslintrc` configurati
         "collation/group-exports": "warn",
         "collation/no-default-export": "warn",
         "collation/no-inline-export": "warn",
-        "collation/sort-dependency-list": "warn"
+        "collation/sort-dependency-list": "warn",
+        "collation/sort-exports": "warn"
     }
 }
 ```
