@@ -1,0 +1,41 @@
+name: release
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - "src/**"
+    workflow_dispatch:
+
+jobs:
+    release:
+        env:
+            NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        name: semantic-release
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                  fetch-depth: 0
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v2
+              with:
+                  node-version: "lts/*"
+
+            - name: npm install
+              run: npm install
+
+            # This should have already been done at the PR step, but just to sanity check
+            - name: npm run build:dist
+              run: npm run build:dist
+
+            - name: Install semantic-release
+              run: npm i -g semantic-release
+
+            - name: Release
+              env:
+                  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+              run: npx semantic-release
