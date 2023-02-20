@@ -32,6 +32,14 @@ ruleTester.run("groupExports", groupExports, {
                 }
             `,
         },
+        {
+            name: "should not report errors for exports from separate modules",
+            code: stripIndent`
+                export { default as useSiteMetadata } from "./use-site-metadata";
+                export { default as useCategoriesList } from "./use-categories-list";
+                export { default as useTagsList } from "./use-tags-list";
+            `,
+        },
     ],
     invalid: [
         {
@@ -45,8 +53,7 @@ ruleTester.run("groupExports", groupExports, {
             output: stripIndent`
                 const foo = 5;
                 const bar = 4;
-
-                export { bar, foo };
+                export { foo, bar };
             `,
             errors: [{ messageId: "groupExports" }],
         },
@@ -61,8 +68,7 @@ ruleTester.run("groupExports", groupExports, {
             output: stripIndent`
                 type Foo = number;
                 type Bar = string;
-
-                export type { Bar, Foo };
+                export type { Foo, Bar };
             `,
             errors: [{ messageId: "groupExports" }],
         },
@@ -87,15 +93,52 @@ ruleTester.run("groupExports", groupExports, {
                 type Bar = string;
                 const bar: Bar = "bar";
 
-
-
-                export type { Bar, Foo };
-                export { bar, foo };
+                export type { Foo, Bar };
+                export { foo, bar };
             `,
             errors: [
                 { messageId: "groupExports" },
                 { messageId: "groupExports" },
             ],
+        },
+        {
+            name: "should maintain modules",
+            code: stripIndent`
+                export { isEmpty } from "./utils";
+                export { hasValues } from "./utils";
+            `,
+            output: stripIndent`
+
+                export { isEmpty, hasValues } from "./utils";`,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "should maintain modules from separate modules",
+            code: stripIndent`
+                export { isEmpty } from "./collection-utils";
+                export { isPositive } from "./number-utils";
+                export { hasValues } from "./collection-utils";
+                export { isNegative } from "./number-utils";
+            `,
+            output: stripIndent`
+                export { isEmpty, hasValues } from "./collection-utils";
+                export { isPositive, isNegative } from "./number-utils";
+            `,
+            errors: [
+                { messageId: "groupExports" },
+                { messageId: "groupExports" },
+            ],
+        },
+        {
+            name: "should maintain aliases",
+            code: stripIndent`
+                export { default as isEmpty };
+                export { isNilOrEmpty };
+            `,
+            output: stripIndent`
+                export { default as isEmpty, isNilOrEmpty };
+            `,
+            errors: [{ messageId: "groupExports" }],
         },
     ],
 });
