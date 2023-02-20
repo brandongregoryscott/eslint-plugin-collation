@@ -1,5 +1,4 @@
 import type { TSESTree } from "@typescript-eslint/utils";
-import { parseForESLint } from "@typescript-eslint/parser";
 import type {
     RuleContext,
     RuleFix,
@@ -11,7 +10,8 @@ import last from "lodash/last";
 import { isInlineExport } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 import dropRight from "lodash/dropRight";
-import { groupBy, isEmpty } from "lodash";
+import groupBy from "lodash/groupBy";
+import isEmpty from "lodash/isEmpty";
 import { removeNodeAndNewLine } from "../utils/fixer-utils";
 
 interface NamedExport {
@@ -62,18 +62,21 @@ const groupExports = createRule({
 });
 
 /**
- * Converts multiple named exports into a string representation of a single export
+ * Converts multiple named exports into a string representation of a single export. This function
+ * assumes the exports are all the same kind, for the same module and the array contains at least two entries
  */
 const consolidateExportsToString = (exports: NamedExport[]): string => {
-    // Pull the module and kind from the last export in the list. We can safely assume that they
-    // are all the same module/kind at this point, and the array contains at least two entries
-    const lastExport = last(exports)!;
-    const { kind, module } = lastExport;
+    const _export = last(exports)!;
+    _export.specifiers = exports.flatMap((_export) => _export.specifiers);
+
+    return exportToString(_export);
+};
+
+const exportToString = (_export: NamedExport): string => {
+    const { kind, module } = _export;
 
     const exportKeyword = kind === "type" ? "export type" : "export";
-    const specifierList = exports
-        .flatMap((_export) => _export.specifiers)
-        .join(", ");
+    const specifierList = _export.specifiers.join(", ");
 
     const moduleSpecifier = isEmpty(module) ? "" : ` from "${module}"`;
 
