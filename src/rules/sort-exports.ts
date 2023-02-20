@@ -7,6 +7,7 @@ import {
 } from "../utils/export-utils";
 import { createRule } from "../utils/rule-utils";
 import type { NamedExport } from "../types/named-export";
+import isEqual from "lodash/isEqual";
 
 const sortExports = createRule({
     create: (context) => {
@@ -41,21 +42,16 @@ const sortExports = createRule({
     name: RuleName.SortExports,
 });
 
-const isSorted = (specifiers: string[]): boolean => {
-    const expected = [...specifiers].sort();
-    return JSON.stringify(expected) === JSON.stringify(specifiers);
-};
-
 const reportErrors = (
     context: RuleContext<"sortExports", never[]>,
     exports: NamedExport[]
 ): void => {
     exports.forEach((_export) => {
-        if (isSorted(_export.specifiers)) {
+        const sortedSpecifiers = sort(_export.specifiers);
+        if (isEqual(sortedSpecifiers, _export.specifiers)) {
             return;
         }
 
-        const sortedSpecifiers = [..._export.specifiers].sort();
         context.report({
             messageId: "sortExports",
             node: _export.reference,
@@ -67,5 +63,8 @@ const reportErrors = (
         });
     });
 };
+
+const sort = (values: string[]): string[] =>
+    [...values].sort((left, right) => left.localeCompare(right));
 
 export { sortExports };

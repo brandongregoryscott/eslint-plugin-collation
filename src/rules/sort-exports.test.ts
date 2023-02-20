@@ -40,6 +40,16 @@ ruleTester.run("sortExports", sortExports, {
             errors: [{ messageId: "sortExports" }],
         },
         {
+            name: "should sort lowercase specifiers first",
+            code: codeBlock`
+                export { Foo, bar };
+            `,
+            output: codeBlock`
+                export { bar, Foo };
+            `,
+            errors: [{ messageId: "sortExports" }],
+        },
+        {
             name: "should sort type export statements",
             code: codeBlock`
                 export type { Foo, Bar };
