@@ -69,11 +69,11 @@ const getFixesForExports = (
     exports: NamedExport[],
     sourceCode: SourceCode
 ): RuleFix[] => {
-    if (exports.length < 2) {
+    const lastExport = last(exports);
+    if (exports.length < 2 || lastExport == null) {
         return [];
     }
 
-    const lastExport = last(exports)!;
     const consolidatedExport = consolidateExports(exports);
     return [
         fixer.insertTextAfter(

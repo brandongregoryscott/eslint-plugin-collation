@@ -8,6 +8,7 @@ import type { NamedExport } from "../types/named-export";
  * assumes the exports are all the same kind, for the same module and the array contains at least two entries
  */
 const consolidateExports = (exports: NamedExport[]): NamedExport => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const lastExport = last(exports)!;
     const { kind, module, reference } = lastExport;
     const consolidatedExport: NamedExport = {
@@ -54,4 +55,4 @@ const toNamedExport = (
     specifiers: getSpecifiers(_export),
 });
 
-export { consolidateExports, toNamedExport, isInlineExport, exportToString };
+export { consolidateExports, exportToString, isInlineExport, toNamedExport };
