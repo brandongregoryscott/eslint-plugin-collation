@@ -311,6 +311,24 @@ import useWorkspace from 'hooks/use-workspace'`,
 `,
             errors: [{ messageId: "preferImport" }],
         },
+        {
+            options: [
+                {
+                    "@twilio-paste/core": {
+                        importName: "*",
+                        replacementModuleSpecifier:
+                            "@twilio-paste/core/{importName}",
+                        transformImportName: "kebab-case",
+                    },
+                },
+            ],
+            code: "import { Paragraph as PasteParagraph, ParagraphProps as PasteParagraphProps } from '@twilio-paste/core'",
+            output: codeBlock`
+                import { Paragraph as PasteParagraph } from '@twilio-paste/core/paragraph';
+                import { ParagraphProps as PasteParagraphProps } from '@twilio-paste/core/paragraph';
+            `,
+            errors: [{ messageId: "preferImport" }],
+        },
 
         // #region Twilio Paste Import Tests
 

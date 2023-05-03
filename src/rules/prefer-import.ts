@@ -455,7 +455,7 @@ const getReplacementModuleSpecifier = (
         hasImportNameVariable(replacementModuleSpecifier) &&
         specifier != null
     ) {
-        let importName = getImportSpecifierText(specifier) ?? "";
+        let importName = getName(specifier) ?? "";
         const shouldReplaceProps =
             importName.endsWith(PROPS) && importPropsFromSameModule;
 
