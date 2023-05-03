@@ -27,6 +27,8 @@ Given the following ESLint config:
 }
 ```
 
+This import:
+
 ```ts
 import { isEmpty, isNil } from "lodash";
 ```
@@ -87,11 +89,13 @@ The fix for this rule does not handle any whitespace/formatting, and may add add
 
 It shouldn't produce _broken_ code though, so if something isn't being parsed correctly, please [open up an issue](https://github.com/brandongregoryscott/eslint-plugin-collation/issues/new/choose)!
 
+Additionally, this plugin does not perform any module resolution - it's a pretty simple string replacement utility, so if your auto-fixed import isn't correct, you may need to tweak your config.
+
 ### Twilio Paste
 
 In addition to reducing bundle size when using `lodash` functions, one of the main motivators around creating this rule was the [guidance by the Twilio Paste team on best practices](https://paste.twilio.design/core) for importing from `@twilio-paste/core`. While the [`no-restricted-imports`](https://eslint.org/docs/latest/rules/no-restricted-imports) can be configured to nudge people against using `@twilio-paste/core`, it still requires you to update the import manually, and at the time of writing, VS Code doesn't know how to suggest imports from the individual packages in `@twilio-paste/core`, such as `@twilio-paste/core/box`.
 
-As such, I've written an extensive (but likely non-exhaustive) configuration list oriented around improving the DX while using [Twilio Paste](https://paste.twilio.design/). It isn't bundled or exported, but should serve as a good baseline config for consuming applications.
+As such, I've written an extensive (but likely non-exhaustive) configuration list oriented around improving the DX while using [Twilio Paste](https://paste.twilio.design/). It isn't bundled or exported, but should serve as a good baseline config for consuming applications. You can also view the tests that run against this config to verify expected output [here](https://github.com/brandongregoryscott/eslint-plugin-collation/blob/3f6721ebf16f688cfcf289d75936e9eff525ccec/src/rules/prefer-import.test.ts#L291-L1306).
 
 <details>
 <summary>Click to view Twilio Paste config</summary>
