@@ -7,7 +7,7 @@ import {
 } from "../utils/export-utils";
 import { createRule } from "../utils/rule-utils";
 import type { NamedExport } from "../types/named-export";
-import isEqual from "lodash/isEqual";
+import { isEqualJson } from "../utils/core-utils";
 
 const sortExports = createRule({
     create: (context) => {
@@ -48,7 +48,7 @@ const reportErrors = (
 ): void => {
     exports.forEach((_export) => {
         const sortedSpecifiers = sort(_export.specifiers);
-        if (isEqual(sortedSpecifiers, _export.specifiers)) {
+        if (isEqualJson(sortedSpecifiers, _export.specifiers)) {
             return;
         }
 

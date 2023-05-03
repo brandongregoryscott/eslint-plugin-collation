@@ -1,7 +1,7 @@
 import type { TSESTree } from "@typescript-eslint/utils";
-import isEmpty from "lodash/isEmpty";
-import last from "lodash/last";
 import type { NamedExport } from "../types/named-export";
+import { last } from "./collection-utils";
+import { isEmpty } from "./core-utils";
 
 /**
  * Converts multiple named exports into a single export. This function

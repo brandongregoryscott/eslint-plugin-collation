@@ -6,10 +6,10 @@ import type {
     SourceCode,
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
-import last from "lodash/last";
 import { getName } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 import { isInlineExport } from "../utils/export-utils";
+import { last } from "../utils/collection-utils";
 
 const noInlineExport = createRule({
     create: (context) => {
