@@ -94,6 +94,10 @@ ruleTester.run("prefer-import", preferImport, {
             errors: [
                 {
                     messageId: "preferImport",
+                    data: {
+                        importName: "Box",
+                        replacementModuleSpecifier: "@twilio-paste/core/box",
+                    },
                 },
             ],
         },
@@ -114,7 +118,11 @@ import { Heading } from '@twilio-paste/core/heading';
 import { Paragraph } from '@twilio-paste/core/paragraph';`,
             errors: [
                 {
-                    messageId: "preferImport",
+                    messageId: "preferImportMultiple",
+                    data: {
+                        message:
+                            "Import 'Box' from '@twilio-paste/core/box', 'Heading' from '@twilio-paste/core/heading', and 'Paragraph' from '@twilio-paste/core/paragraph'.",
+                    },
                 },
             ],
         },
@@ -205,7 +213,15 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
             code: "import { isEmpty, isNil } from 'lodash'",
             output: `import isEmpty from 'lodash/isEmpty';
 import isNil from 'lodash/isNil';`,
-            errors: [{ messageId: "preferImport" }],
+            errors: [
+                {
+                    messageId: "preferImportMultiple",
+                    data: {
+                        message:
+                            "Import 'isEmpty' from 'lodash/isEmpty', and 'isNil' from 'lodash/isNil'.",
+                    },
+                },
+            ],
         },
         {
             name: "should not produce fix overlaps with large import",
@@ -271,7 +287,15 @@ import useInfiniteScroll from 'hooks/use-infinite-scroll'
 import useRouter from 'hooks/use-router'
 import useSpace from 'hooks/use-space'
 import useWorkspace from 'hooks/use-workspace'`,
-            errors: [{ messageId: "preferImport" }],
+            errors: [
+                {
+                    messageId: "preferImportMultiple",
+                    data: {
+                        message:
+                            "Import 'TBody, THead, Table, Td, Th, Tr' from '@twilio-paste/core/table', 'Button' from '@twilio-paste/core/button', 'Text' from '@twilio-paste/core/text', and 'Truncate' from '@twilio-paste/core/truncate'.",
+                    },
+                },
+            ],
         },
         {
             options: [

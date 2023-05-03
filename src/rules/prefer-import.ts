@@ -19,6 +19,7 @@ import {
     first,
     flatten,
     intersection,
+    last,
 } from "../utils/collection-utils";
 import { cloneDeepJson, isEmpty } from "../utils/core-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
@@ -71,7 +72,11 @@ interface ImportRule {
     transformImportName?: CaseTransformation;
 }
 
-type PreferImportMessageIds = "preferImport";
+type PreferImportMessageIds = "preferImport" | "preferImportMultiple";
+type ErrorMessageReplacementData = Pick<
+    ImportRule,
+    "importName" | "replacementModuleSpecifier"
+>;
 
 type ImportRuleErrors = Map<
     TSESTree.ImportDeclaration,
@@ -158,6 +163,7 @@ const create = (
                     // and remove it from the collection when we rebuild the import list
                     let specifiersMarkedAsError: TSESTree.ImportSpecifier[] =
                         flatten(getValues(errorsByImport));
+                    const replacementData: ErrorMessageReplacementData[] = [];
 
                     const fixes: RuleFix[] = [];
 
@@ -178,6 +184,10 @@ const create = (
                     }
 
                     iterate(errorsByImport, (rule, specifiersByRule) => {
+                        const {
+                            replaceAsDefault = DEFAULT_IMPORT_RULE.replaceAsDefault,
+                            replacementModuleSpecifier,
+                        } = rule;
                         const remainingSpecifiersToFix = intersection(
                             specifiersByRule,
                             specifiersMarkedAsError
@@ -185,6 +195,59 @@ const create = (
 
                         if (isEmpty(remainingSpecifiersToFix)) {
                             return;
+                        }
+
+                        const hasPotentiallyMultipleImports =
+                            replaceAsDefault ||
+                            hasImportNameVariable(replacementModuleSpecifier);
+                        if (hasPotentiallyMultipleImports) {
+                            const replacementsByModuleSpecifier = new Map<
+                                string,
+                                string[]
+                            >();
+                            remainingSpecifiersToFix.forEach((specifier) => {
+                                const importName = getName(specifier) ?? "";
+                                const replacementModuleSpecifier =
+                                    getReplacementModuleSpecifier(
+                                        rule,
+                                        specifier
+                                    );
+
+                                const importNames =
+                                    replacementsByModuleSpecifier.get(
+                                        replacementModuleSpecifier
+                                    ) ?? [];
+
+                                if (!importNames.includes(importName)) {
+                                    importNames.push(importName);
+                                }
+                                replacementsByModuleSpecifier.set(
+                                    replacementModuleSpecifier,
+                                    importNames
+                                );
+                            });
+
+                            iterate(
+                                replacementsByModuleSpecifier,
+                                (replacementModuleSpecifier, importNames) =>
+                                    replacementData.push({
+                                        importName: importNames.join(", "),
+                                        replacementModuleSpecifier,
+                                    })
+                            );
+                        }
+
+                        if (!hasPotentiallyMultipleImports) {
+                            replacementData.push({
+                                importName: remainingSpecifiersToFix
+                                    .map(getName)
+                                    .join(", "),
+                                replacementModuleSpecifier:
+                                    getReplacementModuleSpecifier(
+                                        rule,
+                                        firstIfOnly(remainingSpecifiersToFix)
+                                    ),
+                            });
                         }
 
                         specifiersMarkedAsError = difference(
@@ -203,9 +266,20 @@ const create = (
                         );
                     });
 
+                    const hasMultipleErrors = replacementData.length > 1;
                     context.report({
                         node: importDeclaration,
-                        messageId: "preferImport",
+                        messageId: hasMultipleErrors
+                            ? "preferImportMultiple"
+                            : "preferImport",
+                        data: hasMultipleErrors
+                            ? {
+                                  message:
+                                      getMultipleErrorReplacementString(
+                                          replacementData
+                                      ),
+                              }
+                            : firstIfOnly(replacementData),
                         fix: () => fixes,
                     });
                 });
@@ -264,7 +338,8 @@ const preferImport = createRule<PreferImportOptions[], PreferImportMessageIds>({
         },
         messages: {
             preferImport:
-                "Import '{{importName}}' from '{{moduleSpecifier}}' instead.",
+                "Import '{{importName}}' from '{{replacementModuleSpecifier}}' instead.",
+            preferImportMultiple: "{{message}}",
         },
         schema: {
             type: "array",
@@ -340,10 +415,7 @@ const getReplacementImportDeclarations = (
         replacementModuleSpecifier,
     } = rule;
 
-    if (
-        replaceAsDefault ||
-        replacementModuleSpecifier.includes(IMPORT_NAME_VARIABLE)
-    ) {
+    if (replaceAsDefault || hasImportNameVariable(replacementModuleSpecifier)) {
         return specifiers
             .map((specifier) => {
                 const name = getImportSpecifierText(specifier) ?? "";
@@ -380,7 +452,7 @@ const getReplacementModuleSpecifier = (
     let moduleSpecifier = replacementModuleSpecifier;
 
     if (
-        replacementModuleSpecifier.includes(IMPORT_NAME_VARIABLE) &&
+        hasImportNameVariable(replacementModuleSpecifier) &&
         specifier != null
     ) {
         let importName = getImportSpecifierText(specifier) ?? "";
@@ -401,6 +473,35 @@ const getReplacementModuleSpecifier = (
 
     return moduleSpecifier;
 };
+
+/**
+ * Constructs the error message for an ImportDeclaration that has multiple imports + module specifiers
+ * for replacement, which is too complex for ESLint's variable substitution to do alone.
+ */
+const getMultipleErrorReplacementString = (
+    replacementData: ErrorMessageReplacementData[]
+): string =>
+    replacementData
+        .map((data) => {
+            const { importName, replacementModuleSpecifier } = data;
+            const isFirst = data === first(replacementData);
+            const isLast = data === last(replacementData);
+
+            let introText = isFirst ? "Import" : "";
+            if (isLast) {
+                introText = " and";
+            }
+
+            return `${introText} ${arrify(importName)
+                .map((name) => `'${name}'`)
+                .join()} from '${replacementModuleSpecifier}'${
+                isLast ? "." : ","
+            }`;
+        })
+        .join("");
+
+const hasImportNameVariable = (replacementModuleSpecifier: string) =>
+    replacementModuleSpecifier.includes(IMPORT_NAME_VARIABLE);
 
 export type { PreferImportOptions };
 export { preferImport };
