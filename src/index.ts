@@ -2,6 +2,7 @@ import { RuleName } from "./enums/rule-name";
 import { groupExports } from "./rules/group-exports";
 import { noDefaultExport } from "./rules/no-default-export";
 import { noInlineExport } from "./rules/no-inline-export";
+import { preferImport } from "./rules/prefer-import";
 import { sortDependencyList } from "./rules/sort-dependency-list";
 import { sortExports } from "./rules/sort-exports";
 
@@ -32,6 +33,7 @@ const rules = {
     [RuleName.GroupExports]: groupExports,
     [RuleName.NoDefaultExport]: noDefaultExport,
     [RuleName.NoInlineExport]: noInlineExport,
+    [RuleName.PreferImport]: preferImport,
     [RuleName.SortDependencyList]: sortDependencyList,
     [RuleName.SortExports]: sortExports,
 };

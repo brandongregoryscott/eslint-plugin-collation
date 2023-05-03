@@ -7,6 +7,7 @@ import type {
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { createRule } from "../utils/rule-utils";
+import { isEqualJson } from "../utils/core-utils";
 
 const callExpressionNames = ["useCallback", "useEffect", "useMemo"];
 
@@ -219,7 +220,7 @@ const isSorted = (
 ): boolean => {
     const current = identifiers.map(getIdentifierName);
     const expected = [...current].sort();
-    return JSON.stringify(current) === JSON.stringify(expected);
+    return isEqualJson(current, expected);
 };
 
 export { sortDependencyList };

@@ -5,7 +5,6 @@ import type {
     SourceCode,
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
-import last from "lodash/last";
 import {
     isInlineExport,
     consolidateExports,
@@ -17,6 +16,7 @@ import dropRight from "lodash/dropRight";
 import groupBy from "lodash/groupBy";
 import { removeNodeAndNewLine } from "../utils/fixer-utils";
 import type { NamedExport } from "../types/named-export";
+import { last } from "../utils/collection-utils";
 
 const groupExports = createRule({
     create: (context) => {
@@ -83,7 +83,7 @@ const getFixesForExports = (
         ...exports.flatMap((_export, index) =>
             index === exports.length - 1
                 ? fixer.remove(_export.reference)
-                : removeNodeAndNewLine(fixer, _export.reference, sourceCode)
+                : removeNodeAndNewLine(sourceCode)(_export.reference)
         ),
     ];
 };

@@ -1,8 +1,25 @@
-import type { TSESTree } from "@typescript-eslint/utils";
-import { AST_NODE_TYPES } from "@typescript-eslint/utils";
+import { TSESTree, AST_NODE_TYPES } from "@typescript-eslint/utils";
 import type { Declaration } from "../types/declaration";
+import { arrify } from "./collection-utils";
 
-const getName = (node?: TSESTree.Node | null): string | undefined => {
+/**
+ * Returns the full text of the ImportSpecifier, taking into account aliasing, i.e.
+ * Box as MyBox
+ */
+const getImportSpecifierText = (specifier: TSESTree.ImportSpecifier) => {
+    const name = getName(specifier);
+    const alias = specifier.local.name;
+    const isAliased = alias !== name;
+    if (isAliased) {
+        return `${name} as ${alias}`;
+    }
+
+    return name;
+};
+
+const getName = (
+    node: TSESTree.Node | null | undefined
+): string | undefined => {
     if (node == null) {
         return undefined;
     }
@@ -24,10 +41,21 @@ const getName = (node?: TSESTree.Node | null): string | undefined => {
             }
 
             return (declarator.id as TSESTree.Identifier).name;
+        case AST_NODE_TYPES.ImportSpecifier:
+            return node.imported.name;
         default:
             return undefined;
     }
 };
+
+const getModuleSpecifier = (
+    importDeclaration: TSESTree.ImportDeclaration
+): string => importDeclaration.source.value;
+
+const isCommaToken = (
+    token: TSESTree.Token | null | undefined
+): token is TSESTree.PunctuatorToken =>
+    token?.type === TSESTree.AST_TOKEN_TYPES.Punctuator && token.value === ",";
 
 const isDeclaration = (node: TSESTree.Node): node is Declaration =>
     [
@@ -37,4 +65,48 @@ const isDeclaration = (node: TSESTree.Node): node is Declaration =>
         AST_NODE_TYPES.VariableDeclaration,
     ].includes(node.type);
 
-export { getName, isDeclaration };
+const isIdentifierToken = (
+    token: TSESTree.Token | undefined,
+    value?: string
+): token is TSESTree.IdentifierToken => {
+    const isIdentifier = token?.type === TSESTree.AST_TOKEN_TYPES.Identifier;
+    if (value != null) {
+        return isIdentifier && token.value === value;
+    }
+
+    return isIdentifier;
+};
+
+const isImportDeclaration = (
+    node: TSESTree.Node | TSESTree.Token | null | undefined
+): node is TSESTree.ImportDeclaration =>
+    node?.type === TSESTree.AST_NODE_TYPES.ImportDeclaration;
+
+const isImportSpecifier = (
+    node: TSESTree.ImportClause | null | undefined
+): node is TSESTree.ImportSpecifier =>
+    node?.type === TSESTree.AST_NODE_TYPES.ImportSpecifier;
+
+const toDefaultImportDeclaration = (
+    specifier: string,
+    moduleSpecifier: string
+): string => `import ${specifier} from '${moduleSpecifier}';`;
+
+const toImportDeclaration = (
+    specifiers: string[] | string,
+    moduleSpecifier: string
+): string =>
+    `import { ${arrify(specifiers).join(", ")} } from '${moduleSpecifier}';`;
+
+export {
+    getImportSpecifierText,
+    getModuleSpecifier,
+    getName,
+    isCommaToken,
+    isDeclaration,
+    isIdentifierToken,
+    isImportDeclaration,
+    isImportSpecifier,
+    toDefaultImportDeclaration,
+    toImportDeclaration,
+};
