@@ -3,11 +3,11 @@ import type { PreferImportOptions } from "../rules/prefer-import";
 const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
     "@twilio-paste/core": [
         {
-            importName: ["AlertDialog*"],
+            importName: "AlertDialog*",
             replacementModuleSpecifier: "@twilio-paste/core/alert-dialog",
         },
         {
-            importName: ["Alert*"],
+            importName: "Alert*",
             replacementModuleSpecifier: "@twilio-paste/core/alert",
         },
         {
@@ -25,11 +25,11 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/box",
         },
         {
-            importName: ["Breadcrumb*"],
+            importName: "Breadcrumb*",
             replacementModuleSpecifier: "@twilio-paste/core/breadcrumb",
         },
         {
-            importName: ["ButtonGroup*"],
+            importName: "ButtonGroup*",
             replacementModuleSpecifier: "@twilio-paste/core/button-group",
         },
         {
@@ -37,11 +37,11 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/button",
         },
         {
-            importName: ["Callout*"],
+            importName: "Callout*",
             replacementModuleSpecifier: "@twilio-paste/core/callout",
         },
         {
-            importName: ["ChatComposer*"],
+            importName: "ChatComposer*",
             replacementModuleSpecifier: "@twilio-paste/core/chat-composer",
         },
         {
@@ -49,11 +49,11 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/chat-log",
         },
         {
-            importName: ["Checkbox*"],
+            importName: "Checkbox*",
             replacementModuleSpecifier: "@twilio-paste/core/checkbox",
         },
         {
-            importName: ["CodeBlock*"],
+            importName: "CodeBlock*",
             replacementModuleSpecifier: "@twilio-paste/core/code-block",
         },
         {
@@ -61,11 +61,11 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/combobox-primitive",
         },
         {
-            importName: ["*Combobox*"],
+            importName: "*Combobox*",
             replacementModuleSpecifier: "@twilio-paste/core/combobox",
         },
         {
-            importName: ["DataGrid*"],
+            importName: "DataGrid*",
             replacementModuleSpecifier: "@twilio-paste/core/data-grid",
         },
         {
@@ -73,7 +73,7 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/date-picker",
         },
         {
-            importName: ["*DescriptionList*"],
+            importName: "*DescriptionList*",
             replacementModuleSpecifier: "@twilio-paste/core/description-list",
         },
         {
@@ -90,23 +90,23 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/disclosure",
         },
         {
-            importName: ["DisplayPill*"],
+            importName: "DisplayPill*",
             replacementModuleSpecifier: "@twilio-paste/core/display-pill-group",
         },
         {
-            importName: ["FilePicker*"],
+            importName: "FilePicker*",
             replacementModuleSpecifier: "@twilio-paste/core/file-picker",
         },
         {
-            importName: ["FileUploader*"],
+            importName: "FileUploader*",
             replacementModuleSpecifier: "@twilio-paste/core/file-uploader",
         },
         {
-            importName: ["*FormPill*"],
+            importName: "*FormPill*",
             replacementModuleSpecifier: "@twilio-paste/core/form-pill-group",
         },
         {
-            importName: ["Form*"],
+            importName: "Form*",
             replacementModuleSpecifier: "@twilio-paste/core/form",
         },
         {
@@ -114,15 +114,15 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/grid",
         },
         {
-            importName: ["Heading*"],
+            importName: "Heading*",
             replacementModuleSpecifier: "@twilio-paste/core/heading",
         },
         {
-            importName: ["HelpText*"],
+            importName: "HelpText*",
             replacementModuleSpecifier: "@twilio-paste/core/help-text",
         },
         {
-            importName: ["InPageNavigation*"],
+            importName: "InPageNavigation*",
             replacementModuleSpecifier: "@twilio-paste/core/in-page-navigation",
         },
         {
@@ -136,7 +136,7 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/input-box",
         },
         {
-            importName: ["Input*"],
+            importName: "Input*",
             replacementModuleSpecifier: "@twilio-paste/core/input",
         },
         {
@@ -144,7 +144,7 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/label",
         },
         {
-            importName: ["*ListboxPrimitive*"],
+            importName: "*ListboxPrimitive*",
             replacementModuleSpecifier: "@twilio-paste/core/listbox-primitive",
         },
         {
@@ -152,23 +152,23 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/list",
         },
         {
-            importName: ["Media*"],
+            importName: "Media*",
             replacementModuleSpecifier: "@twilio-paste/core/media-object",
         },
         {
-            importName: ["*MenuPrimitive*"],
+            importName: "*MenuPrimitive*",
             replacementModuleSpecifier: "@twilio-paste/core/menu-primitive",
         },
         {
-            importName: ["*Menu*"],
+            importName: "*Menu*",
             replacementModuleSpecifier: "@twilio-paste/core/menu",
         },
         {
-            importName: ["*MinimizableDialog*"],
+            importName: "*MinimizableDialog*",
             replacementModuleSpecifier: "@twilio-paste/core/minimizable-dialog",
         },
         {
-            importName: ["*NonModalDialog*Primitive*"],
+            importName: "*NonModalDialog*Primitive*",
             replacementModuleSpecifier:
                 "@twilio-paste/core/non-modal-dialog-primitive",
         },
@@ -181,7 +181,7 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/modal",
         },
         {
-            importName: ["Pagination*"],
+            importName: "Pagination*",
             replacementModuleSpecifier: "@twilio-paste/core/pagination",
         },
         {
@@ -189,11 +189,11 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/popover",
         },
         {
-            importName: ["RadioButton*"],
+            importName: "RadioButton*",
             replacementModuleSpecifier: "@twilio-paste/core/radio-button-group",
         },
         {
-            importName: ["Radio*"],
+            importName: "Radio*",
             replacementModuleSpecifier: "@twilio-paste/core/radio-group",
         },
         {
@@ -201,7 +201,7 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/select",
         },
         {
-            importName: ["Sidebar*"],
+            importName: "Sidebar*",
             replacementModuleSpecifier: "@twilio-paste/core/sidebar",
         },
         {
@@ -214,7 +214,7 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/stack",
         },
         {
-            importName: ["Switch*"],
+            importName: "Switch*",
             replacementModuleSpecifier: "@twilio-paste/core/switch",
         },
         {

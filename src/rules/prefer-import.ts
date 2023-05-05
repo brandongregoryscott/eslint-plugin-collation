@@ -333,7 +333,7 @@ const preferImport = createRule<PreferImportOptions[], PreferImportMessageIds>({
         fixable: "code",
         docs: {
             description:
-                "Enforces imports from a preferred module, i.e. for wrapped library functionality or ESM-friendly packages",
+                "Enforces imports from a preferred module over another, such as for tree-shaking purposes or wrapping a library.",
             recommended: "error",
         },
         messages: {
