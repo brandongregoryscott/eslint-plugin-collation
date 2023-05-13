@@ -5,12 +5,8 @@ import type {
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { createRule, tryRule } from "../utils/rule-utils";
-import type { CaseTransformation } from "../utils/string-utils";
-import {
-    isPattern,
-    transformCase,
-    CASE_TRANSFORMATIONS,
-} from "../utils/string-utils";
+import type { CaseStyle } from "../utils/string-utils";
+import { isPattern, changeCase, CASE_STYLES } from "../utils/string-utils";
 import type { JSONSchema4 } from "@typescript-eslint/utils/dist/json-schema";
 import {
     arrify,
@@ -69,7 +65,7 @@ interface ImportRule {
     /**
      * String transformation method to be run on the matched `importName`. Only applicable if `replacementModuleSpecifier` has the replacement variable `{importName}`.
      */
-    transformImportName?: CaseTransformation;
+    transformImportName?: CaseStyle;
 }
 
 type PreferImportMessageIds = "preferImport" | "preferImportMultiple";
@@ -322,7 +318,7 @@ const importRuleSchema: JSONSchema4 = {
         transformImportName: {
             description:
                 "String transformation method to be run on the matched `importName`. Only applicable if `replacementModuleSpecifier` has the replacement variable `{importName}`.",
-            enum: CASE_TRANSFORMATIONS,
+            enum: CASE_STYLES,
         },
     },
 };
@@ -463,7 +459,7 @@ const getReplacementModuleSpecifier = (
             importName = importName.slice(0, importName.lastIndexOf(PROPS));
         }
 
-        importName = transformCase(importName, transformImportName);
+        importName = changeCase(importName, transformImportName);
 
         moduleSpecifier = replacementModuleSpecifier.replace(
             IMPORT_NAME_VARIABLE,

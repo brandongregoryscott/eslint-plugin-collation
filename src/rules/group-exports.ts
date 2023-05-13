@@ -17,6 +17,7 @@ import groupBy from "lodash/groupBy";
 import { removeNodeAndNewLine } from "../utils/fixer-utils";
 import type { NamedExport } from "../types/named-export";
 import { last } from "../utils/collection-utils";
+import { PROGRAM_EXIT } from "../constants/eslint";
 
 const groupExports = createRule({
     create: (context) => {
@@ -30,7 +31,7 @@ const groupExports = createRule({
 
                 exports.push(toNamedExport(_export));
             },
-            "Program:exit": (): void => {
+            [PROGRAM_EXIT]() {
                 const groupedExports = groupExportsByTypeAndModule(exports);
                 reportErrors(context, groupedExports);
             },
