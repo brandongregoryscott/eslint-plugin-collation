@@ -1,5 +1,6 @@
 import { RuleName } from "./enums/rule-name";
 import { defaultExportMatchesFilename } from "./rules/default-export-matches-filename";
+import { defaultImportMatchesModule } from "./rules/default-import-matches-module";
 import { groupExports } from "./rules/group-exports";
 import { noDefaultExport } from "./rules/no-default-export";
 import { noInlineExport } from "./rules/no-inline-export";
@@ -12,6 +13,7 @@ const configs = {
         plugins: ["collation"],
         rules: {
             "collation/default-export-matches-filename": "warn",
+            "collation/default-import-matches-module": "warn",
             "collation/group-exports": "warn",
             "collation/no-default-export": "warn",
             "collation/no-inline-export": "warn",
@@ -23,6 +25,7 @@ const configs = {
         plugins: ["collation"],
         rules: {
             "collation/default-export-matches-filename": "error",
+            "collation/default-import-matches-module": "error",
             "collation/group-exports": "error",
             "collation/no-default-export": "error",
             "collation/no-inline-export": "error",
@@ -35,6 +38,7 @@ const configs = {
 const rules = {
     [RuleName.GroupExports]: groupExports,
     [RuleName.DefaultExportMatchesFilename]: defaultExportMatchesFilename,
+    [RuleName.DefaultImportMatchesModule]: defaultImportMatchesModule,
     [RuleName.NoDefaultExport]: noDefaultExport,
     [RuleName.NoInlineExport]: noInlineExport,
     [RuleName.PreferImport]: preferImport,

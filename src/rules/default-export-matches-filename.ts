@@ -8,23 +8,17 @@ import type {
 import { getName } from "../utils/node-utils";
 import { isEmpty } from "../utils/core-utils";
 import { insertTextBefore, replaceText } from "../utils/fixer-utils";
-import type { CaseStyle } from "../utils/string-utils";
 import { getBaseFilename, matchCase, changeCase } from "../utils/string-utils";
 import camelCase from "lodash/camelCase";
 import type { TSESTree } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
 import { first } from "../utils/collection-utils";
 import { PROGRAM_EXIT } from "../constants/eslint";
+import { IMPORT_EXPORT_CASE_STYLES } from "../constants/case-styles";
 
 type DefaultExportMatchesFilenameMessageIds =
     | "defaultExportDoesNotMatchFilename"
     | "defaultExportMissingName";
-
-const EXPORT_CASE_STYLES: CaseStyle[] = [
-    "camel-case",
-    "title-case",
-    "constant-case",
-];
 
 const create = (
     context: RuleContext<DefaultExportMatchesFilenameMessageIds, never[]>
@@ -109,7 +103,7 @@ const create = (
                 return;
             }
 
-            const validNames = EXPORT_CASE_STYLES.map((caseStyle) =>
+            const validNames = IMPORT_EXPORT_CASE_STYLES.map((caseStyle) =>
                 changeCase(filename, caseStyle)
             );
             const replacementName = useFilenameForExport

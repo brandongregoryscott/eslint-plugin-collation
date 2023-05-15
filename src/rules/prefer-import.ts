@@ -6,7 +6,7 @@ import type {
 import { RuleName } from "../enums/rule-name";
 import { createRule, tryRule } from "../utils/rule-utils";
 import type { CaseStyle } from "../utils/string-utils";
-import { isPattern, changeCase, CASE_STYLES } from "../utils/string-utils";
+import { isPattern, changeCase } from "../utils/string-utils";
 import type { JSONSchema4 } from "@typescript-eslint/utils/dist/json-schema";
 import {
     arrify,
@@ -34,6 +34,7 @@ import {
     removeImportClause,
 } from "../utils/fixer-utils";
 import { getValues, iterate, updateIn } from "../utils/map-utils";
+import { CASE_STYLES } from "../constants/case-styles";
 
 interface PreferImportOptions {
     [moduleSpecifier: string]: ImportRule | ImportRule[];

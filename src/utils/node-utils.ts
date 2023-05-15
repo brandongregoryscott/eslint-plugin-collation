@@ -45,6 +45,9 @@ const getName = (
             return (declarator.id as TSESTree.Identifier).name;
         case AST_NODE_TYPES.ImportSpecifier:
             return node.imported.name;
+        case AST_NODE_TYPES.ImportNamespaceSpecifier:
+        case AST_NODE_TYPES.ImportDefaultSpecifier:
+            return getName(node.local);
         case AST_NODE_TYPES.ExportDefaultDeclaration:
             return getName(node.declaration);
         default:

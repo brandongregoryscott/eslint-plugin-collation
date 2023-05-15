@@ -10,16 +10,6 @@ type CaseStyle =
     | "title-case"
     | "upper-case";
 
-const CASE_STYLES: CaseStyle[] = [
-    "camel-case",
-    "constant-case",
-    "kebab-case",
-    "lower-case",
-    "snake-case",
-    "title-case",
-    "upper-case",
-];
-
 const changeCase = (
     value: string,
     caseStyle: CaseStyle | undefined
@@ -104,11 +94,4 @@ const titleCase = (value: string): string => {
 };
 
 export type { CaseStyle };
-export {
-    CASE_STYLES,
-    changeCase,
-    getBaseFilename,
-    getDocsUrl,
-    isPattern,
-    matchCase,
-};
+export { changeCase, getBaseFilename, getDocsUrl, isPattern, matchCase };
