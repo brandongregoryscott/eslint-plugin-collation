@@ -20,7 +20,6 @@ type DefaultImportMatchesModuleMessageIds = "defaultImportDoesNotMatchFilename";
 const create = (
     context: RuleContext<DefaultImportMatchesModuleMessageIds, never[]>
 ): RuleListener => {
-    const sourceCode = context.getSourceCode();
     const identifiers: TSESTree.Identifier[] = [];
     const importDeclarations: TSESTree.ImportDeclaration[] = [];
 
@@ -112,14 +111,14 @@ const defaultImportMatchesModule = createRule<
     meta: {
         type: "suggestion",
         docs: {
-            description: "Enforce default import matches the filename",
+            description: "Enforce default import matches the module specifier",
             recommended: "error",
         },
         fixable: "code",
         schema: [],
         messages: {
             defaultImportDoesNotMatchFilename:
-                "Default import does not match filename. Expected one of: {{names}}",
+                "Default import does not match module specifier. Expected one of: {{names}}",
         },
     },
     create,

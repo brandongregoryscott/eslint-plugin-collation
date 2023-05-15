@@ -34,6 +34,7 @@ Add `collation` to the plugins and rules section of your `.eslintrc` configurati
     "parser": "@typescript-eslint/parser",
     "plugins": ["collation"],
     "rules": {
+        "collation/default-import-matches-module": "warn",
         "collation/group-exports": "warn",
         "collation/no-default-export": "warn",
         "collation/no-inline-export": "warn",
