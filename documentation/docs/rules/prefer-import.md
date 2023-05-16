@@ -347,7 +347,8 @@ As such, I've written an extensive (but likely non-exhaustive) configuration lis
                         "TFoot*",
                         "THead*",
                         "Td*",
-                        "Th*",
+                        "Th",
+                        "ThProp*",
                         "Tr",
                         "TrProp*"
                     ],

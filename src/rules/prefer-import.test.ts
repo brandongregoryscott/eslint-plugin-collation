@@ -1273,6 +1273,19 @@ import useWorkspace from 'hooks/use-workspace'`,
             ],
         },
         {
+            name: "Twilio Paste Imports > Theme",
+            options: [TWILIO_PASTE_IMPORTS],
+            code: codeBlock`
+                import { Theme } from '@twilio-paste/core';
+            `,
+            output: "import { Theme } from '@twilio-paste/core/theme';",
+            errors: [
+                {
+                    messageId: "preferImport",
+                },
+            ],
+        },
+        {
             name: "Twilio Paste Imports > TimePicker",
             options: [TWILIO_PASTE_IMPORTS],
             code: codeBlock`
