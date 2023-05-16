@@ -31,6 +31,19 @@ ruleTester.run(
                 filename: "example-function.js",
                 code: "export default function ExampleFunction() {};",
             },
+            {
+                name: "should ignore higher-order-component exports",
+                code: "export default compose(withErrorHandling, withContext)(Foo)",
+            },
+            {
+                name: "should skip d.ts files",
+                filename: "globals.d.ts",
+                code: codeBlock`
+                    declare module 'foo' {
+                        export default foo;
+                    }
+                `,
+            },
         ],
         invalid: [
             {
@@ -143,6 +156,50 @@ ruleTester.run(
                 filename: "ExampleFunction.js",
                 code: "export default function example() {}",
                 output: "export default function ExampleFunction() {}",
+                errors: [{ messageId: "defaultExportDoesNotMatchFilename" }],
+            },
+            {
+                name: "uses basename of nested file path",
+                filename: "/Users/Brandon/app/ExampleFunction.js",
+                code: "export default function example() {}",
+                output: "export default function ExampleFunction() {}",
+                errors: [{ messageId: "defaultExportDoesNotMatchFilename" }],
+            },
+            {
+                name: "uses parent directory name when filename is 'index'",
+                filename: "/Users/Brandon/app/ExampleFunction/index.js",
+                code: "export default function example() {}",
+                output: "export default function ExampleFunction() {}",
+                errors: [{ messageId: "defaultExportDoesNotMatchFilename" }],
+            },
+            {
+                name: "replaces identifiers that match export name",
+                filename: "List.tsx",
+                code: codeBlock`
+                    const MyList = () => {}
+
+                    export default MyList;
+                `,
+                output: codeBlock`
+                    const List = () => {}
+
+                    export default List;
+                `,
+                errors: [{ messageId: "defaultExportDoesNotMatchFilename" }],
+            },
+            {
+                name: "preserves type annotation in replaced identifier",
+                filename: "List.tsx",
+                code: codeBlock`
+                    const MyList: React.FC = () => {}
+
+                    export default MyList;
+                `,
+                output: codeBlock`
+                    const List: React.FC = () => {}
+
+                    export default List;
+                `,
                 errors: [{ messageId: "defaultExportDoesNotMatchFilename" }],
             },
         ],

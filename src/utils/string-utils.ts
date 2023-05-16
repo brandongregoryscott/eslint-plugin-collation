@@ -1,5 +1,7 @@
 import camelCase from "lodash/camelCase";
 import kebabCase from "lodash/kebabCase";
+import { dirname, sep, basename } from "path";
+import { last } from "./collection-utils";
 
 type CaseStyle =
     | "camel-case"
@@ -47,8 +49,11 @@ const changeCase = (
 
 const constantCase = (value: string): string => snakeCase(value).toUpperCase();
 
-const getBaseFilename = (filename: string): string =>
-    filename.includes(".") ? filename.split(".")[0] : filename;
+const getBasenameWithoutExtension = (path: string): string =>
+    removeExtension(basename(path));
+
+const getDirectoryName = (path: string): string =>
+    last(dirname(path).split(sep)) ?? "";
 
 const getDocsUrl = (name: string): string =>
     `https://eslint-plugin-collation.brandonscott.me/docs/rules/${name}`;
@@ -93,6 +98,9 @@ const matchCase = (value: string): CaseStyle | undefined => {
 const snakeCase = (value: string): string =>
     kebabCase(value).replace(/\-/g, "_");
 
+const removeExtension = (filename: string): string =>
+    filename.includes(".") ? filename.split(".")[0] : filename;
+
 const titleCase = (value: string): string => {
     if (value.length === 0) {
         return value;
@@ -107,8 +115,10 @@ export type { CaseStyle };
 export {
     CASE_STYLES,
     changeCase,
-    getBaseFilename,
+    getBasenameWithoutExtension,
+    getDirectoryName,
     getDocsUrl,
     isPattern,
     matchCase,
+    removeExtension,
 };

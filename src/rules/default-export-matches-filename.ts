@@ -1,4 +1,4 @@
-import { createRule } from "../utils/rule-utils";
+import { createRule, tryRule } from "../utils/rule-utils";
 import { RuleName } from "../enums/rule-name";
 import type {
     RuleContext,
@@ -7,9 +7,17 @@ import type {
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { getName } from "../utils/node-utils";
 import { isEmpty } from "../utils/core-utils";
-import { insertTextBefore, replaceText } from "../utils/fixer-utils";
+import {
+    insertTextBefore,
+    replaceIdentifier,
+    replaceText,
+} from "../utils/fixer-utils";
 import type { CaseStyle } from "../utils/string-utils";
-import { getBaseFilename, matchCase, changeCase } from "../utils/string-utils";
+import {
+    getBasenameWithoutExtension,
+    getDirectoryName,
+    changeCase,
+} from "../utils/string-utils";
 import camelCase from "lodash/camelCase";
 import type { TSESTree } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
@@ -26,20 +34,24 @@ const EXPORT_CASE_STYLES: CaseStyle[] = [
     "constant-case",
 ];
 
+const INDEX = "index";
+
 const create = (
     context: RuleContext<DefaultExportMatchesFilenameMessageIds, never[]>
 ): RuleListener => {
-    const filename = getBaseFilename(context.getFilename());
+    let filename = getBasenameWithoutExtension(context.getFilename());
+    if (filename === INDEX) {
+        filename = getDirectoryName(context.getFilename());
+    }
 
-    const filenameCase = matchCase(filename);
-    const useFilenameForExport =
-        filenameCase === "camel-case" || filenameCase === "title-case";
+    const useFilenameForExport = isEmpty(filename.match(/[\-_ ]/));
     const sourceCode = context.getSourceCode();
 
     const identifiers: TSESTree.Identifier[] = [];
     let exportDefaultDeclaration:
         | TSESTree.ExportDefaultDeclaration
         | undefined = undefined;
+
     return {
         Identifier: (node) => {
             identifiers.push(node);
@@ -48,93 +60,103 @@ const create = (
             exportDefaultDeclaration = node;
         },
         [PROGRAM_EXIT]() {
-            if (exportDefaultDeclaration == null) {
+            if (shouldSkipFile(context, exportDefaultDeclaration)) {
                 return;
             }
-            const node = exportDefaultDeclaration;
-            const name = getName(node);
 
-            if (isEmpty(name)) {
-                const fixes: RuleFix[] = [];
-                const expectedName = useFilenameForExport
+            tryRule(context, () => {
+                const node =
+                    exportDefaultDeclaration as TSESTree.ExportDefaultDeclaration;
+                const name = getName(node);
+
+                if (isEmpty(name)) {
+                    const fixes: RuleFix[] = [];
+                    const expectedName = useFilenameForExport
+                        ? filename
+                        : camelCase(filename);
+
+                    const shouldAddVariableDeclaration = [
+                        AST_NODE_TYPES.Literal,
+                        AST_NODE_TYPES.ArrayExpression,
+                        AST_NODE_TYPES.ObjectExpression,
+                        AST_NODE_TYPES.ArrowFunctionExpression,
+                    ].includes(node.declaration.type);
+
+                    const shouldMoveDeclaration = [
+                        AST_NODE_TYPES.ClassDeclaration,
+                        AST_NODE_TYPES.FunctionDeclaration,
+                    ].includes(node.declaration.type);
+
+                    const value = sourceCode
+                        .getText(node)
+                        .replace("export default", "")
+                        .trim();
+
+                    if (shouldAddVariableDeclaration) {
+                        const variableDeclaration = `const ${expectedName} = ${value}\n`;
+
+                        fixes.push(insertTextBefore(node, variableDeclaration));
+                    }
+
+                    if (shouldMoveDeclaration) {
+                        const type =
+                            node.declaration.type ===
+                            AST_NODE_TYPES.FunctionDeclaration
+                                ? "function"
+                                : "class";
+                        const namedDeclaration = `${value.replace(
+                            type,
+                            `${type} ${expectedName}`
+                        )}\n`;
+
+                        fixes.push(insertTextBefore(node, namedDeclaration));
+                    }
+
+                    fixes.push(
+                        replaceText(node, `export default ${expectedName}`)
+                    );
+                    context.report({
+                        node,
+                        messageId: "defaultExportMissingName",
+                        data: {
+                            name: expectedName,
+                        },
+                        fix: () => fixes,
+                    });
+                    return;
+                }
+
+                let validNames = EXPORT_CASE_STYLES.map((caseStyle) =>
+                    changeCase(filename, caseStyle)
+                );
+                if (useFilenameForExport && !validNames.includes(filename)) {
+                    validNames = [...validNames, filename];
+                }
+
+                const replacementName = useFilenameForExport
                     ? filename
-                    : camelCase(filename);
+                    : (first(validNames) as string);
 
-                const shouldAddVariableDeclaration = [
-                    AST_NODE_TYPES.Literal,
-                    AST_NODE_TYPES.ArrayExpression,
-                    AST_NODE_TYPES.ObjectExpression,
-                    AST_NODE_TYPES.ArrowFunctionExpression,
-                ].includes(node.declaration.type);
-
-                const shouldMoveDeclaration = [
-                    AST_NODE_TYPES.ClassDeclaration,
-                    AST_NODE_TYPES.FunctionDeclaration,
-                ].includes(node.declaration.type);
-
-                const value = sourceCode
-                    .getText(node)
-                    .replace("export default", "")
-                    .trim();
-
-                if (shouldAddVariableDeclaration) {
-                    const variableDeclaration = `const ${expectedName} = ${value}\n`;
-
-                    fixes.push(insertTextBefore(node, variableDeclaration));
+                if (validNames.includes(name)) {
+                    return;
                 }
 
-                if (shouldMoveDeclaration) {
-                    const type =
-                        node.declaration.type ===
-                        AST_NODE_TYPES.FunctionDeclaration
-                            ? "function"
-                            : "class";
-                    const namedDeclaration = `${value.replace(
-                        type,
-                        `${type} ${expectedName}`
-                    )}\n`;
+                const fixes = identifiers
+                    .filter((identifier) => getName(identifier) === name)
+                    .map((identifier) =>
+                        replaceIdentifier(identifier, replacementName)
+                    );
 
-                    fixes.push(insertTextBefore(node, namedDeclaration));
-                }
-
-                fixes.push(replaceText(node, `export default ${expectedName}`));
                 context.report({
                     node,
-                    messageId: "defaultExportMissingName",
+                    messageId: "defaultExportDoesNotMatchFilename",
                     data: {
-                        name: expectedName,
+                        names: validNames
+                            .map((matchingName) => `'${matchingName}'`)
+                            .join(", "),
                     },
                     fix: () => fixes,
                 });
-                return;
-            }
-
-            const validNames = EXPORT_CASE_STYLES.map((caseStyle) =>
-                changeCase(filename, caseStyle)
-            );
-            const replacementName = useFilenameForExport
-                ? filename
-                : first(validNames);
-
-            if (validNames.includes(name)) {
-                return;
-            }
-
-            const fixes = identifiers
-                .filter((identifier) => getName(identifier) === name)
-                .map((identifier) =>
-                    replaceText(identifier, replacementName ?? "")
-                );
-
-            context.report({
-                node,
-                messageId: "defaultExportDoesNotMatchFilename",
-                data: {
-                    names: validNames
-                        .map((matchingName) => `'${matchingName}'`)
-                        .join(", "),
-                },
-                fix: () => fixes,
             });
         },
     };
@@ -163,5 +185,24 @@ const defaultExportMatchesFilename = createRule<
     },
     create,
 });
+
+const shouldSkipFile = (
+    context: RuleContext<DefaultExportMatchesFilenameMessageIds, never[]>,
+    node: TSESTree.ExportDefaultDeclaration | undefined
+): boolean => {
+    if (context.getFilename().endsWith(".d.ts")) {
+        return true;
+    }
+
+    if (node == null) {
+        return true;
+    }
+
+    if (node.declaration.type === AST_NODE_TYPES.CallExpression) {
+        return true;
+    }
+
+    return false;
+};
 
 export { defaultExportMatchesFilename };
