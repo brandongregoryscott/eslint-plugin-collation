@@ -4,6 +4,8 @@ import type {
     SourceCode,
 } from "@typescript-eslint/utils/dist/ts-eslint";
 import { isCommaToken, isIdentifierToken } from "./node-utils";
+import type { Range } from "../types/range";
+import { first } from "./collection-utils";
 
 // #region Vendorized Fixer functions
 
@@ -138,6 +140,23 @@ const removeNodeAndNewLine =
         return [remove(node)];
     };
 
+const replaceIdentifier = (
+    identifier: TSESTree.Identifier,
+    value: string
+): RuleFix => {
+    const range =
+        identifier.typeAnnotation == null
+            ? identifier.range
+            : ([
+                  // Don't strip out the type annotation, which @typescript-eslint includes in
+                  // the range of the identifier
+                  first(identifier.range),
+                  first(identifier.typeAnnotation.range),
+              ] as Range);
+
+    return replaceTextRange(range, value);
+};
+
 const removeImportClause =
     (sourceCode: SourceCode) =>
     (clause: TSESTree.ImportClause): RuleFix[] => {
@@ -185,6 +204,7 @@ export {
     removeImportClause,
     removeNodeAndNewLine,
     removeRange,
+    replaceIdentifier,
     replaceText,
     replaceTextRange,
 };

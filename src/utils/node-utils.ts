@@ -25,6 +25,8 @@ const getName = (
     }
 
     switch (node.type) {
+        case AST_NODE_TYPES.Identifier:
+            return node.name;
         case AST_NODE_TYPES.ClassDeclaration:
         case AST_NODE_TYPES.FunctionDeclaration:
         case AST_NODE_TYPES.TSEnumDeclaration:
@@ -43,6 +45,8 @@ const getName = (
             return (declarator.id as TSESTree.Identifier).name;
         case AST_NODE_TYPES.ImportSpecifier:
             return node.imported.name;
+        case AST_NODE_TYPES.ExportDefaultDeclaration:
+            return getName(node.declaration);
         default:
             return undefined;
     }

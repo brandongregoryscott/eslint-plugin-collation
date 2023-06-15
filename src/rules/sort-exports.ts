@@ -8,6 +8,7 @@ import {
 import { createRule } from "../utils/rule-utils";
 import type { NamedExport } from "../types/named-export";
 import { isEqualJson } from "../utils/core-utils";
+import { PROGRAM_EXIT } from "../constants/eslint";
 
 const sortExports = createRule({
     create: (context) => {
@@ -21,7 +22,7 @@ const sortExports = createRule({
 
                 exports.push(toNamedExport(_export));
             },
-            "Program:exit": (): void => {
+            [PROGRAM_EXIT]() {
                 reportErrors(context, exports);
             },
         };
