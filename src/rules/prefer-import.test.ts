@@ -396,10 +396,22 @@ import useWorkspace from 'hooks/use-workspace'`,
             code: codeBlock`
                 import { Avatar, AvatarProps } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Avatar } from '@twilio-paste/core/avatar';
-                import { AvatarProps } from '@twilio-paste/core/avatar';
+            output: `import { Avatar, AvatarProps } from '@twilio-paste/core/avatar';
+`,
+            errors: [
+                {
+                    messageId: "preferImport",
+                },
+            ],
+        },
+        {
+            name: "Twilio Paste Imports > AvatarGroup",
+            options: [TWILIO_PASTE_IMPORTS],
+            code: codeBlock`
+                import { AvatarGroup, AvatarGroupProps } from '@twilio-paste/core';
             `,
+            output: `import { AvatarGroup, AvatarGroupProps } from '@twilio-paste/core/avatar';
+`,
             errors: [
                 {
                     messageId: "preferImport",

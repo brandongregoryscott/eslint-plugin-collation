@@ -15,6 +15,10 @@ const TWILIO_PASTE_IMPORTS: PreferImportOptions = {
             replacementModuleSpecifier: "@twilio-paste/core/anchor",
         },
         {
+            importName: "Avatar*",
+            replacementModuleSpecifier: "@twilio-paste/core/avatar",
+        },
+        {
             importName: [
                 "BOX_PROPS_TO_BLOCK",
                 "Box*",
