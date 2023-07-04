@@ -2,6 +2,7 @@ import { ESLintUtils } from "@typescript-eslint/utils";
 import { preferImport } from "./prefer-import";
 import { codeBlock } from "common-tags";
 import { TWILIO_PASTE_IMPORTS } from "../constants/twilio-paste-imports";
+import { LODASH_IMPORTS } from "../constants/lodash-imports";
 
 const ruleTester = new ESLintUtils.RuleTester({
     parser: "@typescript-eslint/parser",
@@ -327,6 +328,13 @@ import useWorkspace from 'hooks/use-workspace'`,
                 import { Paragraph as PasteParagraph } from '@twilio-paste/core/paragraph';
                 import { ParagraphProps as PasteParagraphProps } from '@twilio-paste/core/paragraph';
             `,
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "uses alias name when named import is replaced as default",
+            options: [LODASH_IMPORTS],
+            code: "import { isEmpty as lodashIsEmpty } from 'lodash'",
+            output: "import lodashIsEmpty from 'lodash/isEmpty';",
             errors: [{ messageId: "preferImport" }],
         },
 

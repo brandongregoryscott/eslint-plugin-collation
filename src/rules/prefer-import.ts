@@ -418,7 +418,13 @@ const getReplacementImportDeclarations = (
     if (replaceAsDefault || hasImportNameVariable(replacementModuleSpecifier)) {
         return specifiers
             .map((specifier) => {
-                const name = getImportSpecifierText(specifier) ?? "";
+                const alias = specifier.local.name;
+                // Prefer the alias name if present & replacing as a default import, otherwise
+                // we can produce broken code such as `import isEmpty as lodashIsEmpty from 'lodash/isEmpty'`
+                const useAliasAsName = !isEmpty(alias) && replaceAsDefault;
+                const name = useAliasAsName
+                    ? alias
+                    : getImportSpecifierText(specifier) ?? "";
                 const moduleSpecifier = getReplacementModuleSpecifier(
                     rule,
                     specifier
