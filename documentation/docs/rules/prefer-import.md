@@ -103,9 +103,15 @@ When `importPropsFromSameModule` is `true` (which is the default behavior), this
 
 In addition to reducing bundle size when using `lodash` functions, one of the main motivators around creating this rule was the [guidance by the Twilio Paste team on best practices](https://paste.twilio.design/core) for importing from `@twilio-paste/core`. While the [`no-restricted-imports`](https://eslint.org/docs/latest/rules/no-restricted-imports) can be configured to nudge people against using `@twilio-paste/core`, it still requires you to update the import manually, and at the time of writing, VS Code doesn't know how to suggest imports from the individual packages such as `@twilio-paste/core/box`.
 
-As such, I've written an extensive (but likely non-exhaustive) configuration list oriented around improving the DX while using [Twilio Paste](https://paste.twilio.design/). It isn't bundled or exported, but should serve as a good baseline config for consuming applications. You can also view the tests that run against this config to verify expected output [here](https://github.com/brandongregoryscott/eslint-plugin-collation/blob/3f6721ebf16f688cfcf289d75936e9eff525ccec/src/rules/prefer-import.test.ts#L291-L1306).
+As such, I've written an extensive (but likely non-exhaustive) configuration list oriented around improving the DX while using [Twilio Paste](https://paste.twilio.design/). It should serve as a good baseline config for consuming applications. You can also view the tests that run against this config to verify expected output [here](https://github.com/brandongregoryscott/eslint-plugin-collation/blob/3f6721ebf16f688cfcf289d75936e9eff525ccec/src/rules/prefer-import.test.ts#L291-L1306).
 
-You can view the latest config on GitHub at [src/constants/twilio-paste-imports.ts](https://github.com/brandongregoryscott/eslint-plugin-collation/blob/main/src/constants/twilio-paste-imports.ts#L3)
+As of [v1.3.0](https://github.com/brandongregoryscott/eslint-plugin-collation/releases/tag/v1.3.0), this config is bundled in the package and can be used by extending `collation/prefer-import.@twilio-paste`, i.e.
+
+```json
+{
+    "extends": ["plugin:collation/prefer-import.@twilio-paste"]
+}
+```
 
 ---
 
