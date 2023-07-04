@@ -333,9 +333,10 @@ import useWorkspace from 'hooks/use-workspace'`,
         {
             name: "uses alias name when named import is replaced as default",
             options: [LODASH_IMPORTS],
-            code: "import { isEmpty as lodashIsEmpty } from 'lodash'",
-            output: "import lodashIsEmpty from 'lodash/isEmpty';",
-            errors: [{ messageId: "preferImport" }],
+            code: `import { kebabCase, isEmpty as lodashIsEmpty } from "lodash";`,
+            output: `import kebabCase from 'lodash/kebabCase';
+import lodashIsEmpty from 'lodash/isEmpty';`,
+            errors: [{ messageId: "preferImportMultiple" }],
         },
 
         // #region Twilio Paste Import Tests
