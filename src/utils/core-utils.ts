@@ -22,7 +22,7 @@ const isEmpty = <
         return true;
     }
 
-    if (typeof value === "string") {
+    if (isString(value)) {
         return value.trim().length < 1;
     }
 
@@ -33,4 +33,6 @@ const isEmpty = <
     return Object.keys(value).length < 1;
 };
 
-export { cloneDeepJson, isEmpty, isEqualJson };
+const isString = (value: unknown): value is string => typeof value === "string";
+
+export { cloneDeepJson, isEmpty, isEqualJson, isString };

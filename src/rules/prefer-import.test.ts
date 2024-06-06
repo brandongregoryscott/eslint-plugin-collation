@@ -21,6 +21,18 @@ ruleTester.run("prefer-import", preferImport, {
             ],
             code: "import { Box } from '@twilio-paste/core/box'",
         },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `import { Node as INode } from '@/types';
+const foo: Node = {}`,
+        },
     ],
     invalid: [
         {
@@ -76,6 +88,52 @@ ruleTester.run("prefer-import", preferImport, {
             errors: [
                 {
                     messageId: "preferImport",
+                },
+            ],
+        },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `const foo: Node = {}`,
+            output: `import { Node } from '@/types';
+const foo: Node = {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `import { Comment } from '@/types';
+const foo: Node = {}`,
+            output: `import { Comment } from '@/types';
+import { Node } from '@/types';
+const foo: Node = {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
                 },
             ],
         },

@@ -1,12 +1,19 @@
 import { TSESTree, AST_NODE_TYPES } from "@typescript-eslint/utils";
 import type { Declaration } from "../types/declaration";
 import { arrify } from "./collection-utils";
+import { isString } from "./core-utils";
 
 /**
  * Returns the full text of the ImportSpecifier, taking into account aliasing, i.e.
  * Box as MyBox
  */
-const getImportSpecifierText = (specifier: TSESTree.ImportSpecifier) => {
+const getImportSpecifierText = (
+    specifier: TSESTree.ImportSpecifier | string
+) => {
+    if (isString(specifier)) {
+        return specifier;
+    }
+
     const name = getName(specifier);
     const alias = specifier.local.name;
     const isAliased = alias !== name;
