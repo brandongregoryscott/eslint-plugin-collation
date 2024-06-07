@@ -169,6 +169,7 @@ const foo: Node = {}`,
             ],
         },
         {
+            name: "global > adds additional import declaration for the same module specifier to fix global type reference",
             options: [
                 {
                     global: {
@@ -183,6 +184,75 @@ const foo: Node = {}`,
 import { Node } from '@/types';
 
 const foo: Node = {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `interface DisplayNode extends Node {}`,
+            output: `import { Node } from '@/types';
+
+interface DisplayNode extends Node {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `class Foo implements Node {}`,
+            output: `import { Node } from '@/types';
+
+class Foo implements Node {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `type DisplayNode = Node & { foo: number }`,
+            output: `import { Node } from '@/types';
+
+type DisplayNode = Node & { foo: number }`,
             errors: [
                 {
                     messageId: "bannedGlobalType",

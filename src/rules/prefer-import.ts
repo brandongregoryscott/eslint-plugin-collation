@@ -108,7 +108,7 @@ const create = (
     }
 
     const importDeclarations: TSESTree.ImportDeclaration[] = [];
-    const typeReferences: TSESTree.TSTypeReference[] = [];
+    const typeIdentifiers: TSESTree.Identifier[] = [];
 
     const errors: ImportRuleErrors = new Map();
 
@@ -133,19 +133,14 @@ const create = (
 
         rules.forEach((rule) => {
             const importNames = arrify(rule.importName);
-            typeReferences.forEach((typeReference) => {
-                if (!isIdentifier(typeReference.typeName)) {
-                    return;
-                }
-
-                const { name } = typeReference.typeName;
+            typeIdentifiers.forEach((identifier) => {
+                const { name } = identifier;
                 if (!importNames.includes(name)) {
                     return;
                 }
 
-                const importDeclaration = getImportDeclarationForIdentifier(
-                    typeReference.typeName
-                );
+                const importDeclaration =
+                    getImportDeclarationForIdentifier(identifier);
 
                 if (importDeclaration !== undefined) {
                     return;
@@ -184,7 +179,7 @@ const create = (
                 }
 
                 context.report({
-                    node: typeReference,
+                    node: identifier,
                     messageId: "bannedGlobalType",
                     data: replacementData,
                     fix: () => fixes,
@@ -194,8 +189,20 @@ const create = (
     };
 
     return {
-        TSTypeReference(typeReference) {
-            typeReferences.push(typeReference);
+        TSClassImplements(node) {
+            if (isIdentifier(node.expression)) {
+                typeIdentifiers.push(node.expression);
+            }
+        },
+        TSTypeReference(node) {
+            if (isIdentifier(node.typeName)) {
+                typeIdentifiers.push(node.typeName);
+            }
+        },
+        TSInterfaceHeritage(node) {
+            if (isIdentifier(node.expression)) {
+                typeIdentifiers.push(node.expression);
+            }
         },
         ImportDeclaration(importDeclaration) {
             importDeclarations.push(importDeclaration);
