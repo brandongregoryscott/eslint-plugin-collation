@@ -118,9 +118,7 @@ const create = (
         importDeclarations.find((importDeclaration) =>
             importDeclaration.specifiers
                 .filter(isImportSpecifier)
-                .some(
-                    (specifier) => specifier.imported.name === identifier.name
-                )
+                .some((specifier) => specifier.local.name === identifier.name)
         );
 
     const checkGlobalTypeReferences = () => {
@@ -171,7 +169,7 @@ const create = (
                     fixes.push(
                         insertTextAfter(
                             lastImportDeclaration,
-                            replacementImportDeclaration
+                            `\n${replacementImportDeclaration}`
                         )
                     );
                 }
@@ -180,7 +178,7 @@ const create = (
                     fixes.push(
                         insertTextBeforeRange(
                             [0, 0],
-                            replacementImportDeclaration
+                            `${replacementImportDeclaration}\n`
                         )
                     );
                 }
