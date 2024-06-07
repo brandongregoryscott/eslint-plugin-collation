@@ -21,7 +21,7 @@ import {
     intersection,
     last,
 } from "../utils/collection-utils";
-import { cloneDeepJson, isEmpty } from "../utils/core-utils";
+import { cloneDeepJson, isEmpty, isString } from "../utils/core-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
 import {
     getImportSpecifierText,
@@ -33,11 +33,14 @@ import {
 } from "../utils/node-utils";
 import { minimatch } from "minimatch";
 import {
+    insertTextAfter,
     insertTextBefore,
+    insertTextBeforeRange,
     remove,
     removeImportClause,
 } from "../utils/fixer-utils";
 import { getValues, iterate, updateIn } from "../utils/map-utils";
+import { isIdentifier } from "@typescript-eslint/utils/dist/ast-utils";
 
 interface PreferImportOptions {
     [moduleSpecifier: string]: ImportRule | ImportRule[];
@@ -72,7 +75,11 @@ interface ImportRule {
     transformImportName?: CaseTransformation;
 }
 
-type PreferImportMessageIds = "preferImport" | "preferImportMultiple";
+type PreferImportMessageIds =
+    | "bannedGlobalType"
+    | "preferImport"
+    | "preferImportMultiple";
+
 type ErrorMessageReplacementData = Pick<
     ImportRule,
     "importName" | "replacementModuleSpecifier"
@@ -101,26 +108,109 @@ const create = (
     }
 
     const importDeclarations: TSESTree.ImportDeclaration[] = [];
+    const typeIdentifiers: TSESTree.Identifier[] = [];
+
     const errors: ImportRuleErrors = new Map();
 
-    return {
-        ImportDeclaration(importDeclaration) {
-            tryRule(context, () => {
-                const moduleSpecifier = getModuleSpecifier(importDeclaration);
-                if (options[moduleSpecifier] == null) {
+    const getImportDeclarationForIdentifier = (
+        identifier: TSESTree.Identifier
+    ): TSESTree.ImportDeclaration | undefined =>
+        importDeclarations.find((importDeclaration) =>
+            importDeclaration.specifiers
+                .filter(isImportSpecifier)
+                .some((specifier) => specifier.local.name === identifier.name)
+        );
+
+    const checkGlobalTypeReferences = () => {
+        if (!("global" in options)) {
+            return;
+        }
+
+        const rules = arrify(options.global);
+        if (isEmpty(rules)) {
+            return;
+        }
+
+        rules.forEach((rule) => {
+            const importNames = arrify(rule.importName);
+            typeIdentifiers.forEach((identifier) => {
+                const { name } = identifier;
+                if (!importNames.includes(name)) {
                     return;
                 }
 
-                const rules = arrify(options[moduleSpecifier]);
-                if (isEmpty(rules)) {
+                const importDeclaration =
+                    getImportDeclarationForIdentifier(identifier);
+
+                if (importDeclaration !== undefined) {
                     return;
                 }
 
-                importDeclarations.push(importDeclaration);
+                const fixes: RuleFix[] = [];
+
+                const replacementModuleSpecifier =
+                    getReplacementModuleSpecifier(rule);
+
+                const replacementData: ErrorMessageReplacementData = {
+                    importName: name,
+                    replacementModuleSpecifier,
+                };
+
+                const lastImportDeclaration = last(importDeclarations);
+                const replacementImportDeclaration =
+                    getReplacementImportDeclarations([name], rule);
+
+                if (lastImportDeclaration !== undefined) {
+                    fixes.push(
+                        insertTextAfter(
+                            lastImportDeclaration,
+                            `\n${replacementImportDeclaration}`
+                        )
+                    );
+                }
+
+                if (lastImportDeclaration === undefined) {
+                    fixes.push(
+                        insertTextBeforeRange(
+                            [0, 0],
+                            `${replacementImportDeclaration}\n`
+                        )
+                    );
+                }
+
+                context.report({
+                    node: identifier,
+                    messageId: "bannedGlobalType",
+                    data: replacementData,
+                    fix: () => fixes,
+                });
             });
+        });
+    };
+
+    return {
+        TSClassImplements(node) {
+            if (isIdentifier(node.expression)) {
+                typeIdentifiers.push(node.expression);
+            }
+        },
+        TSTypeReference(node) {
+            if (isIdentifier(node.typeName)) {
+                typeIdentifiers.push(node.typeName);
+            }
+        },
+        TSInterfaceHeritage(node) {
+            if (isIdentifier(node.expression)) {
+                typeIdentifiers.push(node.expression);
+            }
+        },
+        ImportDeclaration(importDeclaration) {
+            importDeclarations.push(importDeclaration);
         },
         [PROGRAM_EXIT]() {
             tryRule(context, () => {
+                checkGlobalTypeReferences();
+
                 importDeclarations.forEach((importDeclaration) => {
                     const moduleSpecifier =
                         getModuleSpecifier(importDeclaration);
@@ -337,6 +427,8 @@ const preferImport = createRule<PreferImportOptions[], PreferImportMessageIds>({
             recommended: "error",
         },
         messages: {
+            bannedGlobalType:
+                "The type '{{importName}}' is currently being referenced as a global type, but should be imported from '{{replacementModuleSpecifier}}' instead.",
             preferImport:
                 "Import '{{importName}}' from '{{replacementModuleSpecifier}}' instead.",
             preferImportMultiple: "{{message}}",
@@ -407,7 +499,7 @@ const getMatchingSpecifiers = (
 };
 
 const getReplacementImportDeclarations = (
-    specifiers: TSESTree.ImportSpecifier[],
+    specifiers: string[] | TSESTree.ImportSpecifier[],
     rule: ImportRule
 ): string => {
     const {
@@ -418,10 +510,13 @@ const getReplacementImportDeclarations = (
     if (replaceAsDefault || hasImportNameVariable(replacementModuleSpecifier)) {
         return specifiers
             .map((specifier) => {
-                const alias = specifier.local.name;
+                const alias = isString(specifier)
+                    ? specifier
+                    : specifier.local.name;
                 // Prefer the alias name if present & replacing as a default import, otherwise
                 // we can produce broken code such as `import isEmpty as lodashIsEmpty from 'lodash/isEmpty'`
-                const useAliasAsName = !isEmpty(alias) && replaceAsDefault;
+                const useAliasAsName =
+                    !isEmpty(alias) && !isString(specifier) && replaceAsDefault;
                 const name = useAliasAsName
                     ? alias
                     : getImportSpecifierText(specifier) ?? "";
@@ -439,7 +534,7 @@ const getReplacementImportDeclarations = (
 
     const moduleSpecifier = getReplacementModuleSpecifier(
         rule,
-        firstIfOnly(specifiers)
+        firstIfOnly<TSESTree.ImportSpecifier | string>(specifiers)
     );
 
     const importNames = specifiers.map(getImportSpecifierText) as string[];
@@ -448,7 +543,7 @@ const getReplacementImportDeclarations = (
 
 const getReplacementModuleSpecifier = (
     rule: ImportRule,
-    specifier?: TSESTree.ImportSpecifier
+    specifier?: TSESTree.ImportSpecifier | string
 ): string => {
     const {
         replacementModuleSpecifier,
@@ -461,7 +556,9 @@ const getReplacementModuleSpecifier = (
         hasImportNameVariable(replacementModuleSpecifier) &&
         specifier != null
     ) {
-        let importName = getName(specifier) ?? "";
+        let importName = isString(specifier)
+            ? specifier
+            : getName(specifier) ?? "";
         const shouldReplaceProps =
             importName.endsWith(PROPS) && importPropsFromSameModule;
 

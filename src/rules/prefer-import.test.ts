@@ -21,6 +21,45 @@ ruleTester.run("prefer-import", preferImport, {
             ],
             code: "import { Box } from '@twilio-paste/core/box'",
         },
+        {
+            name: "global > aliased name is allowed regardless of module specifier",
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `import { SomeOtherNode as Node } from '@/types';
+const foo: Node = {}`,
+        },
+        {
+            name: "global > import is allowed with same module specifier",
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `import { Node } from '@/types';
+const foo: Node = {}`,
+        },
+        {
+            name: "global > import is allowed with different module specifier when no other rule to replace import is defined",
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `import { Node } from '@/types/node';
+const foo: Node = {}`,
+        },
     ],
     invalid: [
         {
@@ -76,6 +115,151 @@ ruleTester.run("prefer-import", preferImport, {
             errors: [
                 {
                     messageId: "preferImport",
+                },
+            ],
+        },
+        {
+            name: "global > aliased import from same module reports an error when the type would still resolve to global type",
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `import { Node as SomeOtherNode } from '@/types';
+const foo: Node = {}`,
+            output: `import { Node as SomeOtherNode } from '@/types';
+import { Node } from '@/types';
+
+const foo: Node = {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            name: "global > type without an import reports an error",
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `const foo: Node = {}`,
+            output: `import { Node } from '@/types';
+
+const foo: Node = {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            name: "global > adds additional import declaration for the same module specifier to fix global type reference",
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `import { Comment } from '@/types';
+const foo: Node = {}`,
+            output: `import { Comment } from '@/types';
+import { Node } from '@/types';
+
+const foo: Node = {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `interface DisplayNode extends Node {}`,
+            output: `import { Node } from '@/types';
+
+interface DisplayNode extends Node {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `class Foo implements Node {}`,
+            output: `import { Node } from '@/types';
+
+class Foo implements Node {}`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `type DisplayNode = Node & { foo: number }`,
+            output: `import { Node } from '@/types';
+
+type DisplayNode = Node & { foo: number }`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
                 },
             ],
         },
