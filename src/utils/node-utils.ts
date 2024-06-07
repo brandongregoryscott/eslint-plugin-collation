@@ -105,12 +105,16 @@ const toImportDeclaration = (
 ): string =>
     `import { ${arrify(specifiers).join(", ")} } from '${moduleSpecifier}';`;
 
+const isIdentifier = (node: TSESTree.Node): node is TSESTree.Identifier =>
+    node.type === AST_NODE_TYPES.Identifier;
+
 export {
     getImportSpecifierText,
     getModuleSpecifier,
     getName,
     isCommaToken,
     isDeclaration,
+    isIdentifier,
     isIdentifierToken,
     isImportDeclaration,
     isImportSpecifier,

@@ -27,6 +27,7 @@ import {
     getImportSpecifierText,
     getModuleSpecifier,
     getName,
+    isIdentifier,
     isImportSpecifier,
     toDefaultImportDeclaration,
     toImportDeclaration,
@@ -40,7 +41,6 @@ import {
     removeImportClause,
 } from "../utils/fixer-utils";
 import { getValues, iterate, updateIn } from "../utils/map-utils";
-import { isIdentifier } from "@typescript-eslint/utils/dist/ast-utils";
 
 interface PreferImportOptions {
     [moduleSpecifier: string]: ImportRule | ImportRule[];
