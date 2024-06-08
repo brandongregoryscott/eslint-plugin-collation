@@ -109,6 +109,8 @@ const create = (
 
     const importDeclarations: TSESTree.ImportDeclaration[] = [];
     const typeIdentifiers: TSESTree.Identifier[] = [];
+    const interfaceDeclarations: TSESTree.TSInterfaceDeclaration[] = [];
+    const typeDeclarations: TSESTree.TSTypeAliasDeclaration[] = [];
 
     const errors: ImportRuleErrors = new Map();
 
@@ -142,7 +144,19 @@ const create = (
                 const importDeclaration =
                     getImportDeclarationForIdentifier(identifier);
 
-                if (importDeclaration !== undefined) {
+                const typeDeclaration = typeDeclarations.find(
+                    (typeDeclaration) => typeDeclaration.id.name === name
+                );
+                const interfaceDeclaration = interfaceDeclarations.find(
+                    (interfaceDeclaration) =>
+                        interfaceDeclaration.id.name === name
+                );
+
+                if (
+                    importDeclaration !== undefined ||
+                    typeDeclaration !== undefined ||
+                    interfaceDeclaration !== undefined
+                ) {
                     return;
                 }
 
@@ -204,8 +218,14 @@ const create = (
                 typeIdentifiers.push(node.expression);
             }
         },
-        ImportDeclaration(importDeclaration) {
-            importDeclarations.push(importDeclaration);
+        ImportDeclaration(node) {
+            importDeclarations.push(node);
+        },
+        TSInterfaceDeclaration(node) {
+            interfaceDeclarations.push(node);
+        },
+        TSTypeAliasDeclaration(node) {
+            typeDeclarations.push(node);
         },
         [PROGRAM_EXIT]() {
             tryRule(context, () => {

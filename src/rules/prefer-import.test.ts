@@ -60,6 +60,32 @@ const foo: Node = {}`,
             code: `import { Node } from '@/types/node';
 const foo: Node = {}`,
         },
+        {
+            name: "global > no error is reported when type is defined locally",
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `type Node = {};
+const foo: Node = {}`,
+        },
+        {
+            name: "global > no error is reported when interface is defined locally",
+            options: [
+                {
+                    global: {
+                        importName: "Node",
+                        replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+            code: `interface Node {};
+const foo: Node = {}`,
+        },
     ],
     invalid: [
         {
@@ -195,6 +221,7 @@ const foo: Node = {}`,
             ],
         },
         {
+            name: "global > adds import declaration to fix global type reference in interface heritage clause",
             options: [
                 {
                     global: {
@@ -218,6 +245,7 @@ interface DisplayNode extends Node {}`,
             ],
         },
         {
+            name: "global > adds import declaration to fix global type reference in class implements clause",
             options: [
                 {
                     global: {
@@ -241,6 +269,7 @@ class Foo implements Node {}`,
             ],
         },
         {
+            name: "global > adds import declaration to fix global type reference",
             options: [
                 {
                     global: {
