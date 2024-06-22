@@ -15,18 +15,15 @@ jobs:
         name: semantic-release
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout
-              uses: actions/checkout@v2
-              with:
-                  fetch-depth: 0
+            - uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v2
+            - name: Setup node 18.16.0
+              uses: actions/setup-node@v4
               with:
-                  node-version: "lts/*"
+                  node-version: 18.16.0
 
             - name: npm install
-              run: npm install
+              run: npm ci
 
             # This should have already been done at the PR step, but just to sanity check
             - name: npm run build:dist

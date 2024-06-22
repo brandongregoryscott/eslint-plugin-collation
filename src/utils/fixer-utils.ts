@@ -1,8 +1,5 @@
 import type { TSESTree } from "@typescript-eslint/utils";
-import type {
-    RuleFix,
-    SourceCode,
-} from "@typescript-eslint/utils/dist/ts-eslint";
+import type { RuleFix, SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import { isCommaToken, isIdentifierToken } from "./node-utils";
 
 // #region Vendorized Fixer functions

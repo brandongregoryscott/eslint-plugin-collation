@@ -1,8 +1,8 @@
-import { ESLintUtils } from "@typescript-eslint/utils";
+import { RuleTester } from "@typescript-eslint/rule-tester";
 import { noInlineExport } from "./no-inline-export";
 import { codeBlock } from "common-tags";
 
-const ruleTester = new ESLintUtils.RuleTester({
+const ruleTester = new RuleTester({
     parser: "@typescript-eslint/parser",
 });
 

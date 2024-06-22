@@ -3,7 +3,7 @@ import type {
     RuleFix,
     RuleFixer,
     SourceCode,
-} from "@typescript-eslint/utils/dist/ts-eslint";
+} from "@typescript-eslint/utils/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import {
     isInlineExport,
@@ -40,7 +40,7 @@ const groupExports = createRule({
     meta: {
         docs: {
             description: "Consolidates multiple export statements",
-            recommended: "warn",
+            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

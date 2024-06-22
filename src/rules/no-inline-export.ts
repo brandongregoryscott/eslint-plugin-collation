@@ -4,7 +4,7 @@ import type {
     RuleFix,
     RuleFixer,
     SourceCode,
-} from "@typescript-eslint/utils/dist/ts-eslint";
+} from "@typescript-eslint/utils/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { getName } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
@@ -47,7 +47,7 @@ const noInlineExport = createRule({
     meta: {
         docs: {
             description: "Enforces exports to appear at the end of the file",
-            recommended: "warn",
+            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

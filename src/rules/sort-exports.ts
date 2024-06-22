@@ -1,4 +1,4 @@
-import type { RuleContext } from "@typescript-eslint/utils/dist/ts-eslint";
+import type { RuleContext } from "@typescript-eslint/utils/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import {
     isInlineExport,
@@ -30,7 +30,7 @@ const sortExports = createRule({
     meta: {
         docs: {
             description: "Sorts specifiers in an export statement",
-            recommended: "warn",
+            recommended: "stylistic",
         },
         fixable: "code",
         messages: {
