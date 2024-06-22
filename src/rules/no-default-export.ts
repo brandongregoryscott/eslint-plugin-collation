@@ -5,7 +5,7 @@ import type {
     RuleFix,
     RuleFixer,
     SourceCode,
-} from "@typescript-eslint/utils/dist/ts-eslint";
+} from "@typescript-eslint/utils/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import type { Declaration } from "../types/declaration";
 import { getName, isDeclaration } from "../utils/node-utils";
@@ -40,7 +40,7 @@ const noDefaultExport = createRule({
     meta: {
         docs: {
             description: "Enforces exports to be named",
-            recommended: "warn",
+            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

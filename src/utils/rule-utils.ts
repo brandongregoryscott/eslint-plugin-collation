@@ -1,6 +1,6 @@
 import { ESLintUtils } from "@typescript-eslint/utils";
 import { getDocsUrl } from "./string-utils";
-import type { RuleContext } from "@typescript-eslint/utils/dist/ts-eslint";
+import type { RuleContext } from "@typescript-eslint/utils/ts-eslint";
 
 const createRule = ESLintUtils.RuleCreator(getDocsUrl);
 

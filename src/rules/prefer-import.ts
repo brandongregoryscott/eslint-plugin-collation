@@ -1,8 +1,3 @@
-import type {
-    RuleContext,
-    RuleFix,
-    RuleListener,
-} from "@typescript-eslint/utils/dist/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { createRule, tryRule } from "../utils/rule-utils";
 import type { CaseTransformation } from "../utils/string-utils";
@@ -11,7 +6,6 @@ import {
     transformCase,
     CASE_TRANSFORMATIONS,
 } from "../utils/string-utils";
-import type { JSONSchema4 } from "@typescript-eslint/utils/dist/json-schema";
 import {
     arrify,
     difference,
@@ -41,6 +35,12 @@ import {
     removeImportClause,
 } from "../utils/fixer-utils";
 import { getValues, iterate, updateIn } from "../utils/map-utils";
+import type {
+    RuleContext,
+    RuleFix,
+    RuleListener,
+} from "@typescript-eslint/utils/ts-eslint";
+import type { JSONSchema4 } from "@typescript-eslint/utils/json-schema";
 
 interface PreferImportOptions {
     [moduleSpecifier: string]: ImportRule | ImportRule[];
@@ -433,6 +433,7 @@ const importRuleSchema: JSONSchema4 = {
             description:
                 "String transformation method to be run on the matched `importName`. Only applicable if `replacementModuleSpecifier` has the replacement variable `{importName}`.",
             enum: CASE_TRANSFORMATIONS,
+            type: "string",
         },
     },
 };
@@ -444,7 +445,7 @@ const preferImport = createRule<PreferImportOptions[], PreferImportMessageIds>({
         docs: {
             description:
                 "Enforces imports from a preferred module over another, such as for tree-shaking purposes or wrapping a library.",
-            recommended: "error",
+            recommended: "strict",
         },
         messages: {
             bannedGlobalType:

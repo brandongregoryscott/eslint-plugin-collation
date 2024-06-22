@@ -4,7 +4,7 @@ import type {
     RuleContext,
     RuleFix,
     RuleFixer,
-} from "@typescript-eslint/utils/dist/ts-eslint";
+} from "@typescript-eslint/utils/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { createRule } from "../utils/rule-utils";
 import { isEqualJson } from "../utils/core-utils";
@@ -30,7 +30,7 @@ const sortDependencyList = createRule({
     meta: {
         docs: {
             description: "Sorts React dependency lists",
-            recommended: "warn",
+            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

@@ -17,5 +17,7 @@
         "typescript-sort-keys",
         "@typescript-eslint"
     ],
-    "rules": {}
+    "rules": {
+        "@typescript-eslint/sort-type-union-intersection-members": "off"
+    }
 }
