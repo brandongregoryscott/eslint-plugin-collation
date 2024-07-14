@@ -9,7 +9,7 @@ jobs:
     test:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v4
 
             - name: Setup node 18.16.0
               uses: actions/setup-node@v4
@@ -22,7 +22,7 @@ jobs:
             - run: yalc publish --no-scripts
             - run: yalc add eslint-plugin-collation
 
-            - uses: AriPerkkio/eslint-remote-tester-run-action@v3
+            - uses: AriPerkkio/eslint-remote-tester-run-action@v5
               with:
                   issue-title: "Results of scheduled smoke test"
                   eslint-remote-tester-config: eslint-remote-tester.config.js
