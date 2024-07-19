@@ -25,7 +25,7 @@
         "eslint-plugin-collation": "1.4.2",
         "eslint-plugin-import": "2.29.1",
         "eslint-plugin-typescript-sort-keys": "3.2.0",
-        "eslint-remote-tester": "4.0.0",
+        "eslint-remote-tester": "3.0.1",
         "eslint-remote-tester-repositories": "2.0.0",
         "husky": "7.0.4",
         "jest": "28.1.0",
