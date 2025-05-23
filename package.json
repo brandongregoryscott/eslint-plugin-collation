@@ -29,6 +29,7 @@
         "eslint-remote-tester-repositories": "2.0.0",
         "husky": "7.0.4",
         "jest": "28.1.0",
+        "jest-junit": "16.0.0",
         "lint-staged": "13.0.3",
         "prettier": "2.6.2",
         "semantic-release": "19.0.3",
