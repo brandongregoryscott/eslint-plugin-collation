@@ -11,4 +11,14 @@ module.exports = {
     restoreMocks: true,
     testEnvironment: "node",
     silent: false,
+    reporters: [
+        [
+            "jest-junit",
+            {
+                outputDirectory: ".",
+                outputName: "report.xml",
+                addFileAttribute: "true",
+            },
+        ],
+    ],
 };
