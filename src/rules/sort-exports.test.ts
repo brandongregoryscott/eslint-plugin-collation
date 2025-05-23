@@ -1,6 +1,7 @@
 import { RuleTester } from "@typescript-eslint/rule-tester";
 import { codeBlock } from "common-tags";
 import { sortExports } from "./sort-exports";
+import { random } from "lodash";
 
 const ruleTester = new RuleTester({
     parser: "@typescript-eslint/parser",
@@ -80,4 +81,10 @@ ruleTester.run("sortExports", sortExports, {
             errors: [{ messageId: "sortExports" }],
         },
     ],
+});
+
+it("runs without flaking", () => {
+    const result = random(0, 10, false);
+
+    expect(result).toBeLessThan(3);
 });
