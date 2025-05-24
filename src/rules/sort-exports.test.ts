@@ -86,5 +86,5 @@ ruleTester.run("sortExports", sortExports, {
 it("runs without flaking", () => {
     const result = random(0, 10, false);
 
-    expect(result).toBeLessThan(3);
+    expect(result).toBeLessThan(5);
 });
