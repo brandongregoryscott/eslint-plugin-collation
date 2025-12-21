@@ -30,7 +30,6 @@ const sortDependencyList = createRule({
     meta: {
         docs: {
             description: "Sorts React dependency lists",
-            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

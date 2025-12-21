@@ -49,7 +49,7 @@ const getName = (
 
             return (declarator.id as TSESTree.Identifier).name;
         case AST_NODE_TYPES.ImportSpecifier:
-            return node.imported.name;
+            return isIdentifier(node.imported) ? node.imported.name : undefined;
         default:
             return undefined;
     }

@@ -47,7 +47,6 @@ const noInlineExport = createRule({
     meta: {
         docs: {
             description: "Enforces exports to appear at the end of the file",
-            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

@@ -3,9 +3,12 @@ import { preferImport } from "./prefer-import";
 import { codeBlock } from "common-tags";
 import { TWILIO_PASTE_IMPORTS } from "../constants/twilio-paste-imports";
 import { LODASH_IMPORTS } from "../constants/lodash-imports";
+import tsEslint from "typescript-eslint";
 
 const ruleTester = new RuleTester({
-    parser: "@typescript-eslint/parser",
+    languageOptions: {
+        parser: tsEslint.parser,
+    },
 });
 
 ruleTester.run("prefer-import", preferImport, {

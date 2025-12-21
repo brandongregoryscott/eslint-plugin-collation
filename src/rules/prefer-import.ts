@@ -445,7 +445,6 @@ const preferImport = createRule<PreferImportOptions[], PreferImportMessageIds>({
         docs: {
             description:
                 "Enforces imports from a preferred module over another, such as for tree-shaking purposes or wrapping a library.",
-            recommended: "strict",
         },
         messages: {
             bannedGlobalType:
