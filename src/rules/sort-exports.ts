@@ -30,7 +30,6 @@ const sortExports = createRule({
     meta: {
         docs: {
             description: "Sorts specifiers in an export statement",
-            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

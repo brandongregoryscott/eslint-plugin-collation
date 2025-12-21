@@ -40,7 +40,6 @@ const noDefaultExport = createRule({
     meta: {
         docs: {
             description: "Enforces exports to be named",
-            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

@@ -40,7 +40,6 @@ const groupExports = createRule({
     meta: {
         docs: {
             description: "Consolidates multiple export statements",
-            recommended: "stylistic",
         },
         fixable: "code",
         messages: {

@@ -1,9 +1,12 @@
 import { RuleTester } from "../test/test-utils";
 import { noInlineExport } from "./no-inline-export";
 import { codeBlock } from "common-tags";
+import tsEslint from "typescript-eslint";
 
 const ruleTester = new RuleTester({
-    parser: "@typescript-eslint/parser",
+    languageOptions: {
+        parser: tsEslint.parser,
+    },
 });
 
 ruleTester.run("noInlineExport", noInlineExport, {

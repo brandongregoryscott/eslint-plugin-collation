@@ -2,6 +2,8 @@ import type { TSESTree } from "@typescript-eslint/utils";
 import type { NamedExport } from "../types/named-export";
 import { last } from "./collection-utils";
 import { isEmpty } from "./core-utils";
+import { compact } from "lodash";
+import { isIdentifier } from "./node-utils";
 
 /**
  * Converts multiple named exports into a single export. This function
@@ -32,14 +34,23 @@ const exportToString = (_export: NamedExport): string => {
     return `${exportKeyword} { ${specifierList} }${moduleSpecifier};`;
 };
 
-const getSpecifiers = (_export: TSESTree.ExportNamedDeclaration): string[] =>
-    _export.specifiers.map((specifier) => {
+const getSpecifiers = (_export: TSESTree.ExportNamedDeclaration): string[] => {
+    const specifiers = _export.specifiers.map((specifier) => {
         const { exported, local } = specifier;
+
+        if (!isIdentifier(exported) || !isIdentifier(local)) {
+            return "";
+        }
+
         if (exported.name !== local.name) {
             return `${local.name} as ${exported.name}`;
         }
+
         return local.name;
     });
+
+    return compact(specifiers);
+};
 
 const isInlineExport = (
     namedExport: TSESTree.ExportNamedDeclaration
