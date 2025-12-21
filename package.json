@@ -9,6 +9,7 @@
     },
     "description": "ESLint plugin for making your code easier to read",
     "devDependencies": {
+        "@stylistic/eslint-plugin": "5.6.1",
         "@types/common-tags": "1.8.1",
         "@types/lodash": "4.14.182",
         "@typescript-eslint/eslint-plugin": "8.50.0",
@@ -30,6 +31,7 @@
         "prettier": "2.6.2",
         "semantic-release": "19.0.3",
         "typescript": "5.9.3",
+        "typescript-eslint": "8.50.0",
         "vitest": "4.0.16"
     },
     "engines": {
