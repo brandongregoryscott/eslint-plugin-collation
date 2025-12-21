@@ -1,4 +1,4 @@
-import { RuleTester } from "@typescript-eslint/rule-tester";
+import { RuleTester } from "../test/test-utils";
 import { noInlineExport } from "./no-inline-export";
 import { codeBlock } from "common-tags";
 
