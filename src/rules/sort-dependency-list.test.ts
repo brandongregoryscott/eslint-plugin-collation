@@ -1,4 +1,4 @@
-import { RuleTester } from "@typescript-eslint/rule-tester";
+import { RuleTester } from "../test/test-utils";
 import { sortDependencyList } from "./sort-dependency-list";
 
 const ruleTester = new RuleTester({

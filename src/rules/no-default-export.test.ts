@@ -1,4 +1,4 @@
-import { RuleTester } from "@typescript-eslint/rule-tester";
+import { RuleTester } from "../test/test-utils";
 import { noDefaultExport } from "./no-default-export";
 
 const ruleTester = new RuleTester({

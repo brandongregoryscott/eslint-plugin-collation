@@ -1,4 +1,4 @@
-import { RuleTester } from "@typescript-eslint/rule-tester";
+import { RuleTester } from "../test/test-utils";
 import { preferImport } from "./prefer-import";
 import { codeBlock } from "common-tags";
 import { TWILIO_PASTE_IMPORTS } from "../constants/twilio-paste-imports";

@@ -27,12 +27,11 @@
         "eslint-remote-tester": "3.0.1",
         "eslint-remote-tester-repositories": "2.0.0",
         "husky": "7.0.4",
-        "jest": "28.1.0",
         "lint-staged": "13.0.3",
         "prettier": "2.6.2",
         "semantic-release": "19.0.3",
-        "ts-jest": "28.0.3",
-        "typescript": "4.7.2"
+        "typescript": "4.7.2",
+        "vitest": "4.0.16"
     },
     "engines": {
         "node": ">=18"
@@ -82,8 +81,8 @@
         "postpublish": "[[ $(git branch --show-current) == $git_main_branch ]] && npm run deploy:docs || echo \"Skipping deploy:docs\"",
         "prepublishOnly": "npm run clean && npm run build",
         "semantic-release": "semantic-release",
-        "test": "jest",
-        "test:watch": "jest --watch"
+        "test": "vitest",
+        "test:watch": "vitest --watch"
     },
     "version": "0.0.0-development"
 }

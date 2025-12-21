@@ -1,4 +1,4 @@
-import { RuleTester } from "@typescript-eslint/rule-tester";
+import { RuleTester } from "../test/test-utils";
 import { codeBlock } from "common-tags";
 import { sortExports } from "./sort-exports";
 
