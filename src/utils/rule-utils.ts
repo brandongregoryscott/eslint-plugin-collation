@@ -12,7 +12,8 @@ const tryRule = <TMessageIds extends string, TOptions extends unknown[]>(
         fn();
     } catch (error) {
         const prefix = `collation/${context.id}`;
-        const filename = context.getFilename();
+        const { filename } = context;
+        // eslint-disable-next-line no-console -- We don't want to silently swallow this error
         console.error(`${prefix}: Error while linting ${filename}`, error);
     }
 };
