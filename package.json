@@ -9,7 +9,6 @@
     },
     "description": "ESLint plugin for making your code easier to read",
     "devDependencies": {
-        "@brandongregoryscott/eslint-config": "1.0.1",
         "@types/common-tags": "1.8.1",
         "@types/jest": "27.5.1",
         "@types/lodash": "4.14.182",
