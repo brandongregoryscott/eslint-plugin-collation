@@ -89,6 +89,72 @@ const foo: Node = {}`,
             code: `interface Node {};
 const foo: Node = {}`,
         },
+        {
+            name: "global > allows imported global object",
+            options: [
+                {
+                    global: {
+                        importName: "Math",
+                        replacementModuleSpecifier: "@/utilities",
+                    },
+                },
+            ],
+            code: `import { Math } from '@/utilities';
+const foo = Math.floor(0.5)`,
+        },
+        {
+            name: "global > no error when local variable shadows global",
+            options: [
+                {
+                    global: {
+                        importName: "Math",
+                        replacementModuleSpecifier: "@/utilities",
+                    },
+                },
+            ],
+            code: `const Math = { floor: (n: number) => n };
+const foo = Math.floor(0.5)`,
+        },
+        {
+            name: "global > allows imported JSX component",
+            options: [
+                {
+                    global: {
+                        importName: "Text",
+                        replacementModuleSpecifier: "@/components",
+                    },
+                },
+            ],
+            languageOptions: {
+                parserOptions: {
+                    ecmaFeatures: {
+                        jsx: true,
+                    },
+                },
+            },
+            code: `import { Text } from '@/components';
+const elem = <Text>Hello</Text>`,
+        },
+        {
+            name: "global > no error when JSX component is a local variable",
+            options: [
+                {
+                    global: {
+                        importName: "Text",
+                        replacementModuleSpecifier: "@/components",
+                    },
+                },
+            ],
+            languageOptions: {
+                parserOptions: {
+                    ecmaFeatures: {
+                        jsx: true,
+                    },
+                },
+            },
+            code: `const Text = (props) => <div>{props.children}</div>;
+const elem = <Text>Hello</Text>`,
+        },
     ],
     invalid: [
         {
@@ -291,6 +357,176 @@ type DisplayNode = Node & { foo: number }`,
                     data: {
                         importName: "Node",
                         replacementModuleSpecifier: "@/types",
+                    },
+                },
+            ],
+        },
+        {
+            name: "global > flags member expression on global object without import",
+            options: [
+                {
+                    global: {
+                        importName: "Math",
+                        replacementModuleSpecifier: "@/utilities",
+                    },
+                },
+            ],
+            code: `const foo = Math.floor(0.5)`,
+            output: `import { Math } from '@/utilities';
+
+const foo = Math.floor(0.5)`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Math",
+                        replacementModuleSpecifier: "@/utilities",
+                    },
+                },
+            ],
+        },
+        {
+            name: "global > flags JSX component without import",
+            options: [
+                {
+                    global: {
+                        importName: "Text",
+                        replacementModuleSpecifier: "@/components",
+                    },
+                },
+            ],
+            languageOptions: {
+                parserOptions: {
+                    ecmaFeatures: {
+                        jsx: true,
+                    },
+                },
+            },
+            code: `const elem = <Text>Hello</Text>`,
+            output: [
+                `import { Text } from '@/components';
+
+const elem = <Text>Hello</Text>`,
+            ],
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Text",
+                        replacementModuleSpecifier: "@/components",
+                    },
+                },
+            ],
+        },
+        {
+            name: "global > flags self-closing JSX component without import",
+            options: [
+                {
+                    global: {
+                        importName: "Button",
+                        replacementModuleSpecifier: "@/components",
+                    },
+                },
+            ],
+            languageOptions: {
+                parserOptions: {
+                    ecmaFeatures: {
+                        jsx: true,
+                    },
+                },
+            },
+            code: `const elem = <Button />`,
+            output: [
+                `import { Button } from '@/components';
+
+const elem = <Button />`,
+            ],
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Button",
+                        replacementModuleSpecifier: "@/components",
+                    },
+                },
+            ],
+        },
+        {
+            name: "global > flags multiple uses of global object",
+            options: [
+                {
+                    global: {
+                        importName: "Math",
+                        replacementModuleSpecifier: "@/utilities",
+                    },
+                },
+            ],
+            code: `const foo = Math.floor(0.5);
+const bar = Math.ceil(1.5)`,
+            output: `import { Math } from '@/utilities';
+
+const foo = Math.floor(0.5);
+const bar = Math.ceil(1.5)`,
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Math",
+                        replacementModuleSpecifier: "@/utilities",
+                    },
+                },
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Math",
+                        replacementModuleSpecifier: "@/utilities",
+                    },
+                },
+            ],
+        },
+        {
+            name: "global > works with multiple global rules",
+            options: [
+                {
+                    global: [
+                        {
+                            importName: "Math",
+                            replacementModuleSpecifier: "@/utilities",
+                        },
+                        {
+                            importName: "Text",
+                            replacementModuleSpecifier: "@/components",
+                        },
+                    ],
+                },
+            ],
+            code: `const foo = Math.floor(0.5);
+const bar = Text.render()`,
+            output: [
+                `import { Math } from '@/utilities';
+
+const foo = Math.floor(0.5);
+const bar = Text.render()`,
+                `import { Math } from '@/utilities';
+import { Text } from '@/components';
+
+
+const foo = Math.floor(0.5);
+const bar = Text.render()`,
+            ],
+            errors: [
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Math",
+                        replacementModuleSpecifier: "@/utilities",
+                    },
+                },
+                {
+                    messageId: "bannedGlobalType",
+                    data: {
+                        importName: "Text",
+                        replacementModuleSpecifier: "@/components",
                     },
                 },
             ],
