@@ -112,6 +112,9 @@ const toImportDeclaration = (
 const isIdentifier = (node: TSESTree.Node): node is TSESTree.Identifier =>
     node.type === AST_NODE_TYPES.Identifier;
 
+const isJsxIdentifier = (node: TSESTree.Node): node is TSESTree.JSXIdentifier =>
+    node.type === AST_NODE_TYPES.JSXIdentifier;
+
 export {
     getImportSpecifierText,
     getModuleSpecifier,
@@ -122,6 +125,7 @@ export {
     isIdentifierToken,
     isImportDeclaration,
     isImportSpecifier,
+    isJsxIdentifier,
     toDefaultImportDeclaration,
     toImportDeclaration,
 };

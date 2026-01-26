@@ -23,6 +23,7 @@ import {
     getName,
     isIdentifier,
     isImportSpecifier,
+    isJsxIdentifier,
     toDefaultImportDeclaration,
     toImportDeclaration,
 } from "../utils/node-utils";
@@ -108,9 +109,7 @@ const create = (
     }
 
     const importDeclarations: TSESTree.ImportDeclaration[] = [];
-    const typeIdentifiers: TSESTree.Identifier[] = [];
-    const globalReferences: Array<[name: string, node: TSESTree.Node]> = [];
-    const seenGlobalReferences: Set<TSESTree.Node> = new Set();
+    const identifiers: Array<TSESTree.Identifier | TSESTree.JSXIdentifier> = [];
     const interfaceDeclarations: TSESTree.TSInterfaceDeclaration[] = [];
     const typeDeclarations: TSESTree.TSTypeAliasDeclaration[] = [];
     const variableNames: Set<string> = new Set();
@@ -138,8 +137,9 @@ const create = (
             return;
         }
 
-        const checkReference = (name: string, node: TSESTree.Node) => {
-            rules.forEach((rule) => {
+        rules.forEach((rule) => {
+            identifiers.forEach((identifier) => {
+                const { name } = identifier;
                 const importNames = arrify(rule.importName);
                 if (!importNames.includes(name)) {
                     return;
@@ -198,46 +198,39 @@ const create = (
                 }
 
                 context.report({
-                    node,
+                    node: identifier,
                     messageId: "bannedGlobalType",
                     data: replacementData,
                     fix: () => fixes,
                 });
             });
-        };
-
-        typeIdentifiers.forEach((identifier) =>
-            checkReference(identifier.name, identifier)
-        );
-        globalReferences.forEach(([name, node]) => checkReference(name, node));
+        });
     };
 
     return {
         TSClassImplements(node) {
             if (isIdentifier(node.expression)) {
-                typeIdentifiers.push(node.expression);
+                identifiers.push(node.expression);
             }
         },
         TSTypeReference(node) {
             if (isIdentifier(node.typeName)) {
-                typeIdentifiers.push(node.typeName);
+                identifiers.push(node.typeName);
             }
         },
         TSInterfaceHeritage(node) {
             if (isIdentifier(node.expression)) {
-                typeIdentifiers.push(node.expression);
+                identifiers.push(node.expression);
             }
         },
         MemberExpression(node) {
             if (isIdentifier(node.object)) {
-                globalReferences.push([node.object.name, node.object]);
+                identifiers.push(node.object);
             }
         },
         JSXOpeningElement(node) {
-            const jsxElementName = getName(node.name);
-            if (jsxElementName != null && !seenGlobalReferences.has(node)) {
-                globalReferences.push([jsxElementName, node]);
-                seenGlobalReferences.add(node);
+            if (isJsxIdentifier(node.name)) {
+                identifiers.push(node.name);
             }
         },
         ImportDeclaration(node) {
