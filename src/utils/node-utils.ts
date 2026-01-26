@@ -50,10 +50,6 @@ const getName = (
             return (declarator.id as TSESTree.Identifier).name;
         case AST_NODE_TYPES.ImportSpecifier:
             return isIdentifier(node.imported) ? node.imported.name : undefined;
-        case AST_NODE_TYPES.JSXOpeningElement:
-            return getName(node.name);
-        case AST_NODE_TYPES.JSXIdentifier:
-            return node.name;
         default:
             return undefined;
     }
