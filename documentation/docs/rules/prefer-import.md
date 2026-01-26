@@ -99,6 +99,72 @@ This rule does not perform any module resolution to determine if the `replacemen
 
 When `importPropsFromSameModule` is `true` (which is the default behavior), this rule may produce multiple `ImportDeclaration` statements for the same `replacementModuleSpecifier`. Usually, imports from the same module should be consolidated into one statement (unless they are separated due to being value/type imports). The [`imports/no-duplicates`](https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-duplicates.md) rule can be used to auto-fix these duplicate import statements if desired.
 
+### Global types or objects
+
+This rule can also be used to ban and replace references to global types or objects with local versions instead. For example, you might commonly run into an issue trying to use a `Text` component from your design system, but because there is already a global `Text` class in the `DOM` library TypeScript definitions, you aren't prompted to import the proper component. This is annoying - you almost never need to use the built-in `Text` class directly, and you need to provide the import for the correct component manually.
+
+Given the following ESLint config:
+
+```js
+"collation/prefer-import": [
+    "error",
+    {
+        global: [
+            {
+                importName: "Text",
+                replacementModuleSpecifier: "@chakra-ui/react",
+            },
+        ],
+    },
+],
+```
+
+This code:
+
+```tsx
+const MutedText = () => <Text>Foo</Text>;
+```
+
+will be transformed to:
+
+```tsx
+import { Text } from "@chakra-ui/react";
+
+const MutedText = () => <Text>Foo</Text>;
+```
+
+This should also work for types, like `Node`. If you have your own custom `Node` type or interface, you might want to always use that instead of the global `Node` type.
+
+Given the following ESLint config:
+
+```js
+"collation/prefer-import": [
+    "error",
+    {
+        global: [
+            {
+                importName: "Node",
+                replacementModuleSpecifier: "@/types",
+            },
+        ],
+    },
+],
+```
+
+This code:
+
+```ts
+const getName = (node: Node): string | undefined => node.name;
+```
+
+will be transformed to:
+
+```tsx
+import { Node } from "@/types";
+
+const getName = (node: Node): string | undefined => node.name;
+```
+
 ### Twilio Paste
 
 In addition to reducing bundle size when using `lodash` functions, one of the main motivators around creating this rule was the [guidance by the Twilio Paste team on best practices](https://paste.twilio.design/core) for importing from `@twilio-paste/core`. While the [`no-restricted-imports`](https://eslint.org/docs/latest/rules/no-restricted-imports) can be configured to nudge people against using `@twilio-paste/core`, it still requires you to update the import manually, and at the time of writing, VS Code doesn't know how to suggest imports from the individual packages such as `@twilio-paste/core/box`.
