@@ -23,6 +23,7 @@ import {
     getName,
     isIdentifier,
     isImportSpecifier,
+    isJsxIdentifier,
     toDefaultImportDeclaration,
     toImportDeclaration,
 } from "../utils/node-utils";
@@ -108,20 +109,23 @@ const create = (
     }
 
     const importDeclarations: TSESTree.ImportDeclaration[] = [];
-    const typeIdentifiers: TSESTree.Identifier[] = [];
+    const identifiers: Array<TSESTree.Identifier | TSESTree.JSXIdentifier> = [];
     const interfaceDeclarations: TSESTree.TSInterfaceDeclaration[] = [];
     const typeDeclarations: TSESTree.TSTypeAliasDeclaration[] = [];
+    const variableNames: Set<string> = new Set();
 
     const errors: ImportRuleErrors = new Map();
 
     const getImportDeclarationForIdentifier = (
-        identifier: TSESTree.Identifier
-    ): TSESTree.ImportDeclaration | undefined =>
-        importDeclarations.find((importDeclaration) =>
+        identifier: TSESTree.Identifier | string
+    ): TSESTree.ImportDeclaration | undefined => {
+        const name = isString(identifier) ? identifier : identifier.name;
+        return importDeclarations.find((importDeclaration) =>
             importDeclaration.specifiers
                 .filter(isImportSpecifier)
-                .some((specifier) => specifier.local.name === identifier.name)
+                .some((specifier) => specifier.local.name === name)
         );
+    };
 
     const checkGlobalTypeReferences = () => {
         if (!("global" in options)) {
@@ -134,15 +138,15 @@ const create = (
         }
 
         rules.forEach((rule) => {
-            const importNames = arrify(rule.importName);
-            typeIdentifiers.forEach((identifier) => {
+            identifiers.forEach((identifier) => {
                 const { name } = identifier;
+                const importNames = arrify(rule.importName);
                 if (!importNames.includes(name)) {
                     return;
                 }
 
                 const importDeclaration =
-                    getImportDeclarationForIdentifier(identifier);
+                    getImportDeclarationForIdentifier(name);
 
                 const typeDeclaration = typeDeclarations.find(
                     (typeDeclaration) => typeDeclaration.id.name === name
@@ -155,7 +159,8 @@ const create = (
                 if (
                     importDeclaration !== undefined ||
                     typeDeclaration !== undefined ||
-                    interfaceDeclaration !== undefined
+                    interfaceDeclaration !== undefined ||
+                    variableNames.has(name)
                 ) {
                     return;
                 }
@@ -205,21 +210,36 @@ const create = (
     return {
         TSClassImplements(node) {
             if (isIdentifier(node.expression)) {
-                typeIdentifiers.push(node.expression);
+                identifiers.push(node.expression);
             }
         },
         TSTypeReference(node) {
             if (isIdentifier(node.typeName)) {
-                typeIdentifiers.push(node.typeName);
+                identifiers.push(node.typeName);
             }
         },
         TSInterfaceHeritage(node) {
             if (isIdentifier(node.expression)) {
-                typeIdentifiers.push(node.expression);
+                identifiers.push(node.expression);
+            }
+        },
+        MemberExpression(node) {
+            if (isIdentifier(node.object)) {
+                identifiers.push(node.object);
+            }
+        },
+        JSXOpeningElement(node) {
+            if (isJsxIdentifier(node.name)) {
+                identifiers.push(node.name);
             }
         },
         ImportDeclaration(node) {
             importDeclarations.push(node);
+        },
+        VariableDeclarator(node) {
+            if (isIdentifier(node.id)) {
+                variableNames.add(node.id.name);
+            }
         },
         TSInterfaceDeclaration(node) {
             interfaceDeclarations.push(node);
