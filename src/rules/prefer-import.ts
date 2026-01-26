@@ -109,19 +109,24 @@ const create = (
 
     const importDeclarations: TSESTree.ImportDeclaration[] = [];
     const typeIdentifiers: TSESTree.Identifier[] = [];
+    const globalReferences: Array<[name: string, node: TSESTree.Node]> = [];
+    const seenGlobalReferences: Set<TSESTree.Node> = new Set();
     const interfaceDeclarations: TSESTree.TSInterfaceDeclaration[] = [];
     const typeDeclarations: TSESTree.TSTypeAliasDeclaration[] = [];
+    const variableNames: Set<string> = new Set();
 
     const errors: ImportRuleErrors = new Map();
 
     const getImportDeclarationForIdentifier = (
-        identifier: TSESTree.Identifier
-    ): TSESTree.ImportDeclaration | undefined =>
-        importDeclarations.find((importDeclaration) =>
+        identifier: TSESTree.Identifier | string
+    ): TSESTree.ImportDeclaration | undefined => {
+        const name = isString(identifier) ? identifier : identifier.name;
+        return importDeclarations.find((importDeclaration) =>
             importDeclaration.specifiers
                 .filter(isImportSpecifier)
-                .some((specifier) => specifier.local.name === identifier.name)
+                .some((specifier) => specifier.local.name === name)
         );
+    };
 
     const checkGlobalTypeReferences = () => {
         if (!("global" in options)) {
@@ -133,16 +138,15 @@ const create = (
             return;
         }
 
-        rules.forEach((rule) => {
-            const importNames = arrify(rule.importName);
-            typeIdentifiers.forEach((identifier) => {
-                const { name } = identifier;
+        const checkReference = (name: string, node: TSESTree.Node) => {
+            rules.forEach((rule) => {
+                const importNames = arrify(rule.importName);
                 if (!importNames.includes(name)) {
                     return;
                 }
 
                 const importDeclaration =
-                    getImportDeclarationForIdentifier(identifier);
+                    getImportDeclarationForIdentifier(name);
 
                 const typeDeclaration = typeDeclarations.find(
                     (typeDeclaration) => typeDeclaration.id.name === name
@@ -155,7 +159,8 @@ const create = (
                 if (
                     importDeclaration !== undefined ||
                     typeDeclaration !== undefined ||
-                    interfaceDeclaration !== undefined
+                    interfaceDeclaration !== undefined ||
+                    variableNames.has(name)
                 ) {
                     return;
                 }
@@ -193,13 +198,18 @@ const create = (
                 }
 
                 context.report({
-                    node: identifier,
+                    node,
                     messageId: "bannedGlobalType",
                     data: replacementData,
                     fix: () => fixes,
                 });
             });
-        });
+        };
+
+        typeIdentifiers.forEach((identifier) =>
+            checkReference(identifier.name, identifier)
+        );
+        globalReferences.forEach(([name, node]) => checkReference(name, node));
     };
 
     return {
@@ -218,8 +228,25 @@ const create = (
                 typeIdentifiers.push(node.expression);
             }
         },
+        MemberExpression(node) {
+            if (isIdentifier(node.object)) {
+                globalReferences.push([node.object.name, node.object]);
+            }
+        },
+        JSXOpeningElement(node) {
+            const jsxElementName = getName(node.name);
+            if (jsxElementName != null && !seenGlobalReferences.has(node)) {
+                globalReferences.push([jsxElementName, node]);
+                seenGlobalReferences.add(node);
+            }
+        },
         ImportDeclaration(node) {
             importDeclarations.push(node);
+        },
+        VariableDeclarator(node) {
+            if (isIdentifier(node.id)) {
+                variableNames.add(node.id.name);
+            }
         },
         TSInterfaceDeclaration(node) {
             interfaceDeclarations.push(node);
