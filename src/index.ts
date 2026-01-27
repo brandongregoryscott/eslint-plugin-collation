@@ -5,6 +5,7 @@ import { groupExports } from "./rules/group-exports";
 import { noDefaultExport } from "./rules/no-default-export";
 import { noInlineExport } from "./rules/no-inline-export";
 import { preferImport } from "./rules/prefer-import";
+import { preferNativePrivateSyntax } from "./rules/prefer-native-private-syntax";
 import { sortDependencyList } from "./rules/sort-dependency-list";
 import { sortExports } from "./rules/sort-exports";
 
@@ -56,6 +57,7 @@ const rules = {
     [RuleName.NoDefaultExport]: noDefaultExport,
     [RuleName.NoInlineExport]: noInlineExport,
     [RuleName.PreferImport]: preferImport,
+    [RuleName.PreferNativePrivateSyntax]: preferNativePrivateSyntax,
     [RuleName.SortDependencyList]: sortDependencyList,
     [RuleName.SortExports]: sortExports,
 };
