@@ -81,3 +81,12 @@ class Foo {
 This rule only transforms `private` members. It does not affect `protected` members, as there is no native JavaScript equivalent for protected visibility.
 
 When migrating existing code, be aware that references to the private member within the class (e.g., `this.bar`) will also need to be updated to use the hash syntax (e.g., `this.#bar`). This rule does not automatically update these references.
+
+Since the `public` modifier is the default & implied behavior for class members, it is recommended to use this rule in combination with the [@typescript-eslint/explicit-member-accessibility](https://typescript-eslint.io/rules/explicit-member-accessibility) rule to automatically ban and remove any `public` modifiers:
+
+```js
+"@typescript-eslint/explicit-member-accessibility": [
+    "error",
+    { accessibility: "no-public" },
+],
+```
