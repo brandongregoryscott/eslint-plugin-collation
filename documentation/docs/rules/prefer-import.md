@@ -101,7 +101,7 @@ You can enable the provided config by extending it:
 }
 ```
 
-Alternatively, if you would like to vendorize and main this config in your own application, you can view the source [here](https://github.com/brandongregoryscott/eslint-plugin-collation/blob/main/src/constants/twilio-paste-imports.ts#L4-L272). This list has not been maintained since I left Twilio, so this might be a better option nowadays. Feel free to open up a PR if you'd like to keep this list updated.
+Alternatively, if you would like to vendorize and maintain this config in your own application, you can view the source [here](https://github.com/brandongregoryscott/eslint-plugin-collation/blob/main/src/constants/twilio-paste-imports.ts#L4-L272). Since I have not maintained this list since leaving Twilio, this might be a better option nowadays. Feel free to open up a PR if you'd like to keep this list updated.
 
 ### Enforcing a wrapped function over direct library usage
 
