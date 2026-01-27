@@ -79,7 +79,7 @@
         "lint:fix": "npm run lint -- --fix",
         "lint:remote": "eslint-remote-tester",
         "prepare": "husky install",
-        "postpublish": "[[ $(git branch --show-current) == $git_main_branch ]] && npm run deploy:docs || echo \"Skipping deploy:docs\"",
+        "postpublish": "[ \"$(git branch --show-current)\" = \"main\" ] && npm run deploy:docs || echo \"Skipping deploy:docs\"",
         "prepublishOnly": "npm run clean && npm run build",
         "semantic-release": "semantic-release",
         "test": "vitest",
