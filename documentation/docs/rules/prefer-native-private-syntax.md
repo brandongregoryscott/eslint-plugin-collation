@@ -6,13 +6,13 @@
 
 ## Description
 
-Prefer native #private class members over TypeScript private modifier
+Prefer native `#private` class members over TypeScript `private` modifier
 
 ## Why?
 
 TypeScript's `private` modifier only provides compile-time privacy - the members are still accessible at runtime through JavaScript. The native `#private` syntax ([ECMAScript private fields](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_elements)) provides true runtime privacy, meaning the private members cannot be accessed from outside the class even at runtime.
 
-## Example
+## Examples
 
 ### Private properties
 

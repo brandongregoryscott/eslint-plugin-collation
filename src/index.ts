@@ -4,6 +4,7 @@ import { RuleName } from "./enums/rule-name";
 import { groupExports } from "./rules/group-exports";
 import { noDefaultExport } from "./rules/no-default-export";
 import { noInlineExport } from "./rules/no-inline-export";
+import { noInlineObjectType } from "./rules/no-inline-object-type";
 import { preferImport } from "./rules/prefer-import";
 import { preferNativePrivateSyntax } from "./rules/prefer-native-private-syntax";
 import { sortDependencyList } from "./rules/sort-dependency-list";
@@ -56,6 +57,7 @@ const rules = {
     [RuleName.GroupExports]: groupExports,
     [RuleName.NoDefaultExport]: noDefaultExport,
     [RuleName.NoInlineExport]: noInlineExport,
+    [RuleName.NoInlineObjectType]: noInlineObjectType,
     [RuleName.PreferImport]: preferImport,
     [RuleName.PreferNativePrivateSyntax]: preferNativePrivateSyntax,
     [RuleName.SortDependencyList]: sortDependencyList,
