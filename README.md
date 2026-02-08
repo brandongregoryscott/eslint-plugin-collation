@@ -56,13 +56,15 @@ Add `collation` to the plugins and rules section of your `.eslintrc` configurati
 
 ## Rules
 
-| Rule                                                                                                              | Description                                                                                                     | Fixable  |
-| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------- |
-| [collation/group-exports](https://eslint-plugin-collation.brandonscott.me/docs/rules/group-exports)               | Consolidates multiple export statements                                                                         | :wrench: |
-| [collation/no-default-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)        | Enforces exports to be named                                                                                    | :wrench: |
-| [collation/no-inline-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)         | Enforces exports to appear at the end of the file                                                               | :wrench: |
-| [collation/prefer-import](https://eslint-plugin-collation.brandonscott.me/docs/rules/prefer-import)               | Enforces imports from a preferred module over another, such as for tree-shaking purposes or wrapping a library. | :wrench: |
-| [collation/sort-dependency-list](https://eslint-plugin-collation.brandonscott.me/docs/rules/sort-dependency-list) | Sorts React dependency lists                                                                                    | :wrench: |
-| [collation/sort-exports](https://eslint-plugin-collation.brandonscott.me/docs/rules/sort-exports)                 | Sorts specifiers in an export statement                                                                         | :wrench: |
+| Rule                                                                                                                              | Description                                                                                                    | Fixable  |
+| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------- |
+| [collation/group-exports](https://eslint-plugin-collation.brandonscott.me/docs/rules/group-exports)                               | Consolidates multiple export statements                                                                        | :wrench: |
+| [collation/no-default-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)                        | Enforces exports to be named                                                                                   | :wrench: |
+| [collation/no-inline-export](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-export)                         | Enforces exports to appear at the end of the file                                                              | :wrench: |
+| [collation/no-inline-object-type](https://eslint-plugin-collation.brandonscott.me/docs/rules/no-inline-object-type)               | Enforces extracting inline object types from function parameters and return types into named type aliases      | :wrench: |
+| [collation/prefer-import](https://eslint-plugin-collation.brandonscott.me/docs/rules/prefer-import)                               | Enforces imports from a preferred module over another, such as for tree-shaking purposes or wrapping a library | :wrench: |
+| [collation/prefer-native-private-syntax](https://eslint-plugin-collation.brandonscott.me/docs/rules/prefer-native-private-syntax) | Prefer native `#private` class members over TypeScript `private` modifier                                      | :wrench: |
+| [collation/sort-dependency-list](https://eslint-plugin-collation.brandonscott.me/docs/rules/sort-dependency-list)                 | Sorts React dependency lists                                                                                   | :wrench: |
+| [collation/sort-exports](https://eslint-plugin-collation.brandonscott.me/docs/rules/sort-exports)                                 | Sorts specifiers in an export statement                                                                        | :wrench: |
 
 For documentation and examples for the available rules, see [Rules](https://eslint-plugin-collation.brandonscott.me/docs/rules/)
