@@ -6,16 +6,30 @@ on:
             - main
         paths:
             - "src/**"
+            - ".github/workflows/release.yaml"
+            - ".releaserc"
+            - "package.json"
+            - "package-lock.json"
     workflow_dispatch:
+
+concurrency:
+    group: release
+    cancel-in-progress: false
 
 jobs:
     release:
-        env:
-            NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        if: github.ref == 'refs/heads/main'
         name: semantic-release
         runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            issues: write
+            pull-requests: write
+            id-token: write
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Setup node 24.12.0
               uses: actions/setup-node@v4
@@ -29,10 +43,7 @@ jobs:
             - name: npm run build:dist
               run: npm run build:dist
 
-            - name: Install semantic-release
-              run: npm i -g semantic-release
-
             - name: Release
               env:
                   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-              run: npx semantic-release
+              run: npm run semantic-release
