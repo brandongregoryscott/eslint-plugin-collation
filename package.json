@@ -29,7 +29,7 @@
         "husky": "7.0.4",
         "lint-staged": "13.0.3",
         "prettier": "2.6.2",
-        "semantic-release": "19.0.3",
+        "semantic-release": "25.0.9",
         "typescript": "5.9.3",
         "typescript-eslint": "8.50.0",
         "vitest": "4.0.16"
