@@ -1,6 +1,6 @@
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import clsx from "clsx";
-import React from "React";
+import React from "react";
 import styles from "./Feature.module.css";
 
 interface FeatureProps {
