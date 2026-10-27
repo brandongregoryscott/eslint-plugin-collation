@@ -4,6 +4,7 @@ import { RuleName } from "./enums/rule-name";
 import { groupExports } from "./rules/group-exports";
 import { noDestructuredPropsParameter } from "./rules/no-destructured-props-parameter";
 import { noDefaultExport } from "./rules/no-default-export";
+import { noInlineEventHandler } from "./rules/no-inline-event-handler";
 import { noInlineExport } from "./rules/no-inline-export";
 import { noInlineObjectType } from "./rules/no-inline-object-type";
 import { preferImport } from "./rules/prefer-import";
@@ -58,6 +59,7 @@ const rules = {
     [RuleName.GroupExports]: groupExports,
     [RuleName.NoDestructuredPropsParameter]: noDestructuredPropsParameter,
     [RuleName.NoDefaultExport]: noDefaultExport,
+    [RuleName.NoInlineEventHandler]: noInlineEventHandler,
     [RuleName.NoInlineExport]: noInlineExport,
     [RuleName.NoInlineObjectType]: noInlineObjectType,
     [RuleName.PreferImport]: preferImport,
