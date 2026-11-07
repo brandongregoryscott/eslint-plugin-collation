@@ -81,6 +81,28 @@ type FooOptions = {
 function foo(options: FooOptions) {}
 ```
 
+### Destructured parameters
+
+Inline object types are also extracted from destructured parameters, including parameters with default values:
+
+```tsx
+function Editor({ state }: { state: string }) {
+    return <div>{state}</div>;
+}
+```
+
+will be transformed to:
+
+```tsx
+type EditorParams = { state: string };
+
+function Editor({ state }: EditorParams) {
+    return <div>{state}</div>;
+}
+```
+
+Destructured parameters have no parameter identifier, so the rule uses `params` for the `{{paramName}}` placeholder (`Params` for `{{upperFirstParamName}}`). Additional destructured parameters use `params2`, `params3`, and so on, skipping names already used by named parameters. These names stay stable across autofix passes. The configured `parameterTypeNamePattern` still applies.
+
 ### Function return type
 
 ```ts
