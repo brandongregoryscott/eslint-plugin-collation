@@ -12,6 +12,19 @@ const ruleTester = new RuleTester({
 ruleTester.run("noInlineObjectType", noInlineObjectType, {
     valid: [
         {
+            name: "should preserve destructured parameters using named types",
+            code: codeBlock`
+                type Options = { id: string };
+                function foo({ id }: Options = { id: "" }) {}
+            `,
+        },
+        {
+            name: "should skip anonymous destructured callbacks",
+            code: codeBlock`
+                items.map(({ id }: { id: string }) => id);
+            `,
+        },
+        {
             name: "should not report errors for function with primitive parameter",
             code: codeBlock`
                 function foo(id: string) {}
@@ -90,6 +103,194 @@ ruleTester.run("noInlineObjectType", noInlineObjectType, {
         },
     ],
     invalid: [
+        {
+            name: "should handle defaulted destructured parameter",
+            code: codeBlock`
+                function foo({ id }: { id: string } = { id: "" }) {}
+            `,
+            output: codeBlock`
+                type FooParams = { id: string };
+
+                function foo({ id }: FooParams = { id: "" }) {}
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should handle nested destructuring, aliases, property defaults, and rest",
+            code: codeBlock`
+                function foo({ user: { id: userId = "" }, ...rest }: { user: { id?: string }; active: boolean }) {}
+            `,
+            output: codeBlock`
+                type FooParams = { user: { id?: string }; active: boolean };
+
+                function foo({ user: { id: userId = "" }, ...rest }: FooParams) {}
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should handle empty destructured parameter",
+            code: codeBlock`
+                function foo({}: {}) {}
+            `,
+            output: codeBlock`
+                type FooParams = {};
+
+                function foo({}: FooParams) {}
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should handle arrow function destructured parameter",
+            code: codeBlock`
+                const foo = ({ id }: { id: string }) => id;
+            `,
+            output: codeBlock`
+                type FooParams = { id: string };
+
+                const foo = ({ id }: FooParams) => id;
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should handle function expression destructured parameter",
+            code: codeBlock`
+                const foo = function({ id }: { id: string }) {};
+            `,
+            output: codeBlock`
+                type FooParams = { id: string };
+
+                const foo = function({ id }: FooParams) {};
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should handle class method destructured parameter",
+            code: codeBlock`
+                class MyClass {
+                    foo({ id }: { id: string }) {}
+                }
+            `,
+            output: codeBlock`
+                type FooParams = { id: string };
+
+                class MyClass {
+                    foo({ id }: FooParams) {}
+                }
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should handle interface method destructured parameter",
+            code: codeBlock`
+                interface MyInterface {
+                    foo({ id }: { id: string }): void;
+                }
+            `,
+            output: codeBlock`
+                type FooParams = { id: string };
+
+                interface MyInterface {
+                    foo({ id }: FooParams): void;
+                }
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should handle declared function destructured parameter",
+            code: codeBlock`
+                declare function foo({ id }: { id: string }): void;
+            `,
+            output: codeBlock`
+                type FooParams = { id: string };
+
+                declare function foo({ id }: FooParams): void;
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should handle fallback name collision with named parameters",
+            code: codeBlock`
+                function foo(params: string, params2: string, { id }: { id: string }) {}
+            `,
+            output: codeBlock`
+                type FooParams3 = { id: string };
+
+                function foo(params: string, params2: string, { id }: FooParams3) {}
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+        {
+            name: "should keep fallback names stable across multiple autofix passes",
+            code: codeBlock`
+                function foo({ id }: { id: string }, { enabled }: { enabled: boolean }) {}
+            `,
+            output: [
+                codeBlock`
+                    type FooParams = { id: string };
+
+                    function foo({ id }: FooParams, { enabled }: { enabled: boolean }) {}
+                `,
+                codeBlock`
+                    type FooParams = { id: string };
+
+                    type FooParams2 = { enabled: boolean };
+
+                    function foo({ id }: FooParams, { enabled }: FooParams2) {}
+                `,
+            ],
+            errors: [
+                { messageId: "noInlineObjectType" },
+                { messageId: "noInlineObjectType" },
+            ],
+        },
+        {
+            name: "should use the parameter pattern for destructuring independently of return types",
+            code: codeBlock`
+                const foo = ({ id }: { id: string } = { id: "" }): { id: string } => ({ id });
+            `,
+            options: [
+                {
+                    parameterTypeNamePattern:
+                        "{{upperFirstFunctionName}}{{upperFirstParamName}}Type",
+                    returnTypeNamePattern: "{{upperFirstFunctionName}}Output",
+                },
+            ],
+            output: [
+                codeBlock`
+                    type FooParamsType = { id: string };
+
+                    const foo = ({ id }: FooParamsType = { id: "" }): { id: string } => ({ id });
+                `,
+                codeBlock`
+                    type FooParamsType = { id: string };
+
+                    type FooOutput = { id: string };
+
+                    const foo = ({ id }: FooParamsType = { id: "" }): FooOutput => ({ id });
+                `,
+            ],
+            errors: [
+                { messageId: "noInlineObjectType" },
+                { messageId: "noInlineObjectType" },
+            ],
+        },
+        {
+            name: "should extract inline props from a destructured TSX component parameter",
+            filename: "editor.tsx",
+            code: codeBlock`
+                function Editor({ ready, signal, state }: { ready: () => void; signal?: AbortSignal; state: string }) {
+                    return <div>{state}</div>;
+                }
+            `,
+            output: codeBlock`
+                type EditorParams = { ready: () => void; signal?: AbortSignal; state: string };
+
+                function Editor({ ready, signal, state }: EditorParams) {
+                    return <div>{state}</div>;
+                }
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
         {
             name: "should extract inline object type from function parameter",
             code: codeBlock`

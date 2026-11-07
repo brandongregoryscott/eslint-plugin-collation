@@ -67,6 +67,35 @@ const noInlineObjectType = createRule<[NoInlineObjectTypeOptions], MessageIds>({
             });
         };
 
+        const checkParameters = (
+            node: TSESTree.Node,
+            params: TSESTree.Parameter[],
+            functionName: string
+        ): void => {
+            const names = new Set(params.map(getParameterName));
+            // Reserve fallback names even after extraction, keeping later autofix passes stable.
+            for (const param of params) {
+                let paramName = getParameterName(param);
+                if (paramName == null) {
+                    paramName = "params";
+                    let suffix = 1;
+                    while (names.has(paramName)) {
+                        paramName = `params${++suffix}`;
+                    }
+                    names.add(paramName);
+                }
+                const typeLiteral = getInlineObjectType(param);
+                if (typeLiteral != null) {
+                    reportInlineObjectType(
+                        node,
+                        typeLiteral,
+                        functionName,
+                        paramName
+                    );
+                }
+            }
+        };
+
         const checkFunction = (
             node:
                 | TSESTree.FunctionDeclaration
@@ -79,19 +108,7 @@ const noInlineObjectType = createRule<[NoInlineObjectTypeOptions], MessageIds>({
                 return;
             }
 
-            // Check parameters for inline object types
-            for (const param of node.params) {
-                const typeLiteral = getInlineObjectType(param);
-                if (typeLiteral != null) {
-                    const paramName = getParameterName(param);
-                    reportInlineObjectType(
-                        node,
-                        typeLiteral,
-                        functionName,
-                        paramName
-                    );
-                }
-            }
+            checkParameters(node, node.params, functionName);
 
             // Check return type for inline object type
             const returnTypeLiteral = getReturnTypeInlineObject(node);
@@ -117,19 +134,7 @@ const noInlineObjectType = createRule<[NoInlineObjectTypeOptions], MessageIds>({
                 // MethodDefinition wraps a FunctionExpression
                 const functionExpr = node.value;
 
-                // Check parameters
-                for (const param of functionExpr.params) {
-                    const typeLiteral = getInlineObjectType(param);
-                    if (typeLiteral != null) {
-                        const paramName = getParameterName(param);
-                        reportInlineObjectType(
-                            node,
-                            typeLiteral,
-                            methodName,
-                            paramName
-                        );
-                    }
-                }
+                checkParameters(node, functionExpr.params, methodName);
 
                 // Check return type
                 const returnTypeLiteral =
@@ -144,19 +149,7 @@ const noInlineObjectType = createRule<[NoInlineObjectTypeOptions], MessageIds>({
                 }
             } else {
                 // TSMethodSignature
-                // Check parameters
-                for (const param of node.params) {
-                    const typeLiteral = getInlineObjectType(param);
-                    if (typeLiteral != null) {
-                        const paramName = getParameterName(param);
-                        reportInlineObjectType(
-                            node,
-                            typeLiteral,
-                            methodName,
-                            paramName
-                        );
-                    }
-                }
+                checkParameters(node, node.params, methodName);
 
                 // Check return type
                 if (
@@ -267,32 +260,16 @@ const getMethodName = (
 const getInlineObjectType = (
     param: TSESTree.Parameter
 ): TSESTree.TSTypeLiteral | undefined => {
-    // Handle regular parameters with type annotation
+    const parameter =
+        param.type === AST_NODE_TYPES.AssignmentPattern ? param.left : param;
     if (
-        param.type === AST_NODE_TYPES.Identifier &&
-        param.typeAnnotation?.typeAnnotation.type ===
+        (parameter.type === AST_NODE_TYPES.Identifier ||
+            parameter.type === AST_NODE_TYPES.ObjectPattern ||
+            parameter.type === AST_NODE_TYPES.RestElement) &&
+        parameter.typeAnnotation?.typeAnnotation.type ===
             AST_NODE_TYPES.TSTypeLiteral
     ) {
-        return param.typeAnnotation.typeAnnotation;
-    }
-
-    // Handle assignment pattern (param with default value)
-    if (
-        param.type === AST_NODE_TYPES.AssignmentPattern &&
-        param.left.type === AST_NODE_TYPES.Identifier &&
-        param.left.typeAnnotation?.typeAnnotation.type ===
-            AST_NODE_TYPES.TSTypeLiteral
-    ) {
-        return param.left.typeAnnotation.typeAnnotation;
-    }
-
-    // Handle rest parameters
-    if (
-        param.type === AST_NODE_TYPES.RestElement &&
-        param.typeAnnotation?.typeAnnotation.type ===
-            AST_NODE_TYPES.TSTypeLiteral
-    ) {
-        return param.typeAnnotation.typeAnnotation;
+        return parameter.typeAnnotation.typeAnnotation;
     }
 
     return undefined;
