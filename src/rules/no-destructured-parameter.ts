@@ -1,7 +1,8 @@
 import type { TSESTree } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
 import { RuleName } from "../enums/rule-name";
-import { collectNodes } from "../utils/node-utils";
+import { collectNodes, isIdentifier } from "../utils/node-utils";
+import { insertFunctionBodyDeclarations } from "../utils/fixer-utils";
 import { createRule } from "../utils/rule-utils";
 
 type FunctionSignature =
@@ -62,12 +63,7 @@ const noDestructuredParameter = createRule({
             const sourceCode = context.sourceCode;
             const nodes = collectNodes(node, sourceCode);
             const identifiers = new Set(
-                nodes
-                    .filter(
-                        (child): child is TSESTree.Identifier =>
-                            child.type === AST_NODE_TYPES.Identifier
-                    )
-                    .map((child) => child.name)
+                nodes.filter(isIdentifier).map((child) => child.name)
             );
             // Moving parameter expressions can change evaluation order and scope.
             // Async/generator bodies also change when destructuring errors surface.
@@ -147,60 +143,27 @@ const noDestructuredParameter = createRule({
                     fix:
                         index === 0 && canFix && isImplementation(node)
                             ? (fixer) => {
-                                  const fixes = replacements.map(
-                                      (replacement) =>
+                                  const bodyFixes =
+                                      insertFunctionBodyDeclarations({
+                                          declarations: replacements.map(
+                                              (replacement) =>
+                                                  replacement.declaration
+                                          ),
+                                          node,
+                                          sourceCode,
+                                      });
+                                  if (bodyFixes == null) {
+                                      return null;
+                                  }
+                                  return [
+                                      ...replacements.map((replacement) =>
                                           fixer.replaceText(
                                               replacement.pattern,
                                               replacement.parameter
                                           )
-                                  );
-                                  const declarations = replacements
-                                      .map(
-                                          (replacement) =>
-                                              replacement.declaration
-                                      )
-                                      .join("\n");
-                                  if (
-                                      node.body.type ===
-                                      AST_NODE_TYPES.BlockStatement
-                                  ) {
-                                      let insertionPoint =
-                                          node.body.range[0] + 1;
-                                      for (const statement of node.body.body) {
-                                          if (
-                                              statement.type !==
-                                                  AST_NODE_TYPES.ExpressionStatement ||
-                                              statement.directive == null
-                                          ) {
-                                              break;
-                                          }
-                                          insertionPoint = statement.range[1];
-                                      }
-                                      fixes.push(
-                                          fixer.insertTextAfterRange(
-                                              [insertionPoint, insertionPoint],
-                                              `\n${declarations}\n`
-                                          )
-                                      );
-                                  } else {
-                                      const arrow = sourceCode.getTokenBefore(
-                                          node.body,
-                                          (token) => token.value === "=>"
-                                      );
-                                      if (arrow == null) {
-                                          return null;
-                                      }
-                                      const expression = sourceCode.text
-                                          .slice(arrow.range[1], node.range[1])
-                                          .trim();
-                                      fixes.push(
-                                          fixer.replaceTextRange(
-                                              [arrow.range[1], node.range[1]],
-                                              ` {\n${declarations}\nreturn (\n${expression}\n);\n}`
-                                          )
-                                      );
-                                  }
-                                  return fixes;
+                                      ),
+                                      ...bodyFixes,
+                                  ];
                               }
                             : undefined,
                 });
