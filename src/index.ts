@@ -2,6 +2,7 @@ import { LODASH_IMPORTS } from "./constants/lodash-imports";
 import { TWILIO_PASTE_IMPORTS } from "./constants/twilio-paste-imports";
 import { RuleName } from "./enums/rule-name";
 import { groupExports } from "./rules/group-exports";
+import { noDestructuredParameter } from "./rules/no-destructured-parameter";
 import { noDestructuredPropsParameter } from "./rules/no-destructured-props-parameter";
 import { noDefaultExport } from "./rules/no-default-export";
 import { noInlineExport } from "./rules/no-inline-export";
@@ -56,6 +57,7 @@ const configs = {
 
 const rules = {
     [RuleName.GroupExports]: groupExports,
+    [RuleName.NoDestructuredParameter]: noDestructuredParameter,
     [RuleName.NoDestructuredPropsParameter]: noDestructuredPropsParameter,
     [RuleName.NoDefaultExport]: noDefaultExport,
     [RuleName.NoInlineExport]: noInlineExport,

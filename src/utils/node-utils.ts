@@ -1,3 +1,4 @@
+import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import { TSESTree, AST_NODE_TYPES } from "@typescript-eslint/utils";
 import type { Declaration } from "../types/declaration";
 import { arrify } from "./collection-utils";
@@ -111,7 +112,33 @@ const isIdentifier = (node: TSESTree.Node): node is TSESTree.Identifier =>
 const isJsxIdentifier = (node: TSESTree.Node): node is TSESTree.JSXIdentifier =>
     node.type === AST_NODE_TYPES.JSXIdentifier;
 
+const collectNodes = (
+    node: TSESTree.Node,
+    sourceCode: SourceCode
+): TSESTree.Node[] => {
+    const nodes = [node];
+    for (const key of sourceCode.visitorKeys[node.type] ?? []) {
+        const child = (
+            node as unknown as Record<
+                string,
+                TSESTree.Node | TSESTree.Node[] | null
+            >
+        )[key];
+        if (Array.isArray(child)) {
+            for (const item of child) {
+                if (item != null) {
+                    nodes.push(...collectNodes(item, sourceCode));
+                }
+            }
+        } else if (child != null) {
+            nodes.push(...collectNodes(child, sourceCode));
+        }
+    }
+    return nodes;
+};
+
 export {
+    collectNodes,
     getImportSpecifierText,
     getModuleSpecifier,
     getName,

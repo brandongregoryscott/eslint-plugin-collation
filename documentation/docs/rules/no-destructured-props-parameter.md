@@ -57,3 +57,5 @@ Fix and suggestion output may need formatting.
 ```
 
 The rule has no options and is opt-in.
+
+To apply the same convention to all parameters of functions, callbacks, and methods, use [no-destructured-parameter](./no-destructured-parameter.md) instead. Enable one of these rules to avoid duplicate diagnostics on React components.

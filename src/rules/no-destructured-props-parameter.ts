@@ -6,6 +6,7 @@ import type {
 } from "@typescript-eslint/utils/ts-eslint";
 import { AST_NODE_TYPES, ASTUtils } from "@typescript-eslint/utils";
 import { RuleName } from "../enums/rule-name";
+import { collectNodes } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 
 type ComponentFunction =
@@ -43,31 +44,6 @@ interface PropsFix {
     apply: (fixer: RuleFixer) => RuleFix[];
     automatic: boolean;
 }
-
-const collectNodes = (
-    node: TSESTree.Node,
-    sourceCode: SourceCode
-): TSESTree.Node[] => {
-    const nodes = [node];
-    for (const key of sourceCode.visitorKeys[node.type] ?? []) {
-        const child = (
-            node as unknown as Record<
-                string,
-                TSESTree.Node | TSESTree.Node[] | null
-            >
-        )[key];
-        if (Array.isArray(child)) {
-            for (const item of child) {
-                if (item != null) {
-                    nodes.push(...collectNodes(item, sourceCode));
-                }
-            }
-        } else if (child != null) {
-            nodes.push(...collectNodes(child, sourceCode));
-        }
-    }
-    return nodes;
-};
 
 const createPropsFix = (
     sourceCode: SourceCode,
