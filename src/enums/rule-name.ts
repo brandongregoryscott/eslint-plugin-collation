@@ -1,6 +1,7 @@
 enum RuleName {
     GroupExports = "group-exports",
     NoDefaultExport = "no-default-export",
+    NoDestructuredParameter = "no-destructured-parameter",
     NoDestructuredPropsParameter = "no-destructured-props-parameter",
     NoInlineExport = "no-inline-export",
     NoInlineObjectType = "no-inline-object-type",

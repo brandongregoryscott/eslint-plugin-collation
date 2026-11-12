@@ -6,6 +6,8 @@ import type {
 } from "@typescript-eslint/utils/ts-eslint";
 import { AST_NODE_TYPES, ASTUtils } from "@typescript-eslint/utils";
 import { RuleName } from "../enums/rule-name";
+import { collectNodes, isIdentifier } from "../utils/node-utils";
+import { insertFunctionBodyDeclarations } from "../utils/fixer-utils";
 import { createRule } from "../utils/rule-utils";
 
 type ComponentFunction =
@@ -44,31 +46,6 @@ interface PropsFix {
     automatic: boolean;
 }
 
-const collectNodes = (
-    node: TSESTree.Node,
-    sourceCode: SourceCode
-): TSESTree.Node[] => {
-    const nodes = [node];
-    for (const key of sourceCode.visitorKeys[node.type] ?? []) {
-        const child = (
-            node as unknown as Record<
-                string,
-                TSESTree.Node | TSESTree.Node[] | null
-            >
-        )[key];
-        if (Array.isArray(child)) {
-            for (const item of child) {
-                if (item != null) {
-                    nodes.push(...collectNodes(item, sourceCode));
-                }
-            }
-        } else if (child != null) {
-            nodes.push(...collectNodes(child, sourceCode));
-        }
-    }
-    return nodes;
-};
-
 const createPropsFix = (
     sourceCode: SourceCode,
     node: ComponentFunction,
@@ -76,12 +53,7 @@ const createPropsFix = (
 ): PropsFix | undefined => {
     const nodes = collectNodes(node, sourceCode);
     const identifiers = new Set(
-        nodes
-            .filter(
-                (child): child is TSESTree.Identifier =>
-                    child.type === AST_NODE_TYPES.Identifier
-            )
-            .map((child) => child.name)
+        nodes.filter(isIdentifier).map((child) => child.name)
     );
     // Dynamic scope, arguments mapping, and generators need a manual rewrite.
     if (
@@ -157,45 +129,18 @@ const createPropsFix = (
     return {
         automatic,
         apply: (fixer) => {
-            const fixes = [
-                fixer.replaceText(pattern, `${propsName}${typeText}`),
-            ];
-            if (node.body.type === AST_NODE_TYPES.BlockStatement) {
-                let insertionPoint = node.body.range[0] + 1;
-                for (const statement of node.body.body) {
-                    if (
-                        statement.type !== AST_NODE_TYPES.ExpressionStatement ||
-                        statement.directive == null
-                    ) {
-                        break;
-                    }
-                    insertionPoint = statement.range[1];
-                }
-                fixes.push(
-                    fixer.insertTextAfterRange(
-                        [insertionPoint, insertionPoint],
-                        `\n${declaration}\n`
-                    )
-                );
-            } else {
-                const arrow = sourceCode.getTokenBefore(
-                    node.body,
-                    (token) => token.value === "=>"
-                );
-                if (arrow == null) {
-                    return [];
-                }
-                const expression = sourceCode.text
-                    .slice(arrow.range[1], node.range[1])
-                    .trim();
-                fixes.push(
-                    fixer.replaceTextRange(
-                        [arrow.range[1], node.range[1]],
-                        ` {\n${declaration}\nreturn (\n${expression}\n);\n}`
-                    )
-                );
+            const bodyFixes = insertFunctionBodyDeclarations({
+                declarations: [declaration],
+                node,
+                sourceCode,
+            });
+            if (bodyFixes == null) {
+                return [];
             }
-            return fixes;
+            return [
+                fixer.replaceText(pattern, `${propsName}${typeText}`),
+                ...bodyFixes,
+            ];
         },
     };
 };

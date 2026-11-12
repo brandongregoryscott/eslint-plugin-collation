@@ -1,4 +1,5 @@
 import type { TSESTree } from "@typescript-eslint/utils";
+import { AST_NODE_TYPES } from "@typescript-eslint/utils";
 import type { RuleFix, SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import { isCommaToken, isIdentifierToken } from "./node-utils";
 
@@ -110,6 +111,58 @@ const removeRange = (range: TSESTree.Range): RuleFix => ({
 
 // #endregion Vendorized Fixer functions
 
+interface InsertFunctionBodyDeclarationsOptions {
+    declarations: string[];
+    node:
+        | TSESTree.ArrowFunctionExpression
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression;
+    sourceCode: SourceCode;
+}
+
+/** Inserts declarations after directives, converting expression arrow bodies to blocks. */
+const insertFunctionBodyDeclarations = (
+    options: InsertFunctionBodyDeclarationsOptions
+): RuleFix[] | undefined => {
+    const { declarations, node, sourceCode } = options;
+    const declarationText = declarations.join("\n");
+    if (node.body.type === AST_NODE_TYPES.BlockStatement) {
+        let insertionPoint = node.body.range[0] + 1;
+        for (const statement of node.body.body) {
+            if (
+                statement.type !== AST_NODE_TYPES.ExpressionStatement ||
+                statement.directive == null
+            ) {
+                break;
+            }
+            insertionPoint = statement.range[1];
+        }
+        return [
+            insertTextAfterRange(
+                [insertionPoint, insertionPoint],
+                `\n${declarationText}\n`
+            ),
+        ];
+    }
+
+    const arrow = sourceCode.getTokenBefore(
+        node.body,
+        (token) => token.value === "=>"
+    );
+    if (arrow == null) {
+        return undefined;
+    }
+    const expression = sourceCode.text
+        .slice(arrow.range[1], node.range[1])
+        .trim();
+    return [
+        replaceTextRange(
+            [arrow.range[1], node.range[1]],
+            ` {\n${declarationText}\nreturn (\n${expression}\n);\n}`
+        ),
+    ];
+};
+
 /**
  * Removes the range of characters between `left` and `right`
  */
@@ -174,6 +227,7 @@ const removeImportClause =
     };
 
 export {
+    insertFunctionBodyDeclarations,
     insertTextAfter,
     insertTextAfterRange,
     insertTextBefore,
