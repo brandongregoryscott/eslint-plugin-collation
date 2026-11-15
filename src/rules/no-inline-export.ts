@@ -15,7 +15,8 @@ const noInlineExport = createRule({
     create: (context) => {
         return {
             ExportDefaultDeclaration: (defaultExport): void => {
-                const sourceCode = context.getSourceCode();
+                const sourceCode =
+                    context.sourceCode ?? context.getSourceCode();
                 if (!isInlineDefaultExport(defaultExport, sourceCode)) {
                     return;
                 }
@@ -32,7 +33,8 @@ const noInlineExport = createRule({
                     return;
                 }
 
-                const sourceCode = context.getSourceCode();
+                const sourceCode =
+                    context.sourceCode ?? context.getSourceCode();
 
                 context.report({
                     node: namedExport,

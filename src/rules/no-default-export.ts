@@ -92,7 +92,7 @@ const handleVisitExportDefaultDeclaration = (
     exportDefault: TSESTree.ExportDefaultDeclaration,
     context: RuleContext<"noDefaultExport", never[]>
 ): void => {
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
 
     context.report({
         node: exportDefault,
