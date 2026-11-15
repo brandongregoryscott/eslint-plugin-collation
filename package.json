@@ -26,6 +26,7 @@
         "eslint-plugin-typescript-sort-keys": "3.3.0",
         "eslint-remote-tester": "4.0.3",
         "eslint-remote-tester-repositories": "2.0.2",
+        "gagen": "0.8.0",
         "husky": "7.0.4",
         "lint-staged": "13.0.3",
         "prettier": "2.6.2",
@@ -35,7 +36,7 @@
         "vitest": "4.0.16"
     },
     "engines": {
-        "node": ">=24"
+        "node": ">=26"
     },
     "files": [
         "dist"
@@ -61,7 +62,7 @@
     "peerDependencies": {
         "@typescript-eslint/parser": ">=6 || >=7",
         "@typescript-eslint/utils": ">=6 || >=7",
-        "eslint": ">=7 || >=8"
+        "eslint": ">=7 || >=8 || >= 9 || >= 10"
     },
     "repository": {
         "type": "git",
@@ -71,6 +72,8 @@
         "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --external:eslint --external:@typescript-eslint/utils",
         "build:dist": "tsc --noEmit && npm run build -- --minify",
         "build:watch": "npm run build -- --watch",
+        "ci:check": "tsc -p .github/tsconfig.json && gagen --lint",
+        "ci:generate": "gagen",
         "clean": "rm -rf dist",
         "deploy:docs": "cd documentation && yarn install && USE_SSH=true yarn deploy",
         "format:check": "prettier src --ignore-unknown --check",
@@ -78,8 +81,8 @@
         "lint": "eslint 'src/**/*.{ts,tsx}'",
         "lint:fix": "npm run lint -- --fix",
         "lint:remote": "eslint-remote-tester",
-        "prepare": "husky install",
         "postpublish": "[ \"$(git branch --show-current)\" = \"main\" ] && npm run deploy:docs || echo \"Skipping deploy:docs\"",
+        "prepare": "husky install",
         "prepublishOnly": "npm run clean && npm run build",
         "semantic-release": "semantic-release",
         "test": "vitest",
