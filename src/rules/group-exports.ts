@@ -101,7 +101,7 @@ const reportErrorsForExtraExports = (
     exports: NamedExport[],
     groupedExports: Record<string, NamedExport[]>
 ): void => {
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
     const extraExports = dropRight(exports, 1);
     extraExports.forEach((_export) => {
         context.report({

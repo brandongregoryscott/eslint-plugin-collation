@@ -103,7 +103,7 @@ const create = (
     context: RuleContext<PreferImportMessageIds, PreferImportOptions[]>
 ): RuleListener => {
     const options = assignDefaultOptions(first(context.options));
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
     if (isEmpty(options)) {
         return {};
     }
