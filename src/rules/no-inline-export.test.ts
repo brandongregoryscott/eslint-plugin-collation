@@ -40,15 +40,35 @@ ruleTester.run("noInlineExport", noInlineExport, {
     ],
     invalid: [
         {
-            name: "skips autofix for comments before a named declaration",
-            code: "export /* keep */ const a = 1;",
-            output: null,
+            name: "keeps trailing comments on the declaration when inserting an export",
+            code: "export const a = 1; // a docs",
+            output: "const a = 1; // a docs\nexport { a };",
+            errors: [{ messageId: "noInlineExport" }],
+        },
+
+        {
+            name: "preserves line comments before a multiline default declaration",
+            code: "export default // keep\nfunction a() {\n    // body\n}",
+            output: "// keep\nfunction a() {\n    // body\n}\nexport default a;",
+            errors: [{ messageId: "noInlineExport" }],
+        },
+
+        {
+            name: "preserves a line comment between export and declaration",
+            code: "export // keep\nconst a = 1;",
+            output: "// keep\nconst a = 1;\nexport { a };",
             errors: [{ messageId: "noInlineExport" }],
         },
         {
-            name: "skips autofix for comments before a default declaration",
+            name: "preserves comments before a named declaration",
+            code: "export /* keep */ const a = 1;",
+            output: "/* keep */ const a = 1;\nexport { a };",
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
+            name: "preserves comments before a default declaration",
             code: "export default /* keep */ function a() {}",
-            output: null,
+            output: "/* keep */ function a() {}\nexport default a;",
             errors: [{ messageId: "noInlineExport" }],
         },
         {

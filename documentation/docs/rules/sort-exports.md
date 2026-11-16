@@ -26,4 +26,4 @@ export { bar, foo };
 
 ## Notes
 
-Exports containing comments are still reported, but are not autofixed to avoid losing comments.
+Comments move with their associated specifiers when sorting. Standalone comments belong to the following specifier; same-line trailing comments stay with the preceding specifier.

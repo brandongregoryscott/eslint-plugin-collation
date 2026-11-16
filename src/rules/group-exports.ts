@@ -1,3 +1,8 @@
+import {
+    groupNodesWithComments,
+    printCommentedList,
+    printComments,
+} from "../utils/comment-utils";
 import type {
     RuleContext,
     RuleFix,
@@ -7,14 +12,14 @@ import type {
 import { RuleName } from "../enums/rule-name";
 import {
     isInlineExport,
-    consolidateExports,
-    exportToString,
+    getExportListRange,
     toNamedExport,
 } from "../utils/export-utils";
 import { createRule } from "../utils/rule-utils";
 import dropRight from "lodash/dropRight";
 import groupBy from "lodash/groupBy";
-import { hasCommentsInRange, removeNodeAndNewLine } from "../utils/fixer-utils";
+import { AST_NODE_TYPES } from "@typescript-eslint/utils";
+import type { TSESTree } from "@typescript-eslint/utils";
 import type { NamedExport } from "../types/named-export";
 import { last } from "../utils/collection-utils";
 
@@ -73,22 +78,91 @@ const getFixesForExports = (
         return [];
     }
 
-    if (exportsHaveComments(exports, sourceCode)) {
-        return [];
-    }
-
-    const consolidatedExport = consolidateExports(exports);
-    return [
-        fixer.insertTextAfter(
-            lastExport.reference,
-            exportToString(consolidatedExport)
-        ),
-        ...exports.flatMap((_export, index) =>
-            index === exports.length - 1
-                ? fixer.remove(_export.reference)
-                : removeNodeAndNewLine(sourceCode)(_export.reference)
-        ),
+    const range = getExportListRange(lastExport.reference, sourceCode);
+    const parent = lastExport.reference.parent;
+    const body =
+        parent.type === AST_NODE_TYPES.Program ||
+        parent.type === AST_NODE_TYPES.TSModuleBlock
+            ? parent.body
+            : exports.map((_export) => _export.reference);
+    const lastStatement = body[body.length - 1];
+    const trailing =
+        lastStatement == null
+            ? []
+            : sourceCode
+                  .getCommentsAfter(lastStatement)
+                  .filter(
+                      (comment) =>
+                          comment.loc.start.line === lastStatement.loc.end.line
+                  );
+    const statementRange: TSESTree.Range = [
+        parent.range[0],
+        Math.max(parent.range[1], trailing[trailing.length - 1]?.range[1] ?? 0),
     ];
+    const statements = groupNodesWithComments(body, statementRange, sourceCode);
+    const orphans: TSESTree.Comment[] = [];
+    const groups = exports.flatMap((_export) => {
+        const reference = _export.reference;
+        const listRange = getExportListRange(reference, sourceCode);
+        const items = groupNodesWithComments(
+            reference.specifiers,
+            _export === lastExport ? listRange : reference.range,
+            sourceCode
+        );
+        const statement = statements.find((item) => item.node === reference);
+        if (items.length === 0) {
+            orphans.push(
+                ...(statement?.leading ?? []),
+                ...sourceCode
+                    .getCommentsInside(reference)
+                    .filter(
+                        (comment) =>
+                            _export !== lastExport ||
+                            (comment.range[0] >= listRange[0] &&
+                                comment.range[1] <= listRange[1])
+                    ),
+                ...(statement?.trailing ?? [])
+            );
+        } else {
+            items[0].leading.unshift(...(statement?.leading ?? []));
+            items[items.length - 1].trailing.push(
+                ...(statement?.trailing ?? [])
+            );
+        }
+        return items;
+    });
+    groups[0]?.leading.unshift(...orphans);
+    const content =
+        groups.length === 0 && orphans.length > 0
+            ? "\n" + printComments(orphans, sourceCode) + "\n"
+            : printCommentedList(groups, sourceCode, true, range);
+    const replacement =
+        sourceCode.text.slice(lastExport.reference.range[0], range[0]) +
+        content +
+        sourceCode.text.slice(range[1], lastExport.reference.range[1]);
+    return exports.map((_export, index) => {
+        const reference = _export.reference;
+        const statement = statements.find((item) => item.node === reference);
+        const first = statement?.leading[0] ?? reference;
+        const last =
+            statement?.trailing[statement.trailing.length - 1] ?? reference;
+        let end = last.range[1];
+        if (index !== exports.length - 1) {
+            const next = sourceCode.getTokenAfter(last, {
+                includeComments: true,
+            });
+            if (
+                next != null &&
+                sourceCode.text.slice(end, next.range[0]).trim() === ""
+            ) {
+                end = next.range[0];
+            }
+        }
+        return fixer.replaceTextRange(
+            [first.range[0], end],
+            index === exports.length - 1 ? replacement : ""
+        );
+    });
 };
 
 /**
@@ -99,14 +173,6 @@ const groupExportsByTypeAndModule = (
     exports: NamedExport[]
 ): Record<string, NamedExport[]> =>
     groupBy(exports, (_export) => [_export.kind, _export.module].join());
-
-const exportsHaveComments = (
-    exports: NamedExport[],
-    sourceCode: SourceCode
-): boolean =>
-    exports.some((_export) =>
-        hasCommentsInRange(sourceCode, _export.reference.range)
-    );
 
 const reportErrorsForExtraExports = (
     context: RuleContext<"groupExports", never[]>,
@@ -120,9 +186,7 @@ const reportErrorsForExtraExports = (
             node: _export.reference,
             messageId: "groupExports",
             fix: (fixer) =>
-                exportsHaveComments(exports, sourceCode)
-                    ? null
-                    : fixUngroupedExports(fixer, groupedExports, sourceCode),
+                fixUngroupedExports(fixer, groupedExports, sourceCode),
         });
     });
 };

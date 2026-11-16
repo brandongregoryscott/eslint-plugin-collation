@@ -42,4 +42,4 @@ const value = useMemo(() => {
 }, [handleOpenDialog, setProject, theme.colors.gray900, x]);
 ```
 
-Dependency lists containing comments are still reported, but are not autofixed to avoid losing comments.
+Comments move with their associated dependencies when sorting, including commented out dependencies. Standalone comments belong to the following dependency; same-line trailing comments stay with the preceding dependency.

@@ -71,6 +71,30 @@ ruleTester.run("sortDependencyList", sortDependencyList, {
     ],
     invalid: [
         {
+            name: "moves trailing line comments after commas with dependencies",
+            code: "useEffect(() => {}, [b, // b docs\n    a])",
+            output: "useEffect(() => {}, [\n    a,\n    b, // b docs\n])",
+            errors: [{ messageId: "sortDependencyList" }],
+        },
+        {
+            name: "places commas before trailing line comments originally before commas",
+            code: "useEffect(() => {}, [b // b docs\n, a])",
+            output: "useEffect(() => {}, [\n    a,\n    b, // b docs\n])",
+            errors: [{ messageId: "sortDependencyList" }],
+        },
+        {
+            name: "preserves comments inside member expressions",
+            code: "useEffect(() => {}, [z.value, a./* keep */value])",
+            output: "useEffect(() => {}, [a./* keep */value, z.value])",
+            errors: [{ messageId: "sortDependencyList" }],
+        },
+        {
+            name: "moves consecutive leading comments as a group",
+            code: "useEffect(() => {}, [\n    // b docs\n    /* more b docs */\n    b,\n    a,\n])",
+            output: "useEffect(() => {}, [\n    a,\n    // b docs\n    /* more b docs */\n    b,\n])",
+            errors: [{ messageId: "sortDependencyList" }],
+        },
+        {
             name: "sorts dependencies while preserving comments outside the list",
             code: "// before\nuseEffect(() => { /* keep */ }, [b, a]) // after",
             output: "// before\nuseEffect(() => { /* keep */ }, [a, b]) // after",
@@ -78,21 +102,21 @@ ruleTester.run("sortDependencyList", sortDependencyList, {
         },
 
         {
-            name: "skips autofix for block comments inside dependencies",
+            name: "moves leading block comments with dependencies",
             code: "useEffect(() => {}, [b, /* keep */ a])",
-            output: null,
+            output: "useEffect(() => {}, [/* keep */ a, b])",
             errors: [{ messageId: "sortDependencyList" }],
         },
         {
-            name: "skips autofix for commented out dependencies from issue 66",
+            name: "moves commented out dependencies from issue 66 with the following node",
             code: "useMemo(() => {}, [b,\n // JSON.stringify(mapping),\n a])",
-            output: null,
+            output: "useMemo(() => {}, [\n // JSON.stringify(mapping),\n a,\n b,\n])",
             errors: [{ messageId: "sortDependencyList" }],
         },
         {
-            name: "skips autofix for trailing comments inside dependencies",
+            name: "moves trailing comments with dependencies",
             code: "useCallback(() => {}, [b, a /* trailing */])",
-            output: null,
+            output: "useCallback(() => {}, [a /* trailing */, b])",
             errors: [{ messageId: "sortDependencyList" }],
         },
         {

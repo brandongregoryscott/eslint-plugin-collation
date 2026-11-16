@@ -10,7 +10,7 @@ import { RuleName } from "../enums/rule-name";
 import type { Declaration } from "../types/declaration";
 import { getName, isDeclaration } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
-import { hasCommentsInRange } from "../utils/fixer-utils";
+import { printComments } from "../utils/comment-utils";
 
 const noDefaultExport = createRule({
     create: (context) => {
@@ -68,20 +68,6 @@ const fixDefaultExport = (
     sourceCode: SourceCode
 ): RuleFix | RuleFix[] | null => {
     const { declaration } = defaultExport;
-    const discardedRange: TSESTree.Range =
-        declaration.type === AST_NODE_TYPES.Identifier
-            ? defaultExport.range
-            : [defaultExport.range[0], declaration.range[0]];
-    if (
-        hasCommentsInRange(sourceCode, discardedRange) ||
-        hasCommentsInRange(sourceCode, [
-            declaration.range[1],
-            defaultExport.range[1],
-        ])
-    ) {
-        return null;
-    }
-
     if (declaration.type === AST_NODE_TYPES.Identifier) {
         const parent = findParentDeclaration(declaration, declarations);
         if (parent == null) {
@@ -89,7 +75,13 @@ const fixDefaultExport = (
         }
 
         return [
-            fixer.insertTextBefore(parent, "export "),
+            fixer.insertTextBefore(
+                parent,
+                printComments(
+                    sourceCode.getCommentsInside(defaultExport),
+                    sourceCode
+                ) + "export "
+            ),
             fixer.remove(defaultExport),
         ];
     }
@@ -98,8 +90,20 @@ const fixDefaultExport = (
         return [];
     }
 
-    const nodeText = sourceCode.getText(declaration);
-    return fixer.replaceText(defaultExport, `export ${nodeText}`);
+    const keyword = sourceCode.getFirstToken(
+        defaultExport,
+        (token) => token.value === "default"
+    );
+    const next =
+        keyword == null
+            ? null
+            : sourceCode.getTokenAfter(keyword, { includeComments: true });
+    return keyword == null
+        ? []
+        : fixer.removeRange([
+              keyword.range[0],
+              next?.range[0] ?? keyword.range[1],
+          ]);
 };
 
 const handleVisitExportDefaultDeclaration = (

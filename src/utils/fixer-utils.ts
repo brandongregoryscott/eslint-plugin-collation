@@ -3,10 +3,7 @@ import { AST_NODE_TYPES } from "@typescript-eslint/utils";
 import type { RuleFix, SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import { isCommaToken, isIdentifierToken } from "./node-utils";
 
-/**
- * Whether a replacement range contains comments that reconstructed text would lose.
- * Callers that copy original source text can check only the discarded portion.
- */
+/** Whether a source range overlaps any parsed comments. */
 const hasCommentsInRange = (
     sourceCode: SourceCode,
     range: TSESTree.Range

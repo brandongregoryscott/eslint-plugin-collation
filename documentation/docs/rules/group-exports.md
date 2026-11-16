@@ -81,4 +81,4 @@ export type { Bar, Foo };
 export { bar, foo };
 ```
 
-Export groups containing comments inside any export statement are still reported, but are not autofixed to avoid losing comments.
+Comments are preserved with their associated specifiers when consolidating exports. Comments attached to an export statement move into the combined list with that statement’s specifiers.

@@ -1,56 +1,19 @@
+import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import type { TSESTree } from "@typescript-eslint/utils";
 import type { NamedExport } from "../types/named-export";
-import { last } from "./collection-utils";
 import { isEmpty } from "./core-utils";
-import { compact } from "lodash";
 import { isIdentifier } from "./node-utils";
 
-/**
- * Converts multiple named exports into a single export. This function
- * assumes the exports are all the same kind, for the same module and the array contains at least two entries
- */
-const consolidateExports = (exports: NamedExport[]): NamedExport => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const lastExport = last(exports)!;
-    const { kind, module, reference } = lastExport;
-    const consolidatedExport: NamedExport = {
-        specifiers: exports.flatMap((_export) => _export.specifiers),
-        reference,
-        kind,
-        module,
-    };
-
-    return consolidatedExport;
-};
-
-const exportToString = (_export: NamedExport): string => {
-    const { kind, module } = _export;
-
-    const exportKeyword = kind === "type" ? "export type" : "export";
-    const specifierList = _export.specifiers.join(", ");
-
-    const moduleSpecifier = isEmpty(module) ? "" : ` from "${module}"`;
-
-    return `${exportKeyword} { ${specifierList} }${moduleSpecifier};`;
-};
-
-const getSpecifiers = (_export: TSESTree.ExportNamedDeclaration): string[] => {
-    const specifiers = _export.specifiers.map((specifier) => {
-        const { exported, local } = specifier;
-
-        if (!isIdentifier(exported) || !isIdentifier(local)) {
-            return "";
-        }
-
-        if (exported.name !== local.name) {
-            return `${local.name} as ${exported.name}`;
-        }
-
-        return local.name;
+const getSpecifiers = (_export: TSESTree.ExportNamedDeclaration): string[] =>
+    _export.specifiers.map((specifier) => {
+        const local = isIdentifier(specifier.local)
+            ? specifier.local.name
+            : specifier.local.value;
+        const exported = isIdentifier(specifier.exported)
+            ? specifier.exported.name
+            : specifier.exported.value;
+        return exported === local ? local : `${local} as ${exported}`;
     });
-
-    return compact(specifiers);
-};
 
 const isInlineExport = (
     namedExport: TSESTree.ExportNamedDeclaration
@@ -66,4 +29,22 @@ const toNamedExport = (
     specifiers: getSpecifiers(_export),
 });
 
-export { consolidateExports, exportToString, isInlineExport, toNamedExport };
+const getExportListRange = (
+    node: TSESTree.ExportNamedDeclaration,
+    sourceCode: SourceCode
+): TSESTree.Range => {
+    const open = sourceCode.getFirstToken(node, (token) => token.value === "{");
+    const close =
+        open == null
+            ? null
+            : sourceCode.getTokenAfter(
+                  node.specifiers[node.specifiers.length - 1] ?? open,
+                  (token) => token.value === "}"
+              );
+    if (open == null || close == null) {
+        throw new Error("Expected a named export list");
+    }
+    return [open.range[1], close.range[0]];
+};
+
+export { getExportListRange, isInlineExport, toNamedExport };

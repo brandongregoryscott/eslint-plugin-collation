@@ -84,4 +84,4 @@ export { bar };
 
 Since this is generally undesirable, the [`group-exports`](./group-exports) rule can be turned on to consolidate these.
 
-Autofixes are skipped when they would discard comments around the exported declaration. Comments inside a copied declaration are preserved.
+Comments around and inside declarations stay with the declaration when its export moves to the end of the file.

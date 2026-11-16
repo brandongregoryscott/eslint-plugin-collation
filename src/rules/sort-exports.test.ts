@@ -34,15 +34,39 @@ ruleTester.run("sortExports", sortExports, {
     ],
     invalid: [
         {
-            name: "skips autofix for block comments inside an export",
-            code: 'export { /* keep */ b, a } from "mod";',
-            output: null,
+            name: "moves trailing line comments with their specifier",
+            code: 'export { b, // b docs\n    a } from "mod";',
+            output: 'export {\n    a,\n    b, // b docs\n} from "mod";',
             errors: [{ messageId: "sortExports" }],
         },
         {
-            name: "skips autofix for the grouped comments from issue 102",
+            name: "moves block comments before commas with the preceding specifier",
+            code: 'export { b /* b docs */, a } from "mod";',
+            output: 'export { a, b /* b docs */ } from "mod";',
+            errors: [{ messageId: "sortExports" }],
+        },
+        {
+            name: "preserves comments within aliases and individual type modifiers",
+            code: 'export { type Z, type /* a docs */ A, b as c } from "mod";',
+            output: 'export { type /* a docs */ A, b as c, type Z } from "mod";',
+            errors: [{ messageId: "sortExports" }],
+        },
+        {
+            name: "preserves CRLF when sorting commented exports",
+            code: 'export {\r\n    // b docs\r\n    b,\r\n    a,\r\n} from "mod";',
+            output: 'export {\r\n    a,\r\n    // b docs\r\n    b,\r\n} from "mod";',
+            errors: [{ messageId: "sortExports" }],
+        },
+        {
+            name: "moves leading block comments with export specifiers",
+            code: 'export { /* keep */ b, a } from "mod";',
+            output: 'export { a, /* keep */ b } from "mod";',
+            errors: [{ messageId: "sortExports" }],
+        },
+        {
+            name: "sorts the commented export list from issue 102",
             code: 'export {\n // core\n reactive, ref,\n // utilities\n isRef,\n // advanced\n customRef,\n} from "@vue/reactivity";',
-            output: null,
+            output: 'export {\n // advanced\n customRef,\n // utilities\n isRef,\n // core\n reactive,\n ref,\n} from "@vue/reactivity";',
             errors: [{ messageId: "sortExports" }],
         },
         {

@@ -40,4 +40,4 @@ export function noop() {}
 
 ## Notes
 
-Autofixes are skipped when they would discard comments around the exported declaration. Comments inside a copied declaration are preserved.
+Comments around and inside exported declarations are preserved when converting default exports to named exports.

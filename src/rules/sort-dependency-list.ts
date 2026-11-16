@@ -1,13 +1,12 @@
 import type { TSESTree } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
-import type {
-    RuleContext,
-    RuleFix,
-    RuleFixer,
-} from "@typescript-eslint/utils/ts-eslint";
+import type { RuleContext } from "@typescript-eslint/utils/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { createRule } from "../utils/rule-utils";
-import { hasCommentsInRange } from "../utils/fixer-utils";
+import {
+    groupNodesWithComments,
+    printCommentedList,
+} from "../utils/comment-utils";
 import { isEqualJson } from "../utils/core-utils";
 
 const callExpressionNames = ["useCallback", "useEffect", "useMemo"];
@@ -125,37 +124,27 @@ const handleVisitArrayExpression = (
     context.report({
         node: arrayExpression,
         messageId: "sortDependencyList",
-        fix: (fixer) =>
-            hasCommentsInRange(sourceCode, arrayExpression.range)
-                ? null
-                : fixUnsortedDependencyList(fixer, arrayExpression),
+        fix: (fixer) => {
+            const range: TSESTree.Range = [
+                arrayExpression.range[0] + 1,
+                arrayExpression.range[1] - 1,
+            ];
+            const groups = groupNodesWithComments(
+                identifiers,
+                range,
+                sourceCode
+            ).sort((left, right) => {
+                const a = getIdentifierName(left.node);
+                const b = getIdentifierName(right.node);
+                return a < b ? -1 : a > b ? 1 : 0;
+            });
+            return fixer.replaceTextRange(
+                range,
+                printCommentedList(groups, sourceCode, false, range)
+            );
+        },
     });
 };
-
-/**
- * Converts the given `ArrayExpression` to its string representation, assuming it only contains
- * `Identifier` and `MemberExpression` elements
- */
-const arrayExpressionToString = (
-    arrayExpression: TSESTree.ArrayExpression
-): string => {
-    const commaSeparatedValues = arrayExpression.elements.map((element) =>
-        getIdentifierName(
-            element as TSESTree.Identifier | TSESTree.MemberExpression
-        )
-    );
-
-    return `[${commaSeparatedValues.sort().join(", ")}]`;
-};
-
-const fixUnsortedDependencyList = (
-    fixer: RuleFixer,
-    arrayExpression: TSESTree.ArrayExpression
-): RuleFix =>
-    fixer.replaceText(
-        arrayExpression,
-        arrayExpressionToString(arrayExpression)
-    );
 
 const handleVisitCallExpression = (
     callExpression: TSESTree.CallExpression,

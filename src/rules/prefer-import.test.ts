@@ -158,9 +158,143 @@ const elem = <Text>Hello</Text>`,
     ],
     invalid: [
         {
+            name: "preserves type-only imports while moving comments",
+            code: 'import type { /* docs */ Map } from "lodash";',
+            output: "import type { /* docs */ Map } from 'lodash/map';",
+            options: [
+                {
+                    lodash: {
+                        importName: "Map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "preserves type-only flags when replacing a named import as default",
+            code: 'import { type /* docs */ Map as MyMap } from "lodash";',
+            output: "/* docs */ import type MyMap from 'lodash/map';",
+            options: [
+                {
+                    lodash: {
+                        importName: "Map",
+                        replacementModuleSpecifier: "lodash/map",
+                        replaceAsDefault: true,
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "keeps unmatched default imports with overlapping replacement rules",
+            code: 'import lodash, { /* map docs */ map } from "lodash";',
+            output: "import { /* map docs */ map } from 'lodash/map';\nimport lodash from \"lodash\";",
+            options: [
+                {
+                    lodash: [
+                        {
+                            importName: "map",
+                            replacementModuleSpecifier: "lodash/map",
+                        },
+                        {
+                            importName: "*",
+                            replacementModuleSpecifier: "lodash/{importName}",
+                        },
+                    ],
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "splits imports while retaining each specifier comment",
+            code: 'import { /* map docs */ map, /* filter docs */ filter } from "lodash";',
+            output: "import { /* map docs */ map } from 'lodash/map';\nimport { /* filter docs */ filter } from 'lodash/filter';",
+            options: [
+                {
+                    lodash: {
+                        importName: "*",
+                        replacementModuleSpecifier: "lodash/{importName}",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImportMultiple" }],
+        },
+        {
+            name: "moves comments when converting an aliased specifier to a default import",
+            code: 'import { /* map docs */ map /* alias docs */ as myMap /* tail */ } from "lodash";',
+            output: "/* map docs */ /* alias docs */ import myMap from 'lodash/map'; /* tail */ ",
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                        replaceAsDefault: true,
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "preserves an unmatched default import when all named specifiers move",
+            code: 'import lodash, { /* map docs */ map } from "lodash";',
+            output: "import { /* map docs */ map } from 'lodash/map';\nimport lodash from \"lodash\";",
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "keeps comments with unmatched specifiers",
+            code: 'import { map, /* filter docs */ filter } from "lodash";',
+            output: "import { map } from 'lodash/map';\nimport { /* filter docs */ filter } from \"lodash\";",
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "moves comments outside the braces when replacing an entire import",
+            code: 'import /* header */ { map } from /* source */ "lodash";',
+            output: "import { /* header */ map /* source */ } from 'lodash/map';",
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "keeps trailing line comments with a moved specifier",
+            code: 'import { map, // map docs\n    filter } from "lodash";',
+            output: "import {\n    map, // map docs\n} from 'lodash/map';\nimport { filter } from \"lodash\";",
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
             name: "preserves comments when replacing an entire import",
             code: 'import { /* keep */ map } from "lodash";',
-            output: null,
+            output: "import { /* keep */ map } from 'lodash/map';",
             options: [
                 {
                     lodash: {
@@ -174,7 +308,7 @@ const elem = <Text>Hello</Text>`,
         {
             name: "preserves comments when replacing part of an import",
             code: 'import { map /* keep */, filter } from "lodash";',
-            output: null,
+            output: "import { map /* keep */ } from 'lodash/map';\nimport { filter } from \"lodash\";",
             options: [
                 {
                     lodash: {

@@ -8,7 +8,6 @@ import type {
 import { RuleName } from "../enums/rule-name";
 import { getName } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
-import { hasCommentsInRange } from "../utils/fixer-utils";
 import { isInlineExport } from "../utils/export-utils";
 import { last } from "../utils/collection-utils";
 
@@ -18,7 +17,7 @@ const noInlineExport = createRule({
             ExportDefaultDeclaration: (defaultExport): void => {
                 const sourceCode =
                     context.sourceCode ?? context.getSourceCode();
-                if (!isInlineDefaultExport(defaultExport, sourceCode)) {
+                if (!isInlineDefaultExport(defaultExport)) {
                     return;
                 }
 
@@ -79,53 +78,43 @@ const fixInlineExport = (
         return [];
     }
 
-    if (
-        hasCommentsInRange(sourceCode, [
-            exportDeclaration.range[0],
-            declaration.range[0],
-        ]) ||
-        hasCommentsInRange(sourceCode, [
-            declaration.range[1],
-            exportDeclaration.range[1],
-        ])
-    ) {
-        return null;
-    }
-
     const exportStatement = isDefault
         ? `\nexport default ${name};`
         : `\nexport { ${name} };`;
 
+    const keywords = sourceCode
+        .getTokens(exportDeclaration)
+        .filter(
+            (token) =>
+                token.range[1] <= declaration.range[0] &&
+                (token.value === "export" || token.value === "default")
+        );
+    const trailing = sourceCode
+        .getCommentsAfter(lastStatement)
+        .filter(
+            (comment) => comment.loc.start.line === lastStatement.loc.end.line
+        );
+    const insertionPoint = trailing[trailing.length - 1] ?? lastStatement;
     return [
-        fixer.insertTextAfter(
-            exportDeclaration,
-            sourceCode.getText(declaration)
-        ),
-        fixer.remove(exportDeclaration),
-        fixer.insertTextAfter(lastStatement, exportStatement),
+        ...keywords.map((token) => {
+            const next = sourceCode.getTokenAfter(token, {
+                includeComments: true,
+            });
+            return fixer.removeRange([
+                token.range[0],
+                next?.range[0] ?? token.range[1],
+            ]);
+        }),
+        fixer.insertTextAfter(insertionPoint, exportStatement),
     ];
 };
 
 const isInlineDefaultExport = (
-    defaultExport: TSESTree.ExportDefaultDeclaration,
-    sourceCode: SourceCode
-): boolean => {
-    const { lines } = sourceCode;
-
-    const { declaration } = defaultExport;
-    const exportLine = lines.find((line) =>
-        line.includes(sourceCode.getText(defaultExport))
-    );
-    const declarationLine = lines.find((line) =>
-        line.includes(sourceCode.getText(declaration))
-    );
-
-    return (
-        exportLine != null &&
-        declarationLine != null &&
-        lines.indexOf(exportLine) === lines.indexOf(declarationLine)
-    );
-};
+    defaultExport: TSESTree.ExportDefaultDeclaration
+): boolean =>
+    defaultExport.declaration.type === AST_NODE_TYPES.FunctionDeclaration ||
+    defaultExport.declaration.type === AST_NODE_TYPES.ClassDeclaration ||
+    defaultExport.declaration.type === AST_NODE_TYPES.TSInterfaceDeclaration;
 
 const getLastStatement = (
     exportDeclaration:

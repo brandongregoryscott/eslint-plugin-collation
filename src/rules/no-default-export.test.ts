@@ -21,15 +21,21 @@ ruleTester.run("noDefaultExport", noDefaultExport, {
     ],
     invalid: [
         {
-            name: "skips autofix for comments before the exported identifier",
-            code: "const a = 1; export default /* keep */ a;",
-            output: null,
+            name: "preserves a line comment after the default keyword",
+            code: "export default // keep\nfunction a() {}",
+            output: "export // keep\nfunction a() {}",
             errors: [{ messageId: "noDefaultExport" }],
         },
         {
-            name: "skips autofix for comments between export keywords",
+            name: "moves comments with the exported declaration",
+            code: "const a = 1; export default /* keep */ a;",
+            output: "/* keep */ export const a = 1; ",
+            errors: [{ messageId: "noDefaultExport" }],
+        },
+        {
+            name: "preserves comments between export keywords",
             code: "export /* keep */ default function a() {}",
-            output: null,
+            output: "export /* keep */ function a() {}",
             errors: [{ messageId: "noDefaultExport" }],
         },
         {
