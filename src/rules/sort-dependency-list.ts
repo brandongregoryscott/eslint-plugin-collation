@@ -1,8 +1,11 @@
 import { hasSameOrder } from "../utils/collection-utils";
 import { orderBy } from "lodash";
 import { isArrayExpression, isIdentifier } from "../utils/node-utils";
-import { createRule } from "../utils/create-rule";
-import { printList, readList } from "../utils/commented-list";
+import { createRule } from "../utils/rule-utils";
+import {
+    stringifyCommentedNodes,
+    groupNodesWithComments,
+} from "../utils/node-comment-utils";
 
 const HOOK_NAMES = ["useEffect", "useMemo", "useCallback"];
 
@@ -37,7 +40,7 @@ const sortDependencyList = createRule({
                     return;
                 }
 
-                const items = readList(
+                const items = groupNodesWithComments(
                     source,
                     list.elements.filter((element) => element != null),
                     list.range
@@ -59,7 +62,7 @@ const sortDependencyList = createRule({
                     fix: (fixer) =>
                         fixer.replaceText(
                             list,
-                            printList(source, sorted, "[]")
+                            stringifyCommentedNodes(source, sorted, "[]")
                         ),
                 });
             },

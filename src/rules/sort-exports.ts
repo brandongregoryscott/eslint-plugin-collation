@@ -1,8 +1,11 @@
 import { hasSameOrder } from "../utils/collection-utils";
 import { orderBy, findLast } from "lodash";
 import { isIdentifier } from "../utils/node-utils";
-import { createRule } from "../utils/create-rule";
-import { printList, readList } from "../utils/commented-list";
+import { createRule } from "../utils/rule-utils";
+import {
+    stringifyCommentedNodes,
+    groupNodesWithComments,
+} from "../utils/node-comment-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
 
 type Range = [number, number];
@@ -57,7 +60,11 @@ const sortExports = createRule({
                 }
 
                 const range: Range = [open.range[0], close.range[1]];
-                const items = readList(source, node.specifiers, range);
+                const items = groupNodesWithComments(
+                    source,
+                    node.specifiers,
+                    range
+                );
 
                 const reordered = sorted.map(
                     (item) => items[specifiers.indexOf(item)]
@@ -69,7 +76,7 @@ const sortExports = createRule({
                     fix: (fixer) =>
                         fixer.replaceTextRange(
                             range,
-                            printList(source, reordered)
+                            stringifyCommentedNodes(source, reordered)
                         ),
                 });
             },

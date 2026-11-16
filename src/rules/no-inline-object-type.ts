@@ -5,7 +5,7 @@ import {
     isTSTypeLiteral,
 } from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
-import { createRule } from "../utils/create-rule";
+import { createRule } from "../utils/rule-utils";
 import {
     descendants,
     freshName,

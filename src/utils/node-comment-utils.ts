@@ -2,20 +2,20 @@ import { isEmpty } from "lodash";
 import type { TSESTree } from "@typescript-eslint/utils";
 import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
 
-interface ListItem {
+interface CommentedNode {
     leading: TSESTree.Comment[];
     text: string;
     trailing: TSESTree.Comment[];
 }
 
 // Keep ownership separate from formatting so sorting and splitting use the same rules.
-function readList(
+function groupNodesWithComments(
     source: SourceCode,
     nodes: TSESTree.Node[],
     range: TSESTree.Range
-): ListItem[] {
+): CommentedNode[] {
     const items = nodes.map(
-        (node): ListItem => ({
+        (node): CommentedNode => ({
             leading: [],
             text: source.getText(node),
             trailing: [],
@@ -70,9 +70,9 @@ function readList(
     return items;
 }
 
-function printList(
+function stringifyCommentedNodes(
     source: SourceCode,
-    items: ListItem[],
+    items: CommentedNode[],
     brackets = "{}",
     multiline = false
 ): string {
@@ -128,5 +128,5 @@ function printList(
     }`;
 }
 
-export type { ListItem };
-export { printList, readList };
+export type { CommentedNode };
+export { groupNodesWithComments, stringifyCommentedNodes };

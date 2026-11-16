@@ -1,8 +1,9 @@
+import { SafetyClassification } from "../enums/safety-classification";
 import { isEmpty } from "lodash";
-import { createRule } from "../utils/create-rule";
+import { createRule } from "../utils/rule-utils";
 import type { FunctionNode } from "../utils/ast";
-import { parameterMover } from "../utils/parameter-move";
-import { reactComponents } from "../utils/react-component";
+import { ParameterMover } from "../utils/parameter-mover";
+import { ReactComponentDetector } from "../utils/react-component-detector";
 
 const noDestructuredPropsParameter = createRule({
     name: "no-destructured-props-parameter",
@@ -23,8 +24,8 @@ const noDestructuredPropsParameter = createRule({
     },
     defaultOptions: [],
     create(context) {
-        const mover = parameterMover(context);
-        const react = reactComponents(context.sourceCode);
+        const mover = new ParameterMover(context.sourceCode);
+        const react = new ReactComponentDetector(context.sourceCode);
 
         function check(node: FunctionNode) {
             if (!react.isComponent(node)) {
@@ -42,11 +43,11 @@ const noDestructuredPropsParameter = createRule({
                 node: moves[0].pattern,
                 messageId: "destructureInBody",
                 fix:
-                    safety === "safe"
+                    safety === SafetyClassification.Safe
                         ? (fixer) => mover.fix(node, moves, fixer)
                         : undefined,
                 suggest:
-                    safety === "review"
+                    safety === SafetyClassification.Review
                         ? [
                               {
                                   messageId: "reviewDestructureInBody",

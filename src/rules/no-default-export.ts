@@ -4,7 +4,7 @@ import {
     isIdentifier,
     isVariableDeclarator,
 } from "../utils/node-utils";
-import { createRule } from "../utils/create-rule";
+import { createRule } from "../utils/rule-utils";
 import { declarationNames } from "../utils/ast";
 
 const noDefaultExport = createRule({

@@ -1,6 +1,7 @@
-import { createRule } from "../utils/create-rule";
+import { SafetyClassification } from "../enums/safety-classification";
+import { createRule } from "../utils/rule-utils";
 import type { FunctionNode } from "../utils/ast";
-import { parameterMover } from "../utils/parameter-move";
+import { ParameterMover } from "../utils/parameter-mover";
 
 const noDestructuredParameter = createRule({
     name: "no-destructured-parameter",
@@ -16,11 +17,12 @@ const noDestructuredParameter = createRule({
     },
     defaultOptions: [],
     create(context) {
-        const mover = parameterMover(context);
+        const mover = new ParameterMover(context.sourceCode);
 
         function check(node: FunctionNode) {
             const moves = mover.plan(node, "parameter");
-            const safe = mover.safety(node, moves) === "safe";
+            const safe =
+                mover.safety(node, moves) === SafetyClassification.Safe;
 
             for (const move of moves) {
                 context.report({

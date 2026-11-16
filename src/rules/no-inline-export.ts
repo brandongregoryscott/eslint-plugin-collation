@@ -5,7 +5,7 @@ import {
     isTSModuleBlock,
 } from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
-import { createRule } from "../utils/create-rule";
+import { createRule } from "../utils/rule-utils";
 import { declarationNames } from "../utils/ast";
 
 const noInlineExport = createRule({

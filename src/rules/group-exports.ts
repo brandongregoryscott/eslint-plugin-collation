@@ -1,9 +1,12 @@
 import { isEmpty, findLast } from "lodash";
 import { isExportNamedDeclaration } from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
-import { createRule } from "../utils/create-rule";
-import { printList, readList } from "../utils/commented-list";
-import type { ListItem } from "../utils/commented-list";
+import { createRule } from "../utils/rule-utils";
+import {
+    stringifyCommentedNodes,
+    groupNodesWithComments,
+} from "../utils/node-comment-utils";
+import type { CommentedNode } from "../utils/node-comment-utils";
 
 interface ExportEdit {
     range: TSESTree.Range;
@@ -76,7 +79,7 @@ const groupExports = createRule({
             const items =
                 open == null || close == null
                     ? []
-                    : readList(source, node.specifiers, [
+                    : groupNodesWithComments(source, node.specifiers, [
                           open.range[0],
                           close.range[1],
                       ]);
@@ -128,7 +131,7 @@ const groupExports = createRule({
             group: TSESTree.ExportNamedDeclaration[]
         ): ExportEdit[] {
             const first = group[0];
-            const items: ListItem[] = [];
+            const items: CommentedNode[] = [];
             const edits: ExportEdit[] = [];
             let pending: TSESTree.Comment[] = [];
 
@@ -156,7 +159,7 @@ const groupExports = createRule({
                 items[items.length - 1].trailing.push(...pending);
             }
 
-            let list = printList(source, items);
+            let list = stringifyCommentedNodes(source, items);
 
             if (isEmpty(items) && !isEmpty(pending)) {
                 list = `{\n${pending

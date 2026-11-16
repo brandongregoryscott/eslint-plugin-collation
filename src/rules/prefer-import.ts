@@ -7,9 +7,12 @@ import {
 } from "../utils/node-utils";
 import type { JSONSchema, TSESTree } from "@typescript-eslint/utils";
 import { minimatch } from "minimatch";
-import { createRule } from "../utils/create-rule";
-import { printList, readList } from "../utils/commented-list";
-import type { ListItem } from "../utils/commented-list";
+import { createRule } from "../utils/rule-utils";
+import {
+    stringifyCommentedNodes,
+    groupNodesWithComments,
+} from "../utils/node-comment-utils";
+import type { CommentedNode } from "../utils/node-comment-utils";
 
 interface ImportReplacement {
     importName: string | string[];
@@ -24,7 +27,7 @@ type PreferImportOptions = Record<
 >;
 
 interface ReplacementGroup {
-    items: ListItem[];
+    items: CommentedNode[];
     module: string;
     names: string[];
     rule: ImportReplacement;
@@ -113,7 +116,7 @@ const preferImport = createRule<
 
             if (group.rule.replaceAsDefault !== true) {
                 return [
-                    `import ${typeOnly ? "type " : ""}${printList(
+                    `import ${typeOnly ? "type " : ""}${stringifyCommentedNodes(
                         source,
                         group.items
                     )} from '${group.module}';`,
@@ -147,7 +150,11 @@ const preferImport = createRule<
         function planReplacements(node: TSESTree.ImportDeclaration) {
             const rules = asArray(options[String(node.source.value)]);
             const specifiers = node.specifiers.filter(isImportSpecifier);
-            const items = readList(source, specifiers, node.range);
+            const items = groupNodesWithComments(
+                source,
+                specifiers,
+                node.range
+            );
             const moved = new Set<TSESTree.ImportSpecifier>();
             const groups: ReplacementGroup[] = [];
 
@@ -214,7 +221,7 @@ const preferImport = createRule<
 
         function remainingImport(
             node: TSESTree.ImportDeclaration,
-            remaining: ListItem[]
+            remaining: CommentedNode[]
         ): string | undefined {
             const other = node.specifiers.filter(
                 (specifier) => !isImportSpecifier(specifier)
@@ -227,7 +234,7 @@ const preferImport = createRule<
             const parts = other.map((specifier) => source.getText(specifier));
 
             if (!isEmpty(remaining)) {
-                parts.push(printList(source, remaining));
+                parts.push(stringifyCommentedNodes(source, remaining));
             }
 
             return `import ${
@@ -384,7 +391,10 @@ const preferImport = createRule<
             }
         }
 
-        return { ImportDeclaration: checkImport, "Program:exit": checkGlobals };
+        return {
+            ImportDeclaration: checkImport,
+            "Program:exit": checkGlobals,
+        };
     },
 });
 

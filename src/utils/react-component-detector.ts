@@ -27,11 +27,17 @@ import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import { descendants, functionName } from "./ast";
 import type { FunctionNode } from "./ast";
 
-function reactComponents(source: SourceCode) {
+class ReactComponentDetector {
+    readonly #source: SourceCode;
+
+    constructor(source: SourceCode) {
+        this.#source = source;
+    }
+
     // Resolve imports through lexical scope, so aliases work and shadowed names
     // do not accidentally turn an ordinary callback into a component.
-    function reactName(node: TSESTree.Identifier, exported: string): boolean {
-        let scope = source.getScope(node);
+    #reactName(node: TSESTree.Identifier, exported: string): boolean {
+        let scope = this.#source.getScope(node);
 
         while (true) {
             const variable = scope.set.get(node.name);
@@ -75,9 +81,9 @@ function reactComponents(source: SourceCode) {
         return exported === "*" && node.name === "React";
     }
 
-    function reactMember(node: TSESTree.Node, names: string[]): boolean {
+    #reactMember(node: TSESTree.Node, names: string[]): boolean {
         if (isIdentifier(node)) {
-            return names.some((name) => reactName(node, name));
+            return names.some((name) => this.#reactName(node, name));
         }
 
         if (
@@ -88,35 +94,41 @@ function reactComponents(source: SourceCode) {
         ) {
             return (
                 names.includes(node.property.name) &&
-                reactName(node.object, "*")
+                this.#reactName(node.object, "*")
             );
         }
 
         if (isTSQualifiedName(node) && isIdentifier(node.left)) {
-            return names.includes(node.right.name) && reactName(node.left, "*");
+            return (
+                names.includes(node.right.name) &&
+                this.#reactName(node.left, "*")
+            );
         }
 
         return false;
     }
 
-    function componentType(node: TSESTree.Node | undefined): boolean {
+    #componentType(node: TSESTree.Node | undefined): boolean {
         return (
             isTSTypeReference(node) &&
-            reactMember(node.typeName, ["FC", "FunctionComponent"])
+            this.#reactMember(node.typeName, ["FC", "FunctionComponent"])
         );
     }
 
-    function returnsJSX(node: TSESTree.Node): boolean {
+    #returnsJSX(node: TSESTree.Node): boolean {
         if (isJSXElement(node) || isJSXFragment(node)) {
             return true;
         }
 
         if (isConditionalExpression(node)) {
-            return returnsJSX(node.consequent) || returnsJSX(node.alternate);
+            return (
+                this.#returnsJSX(node.consequent) ||
+                this.#returnsJSX(node.alternate)
+            );
         }
 
         if (isLogicalExpression(node)) {
-            return returnsJSX(node.left) || returnsJSX(node.right);
+            return this.#returnsJSX(node.left) || this.#returnsJSX(node.right);
         }
 
         if (
@@ -124,13 +136,13 @@ function reactComponents(source: SourceCode) {
             isTSSatisfiesExpression(node) ||
             isTSNonNullExpression(node)
         ) {
-            return returnsJSX(node.expression);
+            return this.#returnsJSX(node.expression);
         }
 
         return false;
     }
 
-    function isComponent(node: FunctionNode): boolean {
+    isComponent(node: FunctionNode): boolean {
         if (!("body" in node) || node.body == null) {
             return false;
         }
@@ -143,7 +155,7 @@ function reactComponents(source: SourceCode) {
         ) {
             current = current.parent;
 
-            if (componentType(current.typeAnnotation)) {
+            if (this.#componentType(current.typeAnnotation)) {
                 return true;
             }
         }
@@ -153,7 +165,7 @@ function reactComponents(source: SourceCode) {
         if (
             isCallExpression(parent) &&
             parent.arguments[0] === current &&
-            reactMember(parent.callee, ["memo", "forwardRef"])
+            this.#reactMember(parent.callee, ["memo", "forwardRef"])
         ) {
             return true;
         }
@@ -161,7 +173,7 @@ function reactComponents(source: SourceCode) {
         if (
             isVariableDeclarator(parent) &&
             isIdentifier(parent.id) &&
-            componentType(parent.id.typeAnnotation?.typeAnnotation)
+            this.#componentType(parent.id.typeAnnotation?.typeAnnotation)
         ) {
             return true;
         }
@@ -179,14 +191,14 @@ function reactComponents(source: SourceCode) {
         }
 
         if (!isBlockStatement(node.body)) {
-            return returnsJSX(node.body);
+            return this.#returnsJSX(node.body);
         }
 
-        for (const child of descendants(node.body, source, true)) {
+        for (const child of descendants(node.body, this.#source, true)) {
             if (
                 isReturnStatement(child) &&
                 child.argument != null &&
-                returnsJSX(child.argument)
+                this.#returnsJSX(child.argument)
             ) {
                 return true;
             }
@@ -194,8 +206,6 @@ function reactComponents(source: SourceCode) {
 
         return false;
     }
-
-    return { isComponent };
 }
 
-export { reactComponents };
+export { ReactComponentDetector };

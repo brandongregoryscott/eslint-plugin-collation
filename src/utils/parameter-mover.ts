@@ -1,3 +1,4 @@
+import { SafetyClassification } from "../enums/safety-classification";
 import {
     isAssignmentPattern,
     isBlockStatement,
@@ -10,10 +11,7 @@ import {
     isTSAbstractMethodDefinition,
 } from "./node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
-import type {
-    RuleContext,
-    RuleFixer,
-} from "@typescript-eslint/utils/ts-eslint";
+import type { SourceCode, RuleFixer } from "@typescript-eslint/utils/ts-eslint";
 import { declarationNames, descendants, freshName, isPattern } from "./ast";
 import type { FunctionNode, Pattern } from "./ast";
 
@@ -23,20 +21,17 @@ interface ParameterMove {
     replacement: string;
 }
 
-type MoveContext = RuleContext<
-    "destructureInBody" | "reviewDestructureInBody",
-    readonly unknown[]
->;
+class ParameterMover {
+    readonly #source: SourceCode;
 
-// This factory owns one file's source and scopes. Its helpers only need the
-// function being transformed, rather than carrying context through every call.
-function parameterMover(context: MoveContext) {
-    const source = context.sourceCode;
+    constructor(source: SourceCode) {
+        this.#source = source;
+    }
 
-    function plan(node: FunctionNode, baseName: string, firstOnly = false) {
+    plan(node: FunctionNode, baseName: string, firstOnly = false) {
         const used = new Set<string>();
 
-        for (const child of descendants(node, source)) {
+        for (const child of descendants(node, this.#source)) {
             if (isIdentifier(child)) {
                 used.add(child.name);
             }
@@ -64,16 +59,16 @@ function parameterMover(context: MoveContext) {
             const annotation = param.typeAnnotation;
             const end = annotation?.range[0] ?? param.range[1];
 
-            const patternText = source.text
+            const patternText = this.#source.text
                 .slice(param.range[0], end)
                 .trimEnd();
 
             // Whitespace before a type annotation is part of the moved pattern
             // when it contains a line comment.
-            const text = source.text.slice(param.range[0], end);
+            const text = this.#source.text.slice(param.range[0], end);
             const bindingText = text.includes("//") ? text : patternText;
 
-            const variables = source
+            const variables = this.#source
                 .getDeclaredVariables(node)
                 .filter((variable) =>
                     variable.identifiers.some(
@@ -103,19 +98,16 @@ function parameterMover(context: MoveContext) {
 
     // Some transformations need review; others cannot be offered at all. Keep
     // those decisions explicit, because they protect evaluation order and scope.
-    function safety(
-        node: FunctionNode,
-        moves: ParameterMove[]
-    ): "safe" | "review" | "blocked" {
-        if (!("body" in node) || node.body == null || node.body == null) {
-            return "blocked";
+    safety(node: FunctionNode, moves: ParameterMove[]): SafetyClassification {
+        if (!("body" in node) || node.body == null) {
+            return SafetyClassification.Blocked;
         }
 
         if (
             ("async" in node && node.async) ||
             ("generator" in node && node.generator)
         ) {
-            return "blocked";
+            return SafetyClassification.Blocked;
         }
 
         if (
@@ -123,7 +115,7 @@ function parameterMover(context: MoveContext) {
                 isTSAbstractMethodDefinition(node.parent)) &&
             node.parent.kind === "constructor"
         ) {
-            return "blocked";
+            return SafetyClassification.Blocked;
         }
 
         const bodyStart = node.body.range[0];
@@ -132,17 +124,17 @@ function parameterMover(context: MoveContext) {
             moves.flatMap((move) => declarationNames(move.pattern))
         );
 
-        const variables = source
+        const variables = this.#source
             .getDeclaredVariables(node)
             .filter((variable) => names.has(variable.name));
 
         if (variables.some((variable) => variable.defs.length > 1)) {
-            return "blocked";
+            return SafetyClassification.Blocked;
         }
 
-        for (const child of descendants(node.body, source)) {
+        for (const child of descendants(node.body, this.#source)) {
             if (isIdentifier(child) && child.name === "arguments") {
-                return "blocked";
+                return SafetyClassification.Blocked;
             }
 
             if (
@@ -150,7 +142,7 @@ function parameterMover(context: MoveContext) {
                 isIdentifier(child.callee) &&
                 child.callee.name === "eval"
             ) {
-                return "blocked";
+                return SafetyClassification.Blocked;
             }
         }
 
@@ -165,13 +157,13 @@ function parameterMover(context: MoveContext) {
                 )
             )
         ) {
-            return "blocked";
+            return SafetyClassification.Blocked;
         }
 
         let review = false;
 
         for (const param of node.params) {
-            for (const child of descendants(param, source)) {
+            for (const child of descendants(param, this.#source)) {
                 if (
                     isAssignmentPattern(child) ||
                     (isProperty(child) && child.computed)
@@ -181,10 +173,10 @@ function parameterMover(context: MoveContext) {
             }
         }
 
-        return review ? "review" : "safe";
+        return review ? SafetyClassification.Review : SafetyClassification.Safe;
     }
 
-    function fix(node: FunctionNode, moves: ParameterMove[], fixer: RuleFixer) {
+    fix(node: FunctionNode, moves: ParameterMove[], fixer: RuleFixer) {
         if (!("body" in node) || node.body == null) {
             return null;
         }
@@ -223,7 +215,7 @@ function parameterMover(context: MoveContext) {
                 )
             );
         } else {
-            const arrow = source.getTokenBefore(
+            const arrow = this.#source.getTokenBefore(
                 node.body,
                 (token) => token.value === "=>"
             );
@@ -236,7 +228,7 @@ function parameterMover(context: MoveContext) {
             // the expression node's range.
             const start = arrow.range[1];
             const end = node.range[1];
-            const expression = source.text.slice(start, end).trim();
+            const expression = this.#source.text.slice(start, end).trim();
 
             fixes.push(
                 fixer.replaceTextRange(
@@ -248,8 +240,6 @@ function parameterMover(context: MoveContext) {
 
         return fixes;
     }
-
-    return { fix, plan, safety };
 }
 
-export { parameterMover };
+export { ParameterMover };
