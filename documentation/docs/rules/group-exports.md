@@ -80,3 +80,5 @@ const bar: Bar = "bar";
 export type { Bar, Foo };
 export { bar, foo };
 ```
+
+Export groups containing comments inside any export statement are still reported, but are not autofixed to avoid losing comments.

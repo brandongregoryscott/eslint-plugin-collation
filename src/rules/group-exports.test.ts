@@ -46,6 +46,43 @@ ruleTester.run("groupExports", groupExports, {
     ],
     invalid: [
         {
+            name: "only fixes comment-free groups when another group contains comments",
+            code: codeBlock`
+                export { /* keep */ a } from "a";
+                export { b } from "a";
+                export { c } from "b";
+                export { d } from "b";
+            `,
+            output: codeBlock`
+                export { /* keep */ a } from "a";
+                export { b } from "a";
+                export { c, d } from "b";
+            `,
+            errors: [
+                { messageId: "groupExports" },
+                { messageId: "groupExports" },
+            ],
+        },
+        {
+            name: "preserves a trailing line comment between exports",
+            code: 'export { a } from "mod"; // keep\nexport { b } from "mod";',
+            output: ' // keep\nexport { a, b } from "mod";',
+            errors: [{ messageId: "groupExports" }],
+        },
+
+        {
+            name: "skips autofix for comments inside an export group",
+            code: 'export { /* keep */ a } from "mod";\nexport { b } from "mod";',
+            output: null,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "preserves comments between grouped exports",
+            code: 'export { a } from "mod";\n// keep\nexport { b } from "mod";',
+            output: '// keep\nexport { a, b } from "mod";',
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
             name: "should consolidate multiple export statements into one",
             code: codeBlock`
                 const foo = 5;

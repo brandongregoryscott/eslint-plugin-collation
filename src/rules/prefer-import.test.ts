@@ -158,6 +158,35 @@ const elem = <Text>Hello</Text>`,
     ],
     invalid: [
         {
+            name: "preserves comments when replacing an entire import",
+            code: 'import { /* keep */ map } from "lodash";',
+            output: null,
+            options: [
+                {
+                    lodash: {
+                        importName: "*",
+                        replacementModuleSpecifier: "lodash/{importName}",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "preserves comments when replacing part of an import",
+            code: 'import { map /* keep */, filter } from "lodash";',
+            output: null,
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+
+        {
             options: [
                 {
                     "@twilio-paste/core": {

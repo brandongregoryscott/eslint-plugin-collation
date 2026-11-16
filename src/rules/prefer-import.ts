@@ -29,6 +29,7 @@ import {
 } from "../utils/node-utils";
 import { minimatch } from "minimatch";
 import {
+    hasCommentsInRange,
     insertTextAfter,
     insertTextBefore,
     insertTextBeforeRange,
@@ -410,7 +411,13 @@ const create = (
                                       ),
                               }
                             : firstIfOnly(replacementData),
-                        fix: () => fixes,
+                        fix: () =>
+                            hasCommentsInRange(
+                                sourceCode,
+                                importDeclaration.range
+                            )
+                                ? null
+                                : fixes,
                     });
                 });
             });

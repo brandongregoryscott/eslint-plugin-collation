@@ -6,6 +6,7 @@ import {
     toNamedExport,
 } from "../utils/export-utils";
 import { createRule } from "../utils/rule-utils";
+import { hasCommentsInRange } from "../utils/fixer-utils";
 import type { NamedExport } from "../types/named-export";
 import { isEqualJson } from "../utils/core-utils";
 
@@ -45,6 +46,7 @@ const reportErrors = (
     context: RuleContext<"sortExports", never[]>,
     exports: NamedExport[]
 ): void => {
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
     exports.forEach((_export) => {
         const sortedSpecifiers = sort(_export.specifiers);
         if (isEqualJson(sortedSpecifiers, _export.specifiers)) {
@@ -55,10 +57,15 @@ const reportErrors = (
             messageId: "sortExports",
             node: _export.reference,
             fix: (fixer) =>
-                fixer.replaceText(
-                    _export.reference,
-                    exportToString({ ..._export, specifiers: sortedSpecifiers })
-                ),
+                hasCommentsInRange(sourceCode, _export.reference.range)
+                    ? null
+                    : fixer.replaceText(
+                          _export.reference,
+                          exportToString({
+                              ..._export,
+                              specifiers: sortedSpecifiers,
+                          })
+                      ),
         });
     });
 };

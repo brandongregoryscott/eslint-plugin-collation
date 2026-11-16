@@ -10,6 +10,7 @@ import { RuleName } from "../enums/rule-name";
 import type { Declaration } from "../types/declaration";
 import { getName, isDeclaration } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
+import { hasCommentsInRange } from "../utils/fixer-utils";
 
 const noDefaultExport = createRule({
     create: (context) => {
@@ -65,8 +66,22 @@ const fixDefaultExport = (
     declarations: Declaration[],
     defaultExport: TSESTree.ExportDefaultDeclaration,
     sourceCode: SourceCode
-): RuleFix | RuleFix[] => {
+): RuleFix | RuleFix[] | null => {
     const { declaration } = defaultExport;
+    const discardedRange: TSESTree.Range =
+        declaration.type === AST_NODE_TYPES.Identifier
+            ? defaultExport.range
+            : [defaultExport.range[0], declaration.range[0]];
+    if (
+        hasCommentsInRange(sourceCode, discardedRange) ||
+        hasCommentsInRange(sourceCode, [
+            declaration.range[1],
+            defaultExport.range[1],
+        ])
+    ) {
+        return null;
+    }
+
     if (declaration.type === AST_NODE_TYPES.Identifier) {
         const parent = findParentDeclaration(declaration, declarations);
         if (parent == null) {

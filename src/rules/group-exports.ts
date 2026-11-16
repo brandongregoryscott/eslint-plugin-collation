@@ -14,7 +14,7 @@ import {
 import { createRule } from "../utils/rule-utils";
 import dropRight from "lodash/dropRight";
 import groupBy from "lodash/groupBy";
-import { removeNodeAndNewLine } from "../utils/fixer-utils";
+import { hasCommentsInRange, removeNodeAndNewLine } from "../utils/fixer-utils";
 import type { NamedExport } from "../types/named-export";
 import { last } from "../utils/collection-utils";
 
@@ -73,6 +73,10 @@ const getFixesForExports = (
         return [];
     }
 
+    if (exportsHaveComments(exports, sourceCode)) {
+        return [];
+    }
+
     const consolidatedExport = consolidateExports(exports);
     return [
         fixer.insertTextAfter(
@@ -96,6 +100,14 @@ const groupExportsByTypeAndModule = (
 ): Record<string, NamedExport[]> =>
     groupBy(exports, (_export) => [_export.kind, _export.module].join());
 
+const exportsHaveComments = (
+    exports: NamedExport[],
+    sourceCode: SourceCode
+): boolean =>
+    exports.some((_export) =>
+        hasCommentsInRange(sourceCode, _export.reference.range)
+    );
+
 const reportErrorsForExtraExports = (
     context: RuleContext<"groupExports", never[]>,
     exports: NamedExport[],
@@ -108,7 +120,9 @@ const reportErrorsForExtraExports = (
             node: _export.reference,
             messageId: "groupExports",
             fix: (fixer) =>
-                fixUngroupedExports(fixer, groupedExports, sourceCode),
+                exportsHaveComments(exports, sourceCode)
+                    ? null
+                    : fixUngroupedExports(fixer, groupedExports, sourceCode),
         });
     });
 };

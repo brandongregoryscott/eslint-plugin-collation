@@ -37,3 +37,7 @@ will be transformed to:
 ```ts
 export function noop() {}
 ```
+
+## Notes
+
+Autofixes are skipped when they would discard comments around the exported declaration. Comments inside a copied declaration are preserved.

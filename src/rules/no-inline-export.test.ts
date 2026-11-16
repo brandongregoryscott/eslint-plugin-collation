@@ -40,6 +40,24 @@ ruleTester.run("noInlineExport", noInlineExport, {
     ],
     invalid: [
         {
+            name: "skips autofix for comments before a named declaration",
+            code: "export /* keep */ const a = 1;",
+            output: null,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
+            name: "skips autofix for comments before a default declaration",
+            code: "export default /* keep */ function a() {}",
+            output: null,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
+            name: "copies comments inside an inline declaration",
+            code: "export function a() { /* keep */ }",
+            output: "function a() { /* keep */ }\nexport { a };",
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
             name: "should move inline named export to end of file",
             code: "export const foo = 5;",
             output: codeBlock`

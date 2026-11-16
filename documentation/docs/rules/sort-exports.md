@@ -23,3 +23,7 @@ const foo = 5;
 const bar = 4;
 export { bar, foo };
 ```
+
+## Notes
+
+Exports containing comments are still reported, but are not autofixed to avoid losing comments.

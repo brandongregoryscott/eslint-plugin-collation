@@ -3,6 +3,21 @@ import { AST_NODE_TYPES } from "@typescript-eslint/utils";
 import type { RuleFix, SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import { isCommaToken, isIdentifierToken } from "./node-utils";
 
+/**
+ * Whether a replacement range contains comments that reconstructed text would lose.
+ * Callers that copy original source text can check only the discarded portion.
+ */
+const hasCommentsInRange = (
+    sourceCode: SourceCode,
+    range: TSESTree.Range
+): boolean =>
+    sourceCode
+        .getAllComments()
+        .some(
+            (comment) =>
+                comment.range[0] < range[1] && comment.range[1] > range[0]
+        );
+
 // #region Vendorized Fixer functions
 
 /**
@@ -178,7 +193,9 @@ const removeNodeAndNewLine =
     (sourceCode: SourceCode) =>
     (node: TSESTree.Node): RuleFix[] => {
         const currentLine = node?.loc?.start?.line;
-        const nextToken = sourceCode.getTokenAfter(node);
+        const nextToken = sourceCode.getTokenAfter(node, {
+            includeComments: true,
+        });
         const nextTokenLine = nextToken?.loc?.start?.line;
 
         if (nextToken != null && currentLine !== nextTokenLine) {
@@ -227,6 +244,7 @@ const removeImportClause =
     };
 
 export {
+    hasCommentsInRange,
     insertFunctionBodyDeclarations,
     insertTextAfter,
     insertTextAfterRange,

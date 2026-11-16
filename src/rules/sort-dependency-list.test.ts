@@ -11,6 +11,11 @@ const ruleTester = new RuleTester({
 ruleTester.run("sortDependencyList", sortDependencyList, {
     valid: [
         {
+            name: "accepts sorted dependencies containing comments",
+            code: "useEffect(() => {}, [a, /* keep */ b])",
+        },
+
+        {
             name: "should not report errors for useEffect without dependency list",
             code: "useEffect(() => {})",
         },
@@ -65,6 +70,31 @@ ruleTester.run("sortDependencyList", sortDependencyList, {
         },
     ],
     invalid: [
+        {
+            name: "sorts dependencies while preserving comments outside the list",
+            code: "// before\nuseEffect(() => { /* keep */ }, [b, a]) // after",
+            output: "// before\nuseEffect(() => { /* keep */ }, [a, b]) // after",
+            errors: [{ messageId: "sortDependencyList" }],
+        },
+
+        {
+            name: "skips autofix for block comments inside dependencies",
+            code: "useEffect(() => {}, [b, /* keep */ a])",
+            output: null,
+            errors: [{ messageId: "sortDependencyList" }],
+        },
+        {
+            name: "skips autofix for commented out dependencies from issue 66",
+            code: "useMemo(() => {}, [b,\n // JSON.stringify(mapping),\n a])",
+            output: null,
+            errors: [{ messageId: "sortDependencyList" }],
+        },
+        {
+            name: "skips autofix for trailing comments inside dependencies",
+            code: "useCallback(() => {}, [b, a /* trailing */])",
+            output: null,
+            errors: [{ messageId: "sortDependencyList" }],
+        },
         {
             name: "should report errors for useEffect with unsorted dependency list",
             code: "useEffect(() => {}, [c, b, a])",

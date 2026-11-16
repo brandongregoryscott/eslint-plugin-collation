@@ -12,6 +12,11 @@ const ruleTester = new RuleTester({
 ruleTester.run("sortExports", sortExports, {
     valid: [
         {
+            name: "accepts sorted exports containing comments",
+            code: 'export { a, /* keep */ b } from "mod";',
+        },
+
+        {
             name: "should not report errors for single export",
             code: codeBlock`
                 const foo = 5;
@@ -28,6 +33,24 @@ ruleTester.run("sortExports", sortExports, {
         },
     ],
     invalid: [
+        {
+            name: "skips autofix for block comments inside an export",
+            code: 'export { /* keep */ b, a } from "mod";',
+            output: null,
+            errors: [{ messageId: "sortExports" }],
+        },
+        {
+            name: "skips autofix for the grouped comments from issue 102",
+            code: 'export {\n // core\n reactive, ref,\n // utilities\n isRef,\n // advanced\n customRef,\n} from "@vue/reactivity";',
+            output: null,
+            errors: [{ messageId: "sortExports" }],
+        },
+        {
+            name: "preserves leading and trailing comments while sorting",
+            code: '// before\nexport { b, a } from "mod"; // after',
+            output: '// before\nexport { a, b } from "mod"; // after',
+            errors: [{ messageId: "sortExports" }],
+        },
         {
             name: "should sort specifiers",
             code: codeBlock`

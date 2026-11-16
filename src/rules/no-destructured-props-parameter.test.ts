@@ -131,6 +131,13 @@ ruleTester.run(
         ],
         invalid: [
             {
+                name: "copies comments inside destructured props",
+                code: "function Badge({ /* keep */ value }) { return <span>{value}</span>; }",
+                output: "function Badge(props) {\nconst { /* keep */ value } = props;\n return <span>{value}</span>; }",
+                errors: [{ messageId: "destructureInBody" }],
+            },
+
+            {
                 code: codeBlock`
                     const Badge = (
                         { children } // keep

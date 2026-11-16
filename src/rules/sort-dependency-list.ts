@@ -7,6 +7,7 @@ import type {
 } from "@typescript-eslint/utils/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { createRule } from "../utils/rule-utils";
+import { hasCommentsInRange } from "../utils/fixer-utils";
 import { isEqualJson } from "../utils/core-utils";
 
 const callExpressionNames = ["useCallback", "useEffect", "useMemo"];
@@ -120,10 +121,14 @@ const handleVisitArrayExpression = (
         return;
     }
 
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
     context.report({
         node: arrayExpression,
         messageId: "sortDependencyList",
-        fix: (fixer) => fixUnsortedDependencyList(fixer, arrayExpression),
+        fix: (fixer) =>
+            hasCommentsInRange(sourceCode, arrayExpression.range)
+                ? null
+                : fixUnsortedDependencyList(fixer, arrayExpression),
     });
 };
 

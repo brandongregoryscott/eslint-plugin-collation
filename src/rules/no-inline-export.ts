@@ -8,6 +8,7 @@ import type {
 import { RuleName } from "../enums/rule-name";
 import { getName } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
+import { hasCommentsInRange } from "../utils/fixer-utils";
 import { isInlineExport } from "../utils/export-utils";
 import { last } from "../utils/collection-utils";
 
@@ -66,7 +67,7 @@ const fixInlineExport = (
         | TSESTree.ExportDefaultDeclaration
         | TSESTree.ExportNamedDeclaration,
     sourceCode: SourceCode
-): RuleFix | RuleFix[] => {
+): RuleFix | RuleFix[] | null => {
     const { declaration } = exportDeclaration;
     const isDefault =
         exportDeclaration.type === AST_NODE_TYPES.ExportDefaultDeclaration;
@@ -76,6 +77,19 @@ const fixInlineExport = (
 
     if (lastStatement == null || declaration == null || name == null) {
         return [];
+    }
+
+    if (
+        hasCommentsInRange(sourceCode, [
+            exportDeclaration.range[0],
+            declaration.range[0],
+        ]) ||
+        hasCommentsInRange(sourceCode, [
+            declaration.range[1],
+            exportDeclaration.range[1],
+        ])
+    ) {
+        return null;
     }
 
     const exportStatement = isDefault

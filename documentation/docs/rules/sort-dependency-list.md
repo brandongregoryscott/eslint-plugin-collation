@@ -41,3 +41,5 @@ const value = useMemo(() => {
     // ...business logic here
 }, [handleOpenDialog, setProject, theme.colors.gray900, x]);
 ```
+
+Dependency lists containing comments are still reported, but are not autofixed to avoid losing comments.
