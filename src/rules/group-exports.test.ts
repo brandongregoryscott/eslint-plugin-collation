@@ -46,6 +46,19 @@ ruleTester.run("groupExports", groupExports, {
     ],
     invalid: [
         {
+            name: "preserves file header and footer comments outside the grouped list",
+            code: '/* file header */\nexport { a } from "mod";\nexport { b } from "mod";\n// file footer',
+            output: '/* file header */\nexport { a, b } from "mod";\n// file footer',
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "preserves file boundaries when the program starts with whitespace",
+            code: '\n// file header\n\nexport { a } from "mod";\nexport { b } from "mod";\n\n/* file footer */\n',
+            output: '\n// file header\n\nexport { a, b } from "mod";\n\n/* file footer */\n',
+            errors: [{ messageId: "groupExports" }],
+        },
+
+        {
             name: "moves the final export's trailing comment with its specifier",
             code: 'export { a } from "mod";\nexport { b } from "mod"; // b docs',
             output: 'export {\n    a,\n    b, // b docs\n} from "mod";',

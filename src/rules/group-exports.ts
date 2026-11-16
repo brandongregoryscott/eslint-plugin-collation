@@ -95,9 +95,18 @@ const getFixesForExports = (
                       (comment) =>
                           comment.loc.start.line === lastStatement.loc.end.line
                   );
+    // Program ranges include file-level comments in newer parser versions.
+    // Keep headers and footers outside the groups regardless of that range.
     const statementRange: TSESTree.Range = [
-        parent.range[0],
-        Math.max(parent.range[1], trailing[trailing.length - 1]?.range[1] ?? 0),
+        parent.type === AST_NODE_TYPES.Program
+            ? body[0]?.range[0] ?? parent.range[0]
+            : parent.range[0],
+        Math.max(
+            parent.type === AST_NODE_TYPES.Program
+                ? lastStatement?.range[1] ?? parent.range[1]
+                : parent.range[1],
+            trailing[trailing.length - 1]?.range[1] ?? 0
+        ),
     ];
     const statements = groupNodesWithComments(body, statementRange, sourceCode);
     const orphans: TSESTree.Comment[] = [];
