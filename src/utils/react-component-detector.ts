@@ -22,6 +22,7 @@ import {
     isTSTypeReference,
     isVariableDeclarator,
 } from "./node-utils";
+import { ASTUtils } from "@typescript-eslint/utils";
 import type { TSESTree } from "@typescript-eslint/utils";
 import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import { descendants, functionName } from "./ast";
@@ -37,48 +38,41 @@ class ReactComponentDetector {
     // Resolve imports through lexical scope, so aliases work and shadowed names
     // do not accidentally turn an ordinary callback into a component.
     #reactName(node: TSESTree.Identifier, exported: string): boolean {
-        let scope = this.#source.getScope(node);
+        const variable = ASTUtils.findVariable(
+            this.#source.getScope(node),
+            node.name
+        );
 
-        while (true) {
-            const variable = scope.set.get(node.name);
-
-            if (variable !== undefined) {
-                const definition = variable.defs[0];
-
-                if (
-                    definition?.type !== "ImportBinding" ||
-                    (isImportDeclaration(definition.parent)
-                        ? definition.parent.source.value
-                        : undefined) !== "react"
-                ) {
-                    return false;
-                }
-
-                const specifier = definition.node;
-
-                if (exported === "*") {
-                    return (
-                        isImportDefaultSpecifier(specifier) ||
-                        isImportNamespaceSpecifier(specifier)
-                    );
-                }
-
-                return (
-                    isImportSpecifier(specifier) &&
-                    (isIdentifier(specifier.imported)
-                        ? specifier.imported.name
-                        : specifier.imported.value) === exported
-                );
-            }
-
-            if (scope.upper == null) {
-                break;
-            }
-
-            scope = scope.upper;
+        if (variable == null) {
+            return exported === "*" && node.name === "React";
         }
 
-        return exported === "*" && node.name === "React";
+        const definition = variable.defs[0];
+
+        if (
+            definition?.type !== "ImportBinding" ||
+            (isImportDeclaration(definition.parent)
+                ? definition.parent.source.value
+                : undefined) !== "react"
+        ) {
+            return false;
+        }
+
+        const specifier = definition.node;
+
+        if (exported === "*") {
+            return (
+                isImportDefaultSpecifier(specifier) ||
+                isImportNamespaceSpecifier(specifier)
+            );
+        }
+
+        return (
+            isImportSpecifier(specifier) &&
+            (isIdentifier(specifier.imported)
+                ? specifier.imported.name
+                : specifier.imported.value) === exported
+        );
     }
 
     #reactMember(node: TSESTree.Node, names: string[]): boolean {

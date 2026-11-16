@@ -1,3 +1,4 @@
+import { RuleName } from "../enums/rule-name";
 import { isEmpty } from "lodash";
 import {
     isExportNamedDeclaration,
@@ -8,7 +9,7 @@ import { createRule } from "../utils/rule-utils";
 import { declarationNames } from "../utils/ast";
 
 const noDefaultExport = createRule({
-    name: "no-default-export",
+    name: RuleName.NoDefaultExport,
     meta: {
         type: "suggestion",
         docs: { description: "Prefer named exports." },

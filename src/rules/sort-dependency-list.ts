@@ -1,3 +1,4 @@
+import { RuleName } from "../enums/rule-name";
 import { hasSameOrder } from "../utils/collection-utils";
 import { orderBy } from "lodash";
 import {
@@ -26,7 +27,7 @@ function isDependencyReference(node: TSESTree.Node | null): boolean {
 const HOOK_NAMES = ["useEffect", "useMemo", "useCallback"];
 
 const sortDependencyList = createRule({
-    name: "sort-dependency-list",
+    name: RuleName.SortDependencyList,
     meta: {
         type: "suggestion",
         docs: { description: "Sort hook dependencies." },

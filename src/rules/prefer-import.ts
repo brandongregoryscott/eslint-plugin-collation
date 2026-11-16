@@ -1,3 +1,4 @@
+import { RuleName } from "../enums/rule-name";
 import { isEmpty, isArray, kebabCase } from "lodash";
 import {
     isIdentifier,
@@ -55,7 +56,7 @@ const preferImport = createRule<
     [PreferImportOptions],
     "preferImport" | "preferImportMultiple" | "bannedGlobalType"
 >({
-    name: "prefer-import",
+    name: RuleName.PreferImport,
     meta: {
         type: "suggestion",
         docs: {

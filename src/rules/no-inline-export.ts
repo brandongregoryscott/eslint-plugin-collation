@@ -1,3 +1,4 @@
+import { RuleName } from "../enums/rule-name";
 import { isEmpty } from "lodash";
 import {
     isExportDefaultDeclaration,
@@ -9,7 +10,7 @@ import { createRule } from "../utils/rule-utils";
 import { declarationNames } from "../utils/ast";
 
 const noInlineExport = createRule({
-    name: "no-inline-export",
+    name: RuleName.NoInlineExport,
     meta: {
         type: "suggestion",
         docs: { description: "Separate declarations from exports." },

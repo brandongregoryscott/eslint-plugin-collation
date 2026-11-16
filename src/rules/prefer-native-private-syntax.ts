@@ -1,9 +1,10 @@
+import { RuleName } from "../enums/rule-name";
 import { isIdentifier } from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
 import { createRule } from "../utils/rule-utils";
 
 const preferNativePrivateSyntax = createRule({
-    name: "prefer-native-private-syntax",
+    name: RuleName.PreferNativePrivateSyntax,
     meta: {
         type: "suggestion",
         docs: { description: "Use native private members." },

@@ -1,3 +1,4 @@
+import { RuleName } from "../enums/rule-name";
 import { SafetyClassification } from "../enums/safety-classification";
 import { isEmpty } from "lodash";
 import { createRule } from "../utils/rule-utils";
@@ -6,7 +7,7 @@ import { ParameterMover } from "../utils/parameter-mover";
 import { ReactComponentDetector } from "../utils/react-component-detector";
 
 const noDestructuredPropsParameter = createRule({
-    name: "no-destructured-props-parameter",
+    name: RuleName.NoDestructuredPropsParameter,
     meta: {
         type: "suggestion",
         docs: {

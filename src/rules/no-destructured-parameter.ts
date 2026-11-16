@@ -1,10 +1,11 @@
+import { RuleName } from "../enums/rule-name";
 import { SafetyClassification } from "../enums/safety-classification";
 import { createRule } from "../utils/rule-utils";
 import type { FunctionNode } from "../utils/ast";
 import { ParameterMover } from "../utils/parameter-mover";
 
 const noDestructuredParameter = createRule({
-    name: "no-destructured-parameter",
+    name: RuleName.NoDestructuredParameter,
     meta: {
         type: "suggestion",
         docs: { description: "Destructure parameters in the function body." },

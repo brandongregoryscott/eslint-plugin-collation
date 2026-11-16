@@ -1,3 +1,4 @@
+import { RuleName } from "../enums/rule-name";
 import { isEmpty } from "lodash";
 import { isExportNamedDeclaration } from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
@@ -15,7 +16,7 @@ interface ExportEdit {
 }
 
 const groupExports = createRule({
-    name: "group-exports",
+    name: RuleName.GroupExports,
     meta: {
         type: "suggestion",
         docs: { description: "Group exports from the same module." },

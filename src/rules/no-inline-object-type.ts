@@ -1,3 +1,4 @@
+import { RuleName } from "../enums/rule-name";
 import { upperFirst } from "lodash";
 import {
     isAssignmentPattern,
@@ -20,7 +21,7 @@ interface Options {
 }
 
 const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
-    name: "no-inline-object-type",
+    name: RuleName.NoInlineObjectType,
     meta: {
         type: "suggestion",
         docs: { description: "Name object types used in function signatures." },

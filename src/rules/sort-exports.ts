@@ -1,3 +1,4 @@
+import { RuleName } from "../enums/rule-name";
 import { hasSameOrder } from "../utils/collection-utils";
 import { orderBy } from "lodash";
 import { isIdentifier } from "../utils/node-utils";
@@ -10,7 +11,7 @@ import type { TSESTree } from "@typescript-eslint/utils";
 import { exportListRange } from "../utils/ast";
 
 const sortExports = createRule({
-    name: "sort-exports",
+    name: RuleName.SortExports,
     meta: {
         type: "suggestion",
         docs: { description: "Sort named exports." },
