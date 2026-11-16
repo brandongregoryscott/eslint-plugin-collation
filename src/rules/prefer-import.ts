@@ -10,6 +10,7 @@ import type { JSONSchema, TSESTree } from "@typescript-eslint/utils";
 import { minimatch } from "minimatch";
 import { createRule } from "../utils/rule-utils";
 import {
+    printComments,
     stringifyCommentedNodes,
     groupNodesWithComments,
 } from "../utils/node-comment-utils";
@@ -129,14 +130,7 @@ const preferImport = createRule<
                 const inside = source.getCommentsInside(specifier);
                 const comments = [...item.leading, ...inside];
 
-                const prefix = comments
-                    .map(
-                        (comment) =>
-                            `${source.getText(comment)}${
-                                comment.type === "Line" ? "\n" : " "
-                            }`
-                    )
-                    .join("");
+                const prefix = printComments(comments, source);
 
                 const tail = item.trailing
                     .map((comment) => ` ${source.getText(comment)} `)

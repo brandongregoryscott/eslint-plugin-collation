@@ -21,6 +21,12 @@ interface ParameterMove {
     replacement: string;
 }
 
+interface ParameterPlanOptions {
+    baseName: string;
+    firstOnly?: boolean;
+    node: FunctionNode;
+}
+
 class ParameterMover {
     readonly #source: SourceCode;
 
@@ -28,7 +34,7 @@ class ParameterMover {
         this.#source = source;
     }
 
-    plan(node: FunctionNode, baseName: string, firstOnly = false) {
+    plan({ node, baseName, firstOnly = false }: ParameterPlanOptions) {
         const used = new Set<string>();
 
         for (const child of descendants(node, this.#source)) {

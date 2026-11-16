@@ -21,7 +21,7 @@ const noDestructuredParameter = createRule({
         const mover = new ParameterMover(context.sourceCode);
 
         function check(node: FunctionNode) {
-            const moves = mover.plan(node, "parameter");
+            const moves = mover.plan({ node, baseName: "parameter" });
             const safe =
                 mover.safety(node, moves) === SafetyClassification.Safe;
 

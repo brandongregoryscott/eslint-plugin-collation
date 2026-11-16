@@ -70,6 +70,21 @@ function groupNodesWithComments(
     return items;
 }
 
+function printComments(
+    comments: TSESTree.Comment[],
+    source: SourceCode
+): string {
+    const newline = source.text.includes("\r\n") ? "\r\n" : "\n";
+
+    return comments
+        .map(
+            (comment) =>
+                source.getText(comment) +
+                (comment.type === "Line" ? newline : " ")
+        )
+        .join("");
+}
+
 function stringifyCommentedNodes(
     source: SourceCode,
     items: CommentedNode[],
@@ -129,4 +144,4 @@ function stringifyCommentedNodes(
 }
 
 export type { CommentedNode };
-export { groupNodesWithComments, stringifyCommentedNodes };
+export { groupNodesWithComments, printComments, stringifyCommentedNodes };

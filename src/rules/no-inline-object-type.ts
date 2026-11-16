@@ -76,10 +76,10 @@ const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
                 })
             );
 
-            function extract(
+            const extract = (
                 annotation: TSESTree.TSTypeAnnotation | undefined,
                 paramName?: string
-            ) {
+            ) => {
                 if (!isTSTypeLiteral(annotation?.typeAnnotation)) {
                     return;
                 }
@@ -92,8 +92,8 @@ const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
                           "{{upperFirstFunctionName}}{{upperFirstParamName}}";
 
                 const values: Record<string, string> = {
-                    functionName: name as string,
-                    upperFirstFunctionName: upperFirst(name as string),
+                    functionName: name,
+                    upperFirstFunctionName: upperFirst(name),
                     paramName: paramName ?? "",
                     upperFirstParamName:
                         paramName == null ? "" : upperFirst(paramName),
@@ -120,7 +120,7 @@ const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
                         fixer.replaceText(annotation.typeAnnotation, typeName),
                     ],
                 });
-            }
+            };
 
             for (const param of node.params) {
                 const left = isAssignmentPattern(param) ? param.left : param;

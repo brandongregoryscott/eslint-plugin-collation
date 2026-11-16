@@ -25,6 +25,15 @@ ruleTester.run("noDefaultExport", noDefaultExport, {
         },
     ],
     invalid: [
+        ...["\n", "\r\n"].map((newline) => ({
+            name: `preserves comment separators when moving default export comments: ${JSON.stringify(
+                newline
+            )}`,
+            code: `const a = 1; export default /* block */ // line${newline}a;`,
+            output: `/* block */ // line${newline}export const a = 1; `,
+            errors: [{ messageId: "noDefaultExport" as const }],
+        })),
+
         ...[
             "import Foo from './foo';",
             "import { Foo } from './foo';",

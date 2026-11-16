@@ -33,7 +33,11 @@ const noDestructuredPropsParameter = createRule({
                 return;
             }
 
-            const moves = mover.plan(node, "props", true);
+            const moves = mover.plan({
+                node,
+                baseName: "props",
+                firstOnly: true,
+            });
             if (isEmpty(moves)) {
                 return;
             }
