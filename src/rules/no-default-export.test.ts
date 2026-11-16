@@ -25,6 +25,18 @@ ruleTester.run("noDefaultExport", noDefaultExport, {
         },
     ],
     invalid: [
+        ...[
+            "import Foo from './foo';",
+            "import { Foo } from './foo';",
+            "import * as Foo from './foo';",
+            "import Foo = require('./foo');",
+        ].map((statement) => ({
+            name: `reports imported default binding without an unsafe fix: ${statement}`,
+            code: `${statement} export default Foo;`,
+            output: null,
+            errors: [{ messageId: "noDefaultExport" as const }],
+        })),
+
         {
             name: "preserves a line comment after the default keyword",
             code: codeBlock`

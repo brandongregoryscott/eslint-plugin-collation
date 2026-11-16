@@ -1,4 +1,4 @@
-import { isEmpty, findLast } from "lodash";
+import { isEmpty } from "lodash";
 import { isExportNamedDeclaration } from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
 import { createRule } from "../utils/rule-utils";
@@ -7,6 +7,7 @@ import {
     groupNodesWithComments,
 } from "../utils/node-comment-utils";
 import type { CommentedNode } from "../utils/node-comment-utils";
+import { exportListRange } from "../utils/ast";
 
 interface ExportEdit {
     range: TSESTree.Range;
@@ -40,6 +41,12 @@ const groupExports = createRule({
                 const key = JSON.stringify([
                     node.exportKind,
                     node.source?.value,
+                    node.attributes
+                        .map((attribute) => [
+                            source.getText(attribute.key),
+                            attribute.value.value,
+                        ])
+                        .sort(),
                 ]);
 
                 const group = groups.get(key) ?? [];
@@ -51,7 +58,11 @@ const groupExports = createRule({
             return [...groups.values()].filter((group) => group.length > 1);
         }
 
-        function readExport(node: TSESTree.ExportNamedDeclaration) {
+        function readExport(
+            node: TSESTree.ExportNamedDeclaration,
+            listRange: TSESTree.Range,
+            retainEnvelope: boolean
+        ) {
             const index = source.ast.body.indexOf(node);
             const previous = source.ast.body[index - 1];
 
@@ -72,17 +83,18 @@ const groupExports = createRule({
                     (comment) => comment.loc.start.line === node.loc.end.line
                 );
 
-            const tokens = source.getTokens(node);
-            const open = tokens.find((token) => token.value === "{");
-            const close = findLast(tokens, (token) => token.value === "}");
-
-            const items =
-                open == null || close == null
-                    ? []
-                    : groupNodesWithComments(source, node.specifiers, [
-                          open.range[0],
-                          close.range[1],
-                      ]);
+            const items = groupNodesWithComments(
+                source,
+                node.specifiers,
+                listRange
+            );
+            const inside = source.getCommentsInside(node);
+            const beforeList = retainEnvelope
+                ? []
+                : inside.filter((comment) => comment.range[1] <= listRange[0]);
+            const afterList = retainEnvelope
+                ? []
+                : inside.filter((comment) => comment.range[0] >= listRange[1]);
 
             const range: TSESTree.Range = [
                 leading[0]?.range[0] ?? node.range[0],
@@ -95,14 +107,20 @@ const groupExports = createRule({
                     range,
                     emptyComments: [
                         ...leading,
-                        ...source.getCommentsInside(node),
+                        ...beforeList,
+                        ...inside.filter(
+                            (comment) =>
+                                comment.range[0] >= listRange[0] &&
+                                comment.range[1] <= listRange[1]
+                        ),
+                        ...afterList,
                         ...trailing,
                     ],
                 };
             }
 
-            items[0].leading.unshift(...leading);
-            items[items.length - 1].trailing.push(...trailing);
+            items[0].leading.unshift(...leading, ...beforeList);
+            items[items.length - 1].trailing.push(...afterList, ...trailing);
 
             return { items, range, emptyComments: [] };
         }
@@ -131,12 +149,22 @@ const groupExports = createRule({
             group: TSESTree.ExportNamedDeclaration[]
         ): ExportEdit[] {
             const first = group[0];
+            const firstRange = exportListRange(first, source);
+            if (firstRange == null) {
+                return [];
+            }
+
             const items: CommentedNode[] = [];
             const edits: ExportEdit[] = [];
             let pending: TSESTree.Comment[] = [];
 
             for (const node of group) {
-                const entry = readExport(node);
+                const listRange = exportListRange(node, source);
+                if (listRange == null) {
+                    return [];
+                }
+
+                const entry = readExport(node, listRange, node === first);
 
                 if (isEmpty(entry.items)) {
                     pending.push(...entry.emptyComments);
@@ -167,13 +195,10 @@ const groupExports = createRule({
                     .join(" ")} \n}`;
             }
 
-            edits[0].text = `export ${
-                first.exportKind === "type" ? "type " : ""
-            }${list}${
-                first.source == null
-                    ? ""
-                    : ` from ${source.getText(first.source)}`
-            };`;
+            edits[0].text =
+                source.text.slice(first.range[0], firstRange[0]) +
+                list +
+                source.text.slice(firstRange[1], first.range[1]);
 
             return edits;
         }

@@ -152,6 +152,26 @@ function declarationNames(node: TSESTree.Node): string[] {
     return [];
 }
 
+// The list ends immediately after its last specifier, before any import
+// attributes. For an empty list, the first closing brace follows the opener.
+function exportListRange(
+    node: TSESTree.ExportNamedDeclaration,
+    source: SourceCode
+): TSESTree.Range | undefined {
+    const open = source.getFirstToken(node, (token) => token.value === "{");
+    if (open == null) {
+        return undefined;
+    }
+
+    const last = node.specifiers[node.specifiers.length - 1] ?? open;
+    const close = source.getTokenAfter(last, (token) => token.value === "}");
+    if (close == null) {
+        return undefined;
+    }
+
+    return [open.range[0], close.range[1]];
+}
+
 function freshName(base: string, used: Set<string>): string {
     let name = base;
 
@@ -168,6 +188,7 @@ export type { FunctionNode, Pattern };
 export {
     declarationNames,
     descendants,
+    exportListRange,
     freshName,
     functionName,
     isPattern,

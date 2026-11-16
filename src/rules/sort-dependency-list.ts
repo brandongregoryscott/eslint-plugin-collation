@@ -1,11 +1,27 @@
 import { hasSameOrder } from "../utils/collection-utils";
 import { orderBy } from "lodash";
-import { isArrayExpression, isIdentifier } from "../utils/node-utils";
+import {
+    isArrayExpression,
+    isIdentifier,
+    isMemberExpression,
+} from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 import {
     stringifyCommentedNodes,
     groupNodesWithComments,
 } from "../utils/node-comment-utils";
+import type { TSESTree } from "@typescript-eslint/utils";
+
+// Restrict sorting to identifier paths; computed access and call results can
+// evaluate side effects even when the outer node is a member expression.
+function isDependencyReference(node: TSESTree.Node | null): boolean {
+    return (
+        isIdentifier(node) ||
+        (isMemberExpression(node) &&
+            !node.computed &&
+            isDependencyReference(node.object))
+    );
+}
 
 const HOOK_NAMES = ["useEffect", "useMemo", "useCallback"];
 
@@ -35,7 +51,7 @@ const sortDependencyList = createRule({
 
                 if (
                     !isArrayExpression(list) ||
-                    list.elements.some((element) => element == null)
+                    !list.elements.every(isDependencyReference)
                 ) {
                     return;
                 }

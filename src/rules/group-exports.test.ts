@@ -16,6 +16,13 @@ const ruleTester = new RuleTester({
 ruleTester.run("groupExports", groupExports, {
     valid: [
         {
+            name: "keeps exports with differing attributes separate",
+            code: `export { a } from './x' with { type: 'json' };
+export { b } from './x' with { type: 'css' };
+export { c } from './x';`,
+        },
+
+        {
             name: "should not report errors for single export",
             code: codeBlock`
                 const foo = 5;
@@ -49,6 +56,37 @@ ruleTester.run("groupExports", groupExports, {
         },
     ],
     invalid: [
+        {
+            name: "retains the first declaration envelope and transfers outside-list comments",
+            code: `const a = 1, b = 2;
+export /* a docs */ {a};
+export /* b docs */ {b};`,
+            output: `const a = 1, b = 2;
+export /* a docs */ { a, /* b docs */ b };`,
+            errors: [{ messageId: "groupExports" }],
+        },
+        ...["with", "assert"].map((keyword) => ({
+            name: `groups exports while preserving ${keyword} attributes`,
+            code: `export { a } from './x' ${keyword} { type: 'json' };
+export { b } from './x' ${keyword} { type: 'json' };`,
+            output: `export { a, b } from './x' ${keyword} { type: 'json' };`,
+            errors: [{ messageId: "groupExports" as const }],
+        })),
+        {
+            name: "transfers comments after a removed specifier list and within attributes",
+            code: `export { a } from './x' with { type: 'json' };
+export /* b docs */ { b } /* b detail */ from './x' with { /* attribute docs */ type: 'json' };`,
+            output: `export { a, /* b docs */ b /* b detail */ /* attribute docs */ } from './x' with { type: 'json' };`,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "preserves attributes when the retained export list is empty",
+            code: `export /* envelope */ { /* empty */ } from './x' with { type: 'json' };
+export { b } from './x' with { type: 'json' };`,
+            output: `export /* envelope */ { /* empty */ b } from './x' with { type: 'json' };`,
+            errors: [{ messageId: "groupExports" }],
+        },
+
         {
             name: "preserves file header and footer comments outside the grouped list",
             code: codeBlock`
@@ -325,34 +363,36 @@ export { a, b } from "mod";
     ],
 });
 
-it("preserves comments when grouped exports are sorted across repeated autofixes", () => {
-    const linter = new Linter();
-    const config: FlatConfig.Config[] = [
-        {
-            languageOptions: { parser: tsEslint.parser },
-            plugins: {
-                collation: {
-                    rules: {
-                        "group-exports": groupExports,
-                        "sort-exports": sortExports,
+it.each(["", " with { type: 'json' }"])(
+    "preserves comments and attributes when grouping and sorting across repeated autofixes: %s",
+    (attributes) => {
+        const linter = new Linter();
+        const config: FlatConfig.Config[] = [
+            {
+                languageOptions: { parser: tsEslint.parser },
+                plugins: {
+                    collation: {
+                        rules: {
+                            "group-exports": groupExports,
+                            "sort-exports": sortExports,
+                        },
                     },
                 },
+                rules: {
+                    "collation/group-exports": "error",
+                    "collation/sort-exports": "error",
+                },
             },
-            rules: {
-                "collation/group-exports": "error",
-                "collation/sort-exports": "error",
-            },
-        },
-    ];
-    const code = codeBlock`
-        export { /* z docs */ z } from "mod";
+        ];
+        const code = codeBlock`
+        export { /* z docs */ z } from "mod"${attributes};
         export {
             // b docs
             b, // b detail
             /* a docs */ a
-        } from "mod";
+        } from "mod"${attributes};
     `;
-    const expectedOutput = codeBlock`
+        const expectedOutput = codeBlock`
         export {
             /* a docs */
             a,
@@ -360,17 +400,18 @@ it("preserves comments when grouped exports are sorted across repeated autofixes
             b, // b detail
             /* z docs */
             z,
-        } from "mod";
+        } from "mod"${attributes};
     `;
 
-    const result = linter.verifyAndFix(code, config, {});
-    const repeatedResult = linter.verifyAndFix(result.output, config, {});
+        const result = linter.verifyAndFix(code, config, {});
+        const repeatedResult = linter.verifyAndFix(result.output, config, {});
 
-    expect(result.messages).toEqual([]);
-    expect(result.output).toBe(expectedOutput);
-    expect(repeatedResult).toMatchObject({
-        fixed: false,
-        output: expectedOutput,
-        messages: [],
-    });
-});
+        expect(result.messages).toEqual([]);
+        expect(result.output).toBe(expectedOutput);
+        expect(repeatedResult).toMatchObject({
+            fixed: false,
+            output: expectedOutput,
+            messages: [],
+        });
+    }
+);

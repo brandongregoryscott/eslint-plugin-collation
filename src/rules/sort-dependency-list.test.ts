@@ -11,6 +11,21 @@ const ruleTester = new RuleTester({
 
 ruleTester.run("sortDependencyList", sortDependencyList, {
     valid: [
+        ...["useEffect", "useMemo", "useCallback"].flatMap((hook) =>
+            [
+                "z(), a()",
+                "z = 1, a = 2",
+                "z++, a++",
+                "...z, ...a",
+                "z().value, a().value",
+                "z[key()], a[key()]",
+                "z, a()",
+            ].map((dependencies) => ({
+                name: `skips potentially effectful dependencies in ${hook}: ${dependencies}`,
+                code: `${hook}(() => {}, [${dependencies}]);`,
+            }))
+        ),
+
         {
             name: "accepts sorted dependencies containing comments",
             code: codeBlock`

@@ -1,5 +1,5 @@
 import { hasSameOrder } from "../utils/collection-utils";
-import { orderBy, findLast } from "lodash";
+import { orderBy } from "lodash";
 import { isIdentifier } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 import {
@@ -7,8 +7,7 @@ import {
     groupNodesWithComments,
 } from "../utils/node-comment-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
-
-type Range = [number, number];
+import { exportListRange } from "../utils/ast";
 
 const sortExports = createRule({
     name: "sort-exports",
@@ -46,20 +45,11 @@ const sortExports = createRule({
                     return;
                 }
 
-                const open = source
-                    .getTokens(node)
-                    .find((token) => token.value === "{");
-
-                const close = findLast(
-                    source.getTokens(node),
-                    (token) => token.value === "}"
-                );
-
-                if (open == null || close == null) {
+                const range = exportListRange(node, source);
+                if (range == null) {
                     return;
                 }
 
-                const range: Range = [open.range[0], close.range[1]];
                 const items = groupNodesWithComments(
                     source,
                     node.specifiers,

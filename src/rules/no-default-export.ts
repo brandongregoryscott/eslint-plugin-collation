@@ -32,7 +32,10 @@ const noDefaultExport = createRule({
                             const scope = source.getScope(node);
                             const variable = scope.set.get(declaration.name);
                             const definition = variable?.defs[0];
-                            if (definition == null) {
+                            if (
+                                definition == null ||
+                                definition.type === "ImportBinding"
+                            ) {
                                 return null;
                             }
 

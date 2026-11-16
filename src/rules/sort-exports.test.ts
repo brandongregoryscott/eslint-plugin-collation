@@ -35,6 +35,13 @@ ruleTester.run("sortExports", sortExports, {
         },
     ],
     invalid: [
+        ...["with", "assert"].map((keyword) => ({
+            name: `preserves ${keyword} attributes and surrounding comments`,
+            code: `export /* before */ { z, a } /* after */ from './x' ${keyword} { type: 'json' };`,
+            output: `export /* before */ { a, z } /* after */ from './x' ${keyword} { type: 'json' };`,
+            errors: [{ messageId: "sortExports" as const }],
+        })),
+
         {
             name: "moves trailing line comments with their specifier",
             code: codeBlock`
