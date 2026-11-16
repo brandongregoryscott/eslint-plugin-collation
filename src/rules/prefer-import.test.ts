@@ -405,9 +405,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Box } from '@twilio-paste/core'
             `,
-            output: codeBlock`
-                import { Box } from '@twilio-paste/core/box';
-            `.concat("\n"), // This new line is not ideal, but can be cleaned up later
+            output: `import { Box } from '@twilio-paste/core/box';
+`, // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -900,9 +899,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Option } from '@twilio-paste/core'
             `,
-            output: codeBlock`
-                import { Option } from '@twilio-paste/core/select';
-            `.concat("\n"), // This new line is not ideal, but can be cleaned up later
+            output: `import { Option } from '@twilio-paste/core/select';
+`, // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -922,9 +920,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'
             `,
-            output: codeBlock`
-                import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
-            `.concat("\n"), // This new line is not ideal, but can be cleaned up later
+            output: `import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
+`, // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -951,9 +948,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'
             `,
-            output: codeBlock`
-                import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
-            `.concat("\n"), // This new line is not ideal, but can be cleaned up later
+            output: `import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
+`, // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -1076,9 +1072,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Box as MyBox } from '@twilio-paste/core'
             `,
-            output: codeBlock`
-                import { Box as MyBox } from '@twilio-paste/core/box';
-            `.concat("\n"),
+            output: `import { Box as MyBox } from '@twilio-paste/core/box';
+`,
             errors: [{ messageId: "preferImport" }],
         },
         {
@@ -1122,9 +1117,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Alert, AlertProps, AlertBackgroundColors, AlertRoles, AlertTextColors, AlertVariants } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Alert, AlertProps, AlertBackgroundColors, AlertRoles, AlertTextColors, AlertVariants } from '@twilio-paste/core/alert';
-            `.concat("\n"),
+            output: `import { Alert, AlertProps, AlertBackgroundColors, AlertRoles, AlertTextColors, AlertVariants } from '@twilio-paste/core/alert';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1137,9 +1131,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { AlertDialog, AlertDialogProps } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { AlertDialog, AlertDialogProps } from '@twilio-paste/core/alert-dialog';
-            `.concat("\n"),
+            output: `import { AlertDialog, AlertDialogProps } from '@twilio-paste/core/alert-dialog';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1152,9 +1145,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Anchor, AnchorProps, isExternalUrl, secureExternalLink } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Anchor, AnchorProps, isExternalUrl, secureExternalLink } from '@twilio-paste/core/anchor';
-            `.concat("\n"),
+            output: `import { Anchor, AnchorProps, isExternalUrl, secureExternalLink } from '@twilio-paste/core/anchor';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1183,9 +1175,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Avatar, AvatarProps } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Avatar, AvatarProps } from '@twilio-paste/core/avatar';
-            `.concat("\n"),
+            output: `import { Avatar, AvatarProps } from '@twilio-paste/core/avatar';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1198,9 +1189,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { AvatarGroup, AvatarGroupProps } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { AvatarGroup, AvatarGroupProps } from '@twilio-paste/core/avatar';
-            `.concat("\n"),
+            output: `import { AvatarGroup, AvatarGroupProps } from '@twilio-paste/core/avatar';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1229,9 +1219,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Box, BoxProps, StyledBox, BOX_PROPS_TO_BLOCK, getCustomElementStyles, safelySpreadBoxProps } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Box, BoxProps, StyledBox, BOX_PROPS_TO_BLOCK, getCustomElementStyles, safelySpreadBoxProps } from '@twilio-paste/core/box';
-            `.concat("\n"),
+            output: `import { Box, BoxProps, StyledBox, BOX_PROPS_TO_BLOCK, getCustomElementStyles, safelySpreadBoxProps } from '@twilio-paste/core/box';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1244,9 +1233,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Breadcrumb, BreadcrumbProps, BreadcrumbItem } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Breadcrumb, BreadcrumbProps, BreadcrumbItem } from '@twilio-paste/core/breadcrumb';
-            `.concat("\n"),
+            output: `import { Breadcrumb, BreadcrumbProps, BreadcrumbItem } from '@twilio-paste/core/breadcrumb';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1259,9 +1247,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Button, ButtonProps, ButtonToggleStyles, DestructiveSecondaryButtonToggleStyles } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Button, ButtonProps, ButtonToggleStyles, DestructiveSecondaryButtonToggleStyles } from '@twilio-paste/core/button';
-            `.concat("\n"),
+            output: `import { Button, ButtonProps, ButtonToggleStyles, DestructiveSecondaryButtonToggleStyles } from '@twilio-paste/core/button';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1274,9 +1261,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Callout, CalloutProps, CalloutHeading, CalloutList, CalloutListItem, CalloutText } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Callout, CalloutProps, CalloutHeading, CalloutList, CalloutListItem, CalloutText } from '@twilio-paste/core/callout';
-            `.concat("\n"),
+            output: `import { Callout, CalloutProps, CalloutHeading, CalloutList, CalloutListItem, CalloutText } from '@twilio-paste/core/callout';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1305,9 +1291,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { ChatComposer, ChatComposerProps } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { ChatComposer, ChatComposerProps } from '@twilio-paste/core/chat-composer';
-            `.concat("\n"),
+            output: `import { ChatComposer, ChatComposerProps } from '@twilio-paste/core/chat-composer';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1320,9 +1305,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { ChatLog, ChatLogProps, ChatAttachment, ChatAttachmentDescription, ChatAttachmentLink, ChatBookend, ChatBookendItem, ChatBubble, ChatEvent, ChatLogger, ChatMessage, ChatMessageMeta, ChatMessageMetaItem, ComposerAttachmentCard, useChatLogger } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { ChatLog, ChatLogProps, ChatAttachment, ChatAttachmentDescription, ChatAttachmentLink, ChatBookend, ChatBookendItem, ChatBubble, ChatEvent, ChatLogger, ChatMessage, ChatMessageMeta, ChatMessageMetaItem, ComposerAttachmentCard, useChatLogger } from '@twilio-paste/core/chat-log';
-            `.concat("\n"),
+            output: `import { ChatLog, ChatLogProps, ChatAttachment, ChatAttachmentDescription, ChatAttachmentLink, ChatBookend, ChatBookendItem, ChatBubble, ChatEvent, ChatLogger, ChatMessage, ChatMessageMeta, ChatMessageMetaItem, ComposerAttachmentCard, useChatLogger } from '@twilio-paste/core/chat-log';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1335,9 +1319,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Checkbox, CheckboxProps, CheckboxDisclaimer, CheckboxGroup } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Checkbox, CheckboxProps, CheckboxDisclaimer, CheckboxGroup } from '@twilio-paste/core/checkbox';
-            `.concat("\n"),
+            output: `import { Checkbox, CheckboxProps, CheckboxDisclaimer, CheckboxGroup } from '@twilio-paste/core/checkbox';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1350,9 +1333,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { CodeBlock, CodeBlockProps, CodeBlockHeader, CodeBlockTab, CodeBlockTabList, CodeBlockTabPanel, CodeBlockWrapper } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { CodeBlock, CodeBlockProps, CodeBlockHeader, CodeBlockTab, CodeBlockTabList, CodeBlockTabPanel, CodeBlockWrapper } from '@twilio-paste/core/code-block';
-            `.concat("\n"),
+            output: `import { CodeBlock, CodeBlockProps, CodeBlockHeader, CodeBlockTab, CodeBlockTabList, CodeBlockTabPanel, CodeBlockWrapper } from '@twilio-paste/core/code-block';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1365,9 +1347,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Combobox, ComboboxProps, ComboboxInputWrapper, ComboboxListbox, ComboboxListboxGroup, ComboboxListboxOption, MultiselectCombobox, useCombobox } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Combobox, ComboboxProps, ComboboxInputWrapper, ComboboxListbox, ComboboxListboxGroup, ComboboxListboxOption, MultiselectCombobox, useCombobox } from '@twilio-paste/core/combobox';
-            `.concat("\n"),
+            output: `import { Combobox, ComboboxProps, ComboboxInputWrapper, ComboboxListbox, ComboboxListboxGroup, ComboboxListboxOption, MultiselectCombobox, useCombobox } from '@twilio-paste/core/combobox';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1380,9 +1361,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { ComboboxPrimitive, ComboboxPrimitiveProps, useComboboxPrimitive, useMultiSelectPrimitive } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { ComboboxPrimitive, ComboboxPrimitiveProps, useComboboxPrimitive, useMultiSelectPrimitive } from '@twilio-paste/core/combobox-primitive';
-            `.concat("\n"),
+            output: `import { ComboboxPrimitive, ComboboxPrimitiveProps, useComboboxPrimitive, useMultiSelectPrimitive } from '@twilio-paste/core/combobox-primitive';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1395,9 +1375,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { DataGrid, DataGridProps, DataGridBody, DataGridCell, DataGridFoot, DataGridHead, DataGridHeader, DataGridHeaderSort, DataGridRow } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { DataGrid, DataGridProps, DataGridBody, DataGridCell, DataGridFoot, DataGridHead, DataGridHeader, DataGridHeaderSort, DataGridRow } from '@twilio-paste/core/data-grid';
-            `.concat("\n"),
+            output: `import { DataGrid, DataGridProps, DataGridBody, DataGridCell, DataGridFoot, DataGridHead, DataGridHeader, DataGridHeaderSort, DataGridRow } from '@twilio-paste/core/data-grid';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1410,9 +1389,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { DatePicker, DatePickerProps, formatReturnDate } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { DatePicker, DatePickerProps, formatReturnDate } from '@twilio-paste/core/date-picker';
-            `.concat("\n"),
+            output: `import { DatePicker, DatePickerProps, formatReturnDate } from '@twilio-paste/core/date-picker';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1425,9 +1403,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { DescriptionList, DescriptionListProps, DescriptionListDetails, DescriptionListSet, DescriptionListTerm, StyledDescriptionListSet } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { DescriptionList, DescriptionListProps, DescriptionListDetails, DescriptionListSet, DescriptionListTerm, StyledDescriptionListSet } from '@twilio-paste/core/description-list';
-            `.concat("\n"),
+            output: `import { DescriptionList, DescriptionListProps, DescriptionListDetails, DescriptionListSet, DescriptionListTerm, StyledDescriptionListSet } from '@twilio-paste/core/description-list';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1456,9 +1433,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Disclosure, DisclosureProps, AnimatedDisclosureContent, DisclosureContent, DisclosureHeading, useDisclosureState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Disclosure, DisclosureProps, AnimatedDisclosureContent, DisclosureContent, DisclosureHeading, useDisclosureState } from '@twilio-paste/core/disclosure';
-            `.concat("\n"),
+            output: `import { Disclosure, DisclosureProps, AnimatedDisclosureContent, DisclosureContent, DisclosureHeading, useDisclosureState } from '@twilio-paste/core/disclosure';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1471,9 +1447,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { DisclosurePrimitive, DisclosurePrimitiveProps, DisclosurePrimitiveContent, useDisclosurePrimitiveState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { DisclosurePrimitive, DisclosurePrimitiveProps, DisclosurePrimitiveContent, useDisclosurePrimitiveState } from '@twilio-paste/core/disclosure-primitive';
-            `.concat("\n"),
+            output: `import { DisclosurePrimitive, DisclosurePrimitiveProps, DisclosurePrimitiveContent, useDisclosurePrimitiveState } from '@twilio-paste/core/disclosure-primitive';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1502,9 +1477,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { DisplayPillGroup, DisplayPillGroupProps, DisplayPill } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { DisplayPillGroup, DisplayPillGroupProps, DisplayPill } from '@twilio-paste/core/display-pill-group';
-            `.concat("\n"),
+            output: `import { DisplayPillGroup, DisplayPillGroupProps, DisplayPill } from '@twilio-paste/core/display-pill-group';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1517,9 +1491,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { FilePicker, FilePickerProps, FilePickerButton } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { FilePicker, FilePickerProps, FilePickerButton } from '@twilio-paste/core/file-picker';
-            `.concat("\n"),
+            output: `import { FilePicker, FilePickerProps, FilePickerButton } from '@twilio-paste/core/file-picker';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1532,9 +1505,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { FileUploader, FileUploaderProps, FileUploaderDropzone, FileUploaderDropzoneText, FileUploaderErrorText, FileUploaderHelpText, FileUploaderItem, FileUploaderItemDescription, FileUploaderItemTitle, FileUploaderItemsList, FileUploaderLabel } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { FileUploader, FileUploaderProps, FileUploaderDropzone, FileUploaderDropzoneText, FileUploaderErrorText, FileUploaderHelpText, FileUploaderItem, FileUploaderItemDescription, FileUploaderItemTitle, FileUploaderItemsList, FileUploaderLabel } from '@twilio-paste/core/file-uploader';
-            `.concat("\n"),
+            output: `import { FileUploader, FileUploaderProps, FileUploaderDropzone, FileUploaderDropzoneText, FileUploaderErrorText, FileUploaderHelpText, FileUploaderItem, FileUploaderItemDescription, FileUploaderItemTitle, FileUploaderItemsList, FileUploaderLabel } from '@twilio-paste/core/file-uploader';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1563,9 +1535,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Form, FormProps, FormActions, FormControl, FormControlTwoColumn, FormSection, FormSectionDescription, FormSectionHeading } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Form, FormProps, FormActions, FormControl, FormControlTwoColumn, FormSection, FormSectionDescription, FormSectionHeading } from '@twilio-paste/core/form';
-            `.concat("\n"),
+            output: `import { Form, FormProps, FormActions, FormControl, FormControlTwoColumn, FormSection, FormSectionDescription, FormSectionHeading } from '@twilio-paste/core/form';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1578,9 +1549,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { FormPillGroup, FormPillGroupProps, FormPill, useFormPillState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { FormPillGroup, FormPillGroupProps, FormPill, useFormPillState } from '@twilio-paste/core/form-pill-group';
-            `.concat("\n"),
+            output: `import { FormPillGroup, FormPillGroupProps, FormPill, useFormPillState } from '@twilio-paste/core/form-pill-group';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1593,9 +1563,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Grid, GridProps, Column } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Grid, GridProps, Column } from '@twilio-paste/core/grid';
-            `.concat("\n"),
+            output: `import { Grid, GridProps, Column } from '@twilio-paste/core/grid';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1608,9 +1577,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Heading, HeadingProps, HeadingPropTypes } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Heading, HeadingProps, HeadingPropTypes } from '@twilio-paste/core/heading';
-            `.concat("\n"),
+            output: `import { Heading, HeadingProps, HeadingPropTypes } from '@twilio-paste/core/heading';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1623,9 +1591,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { HelpText, HelpTextProps, HelpTextVariants } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { HelpText, HelpTextProps, HelpTextVariants } from '@twilio-paste/core/help-text';
-            `.concat("\n"),
+            output: `import { HelpText, HelpTextProps, HelpTextVariants } from '@twilio-paste/core/help-text';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1638,9 +1605,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { InPageNavigation, InPageNavigationProps, InPageNavigationItem } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { InPageNavigation, InPageNavigationProps, InPageNavigationItem } from '@twilio-paste/core/in-page-navigation';
-            `.concat("\n"),
+            output: `import { InPageNavigation, InPageNavigationProps, InPageNavigationItem } from '@twilio-paste/core/in-page-navigation';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1685,9 +1651,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Input, InputProps, InputElement } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Input, InputProps, InputElement } from '@twilio-paste/core/input';
-            `.concat("\n"),
+            output: `import { Input, InputProps, InputElement } from '@twilio-paste/core/input';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1700,9 +1665,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { InputBox, InputBoxProps, InputChevronWrapper, Prefix, Suffix, getInputChevronIconColor } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { InputBox, InputBoxProps, InputChevronWrapper, Prefix, Suffix, getInputChevronIconColor } from '@twilio-paste/core/input-box';
-            `.concat("\n"),
+            output: `import { InputBox, InputBoxProps, InputChevronWrapper, Prefix, Suffix, getInputChevronIconColor } from '@twilio-paste/core/input-box';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1715,9 +1679,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Label, LabelProps, RequiredDot } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Label, LabelProps, RequiredDot } from '@twilio-paste/core/label';
-            `.concat("\n"),
+            output: `import { Label, LabelProps, RequiredDot } from '@twilio-paste/core/label';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1730,9 +1693,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { List, ListProps, ListItem, OrderedList, UnorderedList } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { List, ListProps, ListItem, OrderedList, UnorderedList } from '@twilio-paste/core/list';
-            `.concat("\n"),
+            output: `import { List, ListProps, ListItem, OrderedList, UnorderedList } from '@twilio-paste/core/list';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1745,9 +1707,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { ListboxPrimitive, ListboxPrimitiveProps, ListboxPrimitiveGroup, ListboxPrimitiveItem, useListboxPrimitiveState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { ListboxPrimitive, ListboxPrimitiveProps, ListboxPrimitiveGroup, ListboxPrimitiveItem, useListboxPrimitiveState } from '@twilio-paste/core/listbox-primitive';
-            `.concat("\n"),
+            output: `import { ListboxPrimitive, ListboxPrimitiveProps, ListboxPrimitiveGroup, ListboxPrimitiveItem, useListboxPrimitiveState } from '@twilio-paste/core/listbox-primitive';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1760,9 +1721,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { MediaObject, MediaObjectProps, MediaBody, MediaFigure } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { MediaObject, MediaObjectProps, MediaBody, MediaFigure } from '@twilio-paste/core/media-object';
-            `.concat("\n"),
+            output: `import { MediaObject, MediaObjectProps, MediaBody, MediaFigure } from '@twilio-paste/core/media-object';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1775,9 +1735,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Menu, MenuProps, MenuButton, MenuGroup, MenuGroupContext, MenuItem, MenuSeparator, StyledMenuItem, SubMenuButton, useMenuState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Menu, MenuProps, MenuButton, MenuGroup, MenuGroupContext, MenuItem, MenuSeparator, StyledMenuItem, SubMenuButton, useMenuState } from '@twilio-paste/core/menu';
-            `.concat("\n"),
+            output: `import { Menu, MenuProps, MenuButton, MenuGroup, MenuGroupContext, MenuItem, MenuSeparator, StyledMenuItem, SubMenuButton, useMenuState } from '@twilio-paste/core/menu';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1790,9 +1749,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { MenuPrimitive, MenuPrimitiveProps, MenuPrimitiveButton, MenuPrimitiveGroup, MenuPrimitiveItem, MenuPrimitiveItemCheckbox, MenuPrimitiveItemRadioMenuItemRadio, MenuPrimitiveSeparator, useMenuPrimitiveState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { MenuPrimitive, MenuPrimitiveProps, MenuPrimitiveButton, MenuPrimitiveGroup, MenuPrimitiveItem, MenuPrimitiveItemCheckbox, MenuPrimitiveItemRadioMenuItemRadio, MenuPrimitiveSeparator, useMenuPrimitiveState } from '@twilio-paste/core/menu-primitive';
-            `.concat("\n"),
+            output: `import { MenuPrimitive, MenuPrimitiveProps, MenuPrimitiveButton, MenuPrimitiveGroup, MenuPrimitiveItem, MenuPrimitiveItemCheckbox, MenuPrimitiveItemRadioMenuItemRadio, MenuPrimitiveSeparator, useMenuPrimitiveState } from '@twilio-paste/core/menu-primitive';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1805,9 +1763,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { MinimizableDialog, MinimizableDialogProps, MinimizableDialogButton, MinimizableDialogContainer, MinimizableDialogContent, MinimizableDialogHeader, useMinimizableDialogState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { MinimizableDialog, MinimizableDialogProps, MinimizableDialogButton, MinimizableDialogContainer, MinimizableDialogContent, MinimizableDialogHeader, useMinimizableDialogState } from '@twilio-paste/core/minimizable-dialog';
-            `.concat("\n"),
+            output: `import { MinimizableDialog, MinimizableDialogProps, MinimizableDialogButton, MinimizableDialogContainer, MinimizableDialogContent, MinimizableDialogHeader, useMinimizableDialogState } from '@twilio-paste/core/minimizable-dialog';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1820,9 +1777,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Modal, ModalProps, ModalBody, ModalContext, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeader, ModalHeading, modalBodyStyles, modalFooterStyles, modalHeaderStyles, useModalContext } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Modal, ModalProps, ModalBody, ModalContext, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeader, ModalHeading, modalBodyStyles, modalFooterStyles, modalHeaderStyles, useModalContext } from '@twilio-paste/core/modal';
-            `.concat("\n"),
+            output: `import { Modal, ModalProps, ModalBody, ModalContext, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeader, ModalHeading, modalBodyStyles, modalFooterStyles, modalHeaderStyles, useModalContext } from '@twilio-paste/core/modal';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1835,9 +1791,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { NonModalDialogPrimitive, NonModalDialogPrimitiveProps, NonModalDialogArrowPrimitive, NonModalDialogDisclosurePrimitive, useNonModalDialogPrimitiveState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { NonModalDialogPrimitive, NonModalDialogPrimitiveProps, NonModalDialogArrowPrimitive, NonModalDialogDisclosurePrimitive, useNonModalDialogPrimitiveState } from '@twilio-paste/core/non-modal-dialog-primitive';
-            `.concat("\n"),
+            output: `import { NonModalDialogPrimitive, NonModalDialogPrimitiveProps, NonModalDialogArrowPrimitive, NonModalDialogDisclosurePrimitive, useNonModalDialogPrimitiveState } from '@twilio-paste/core/non-modal-dialog-primitive';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1850,9 +1805,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Pagination, PaginationProps, PaginationArrow, PaginationEllipsis, PaginationItems, PaginationLabel, PaginationNumber, PaginationNumbers } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Pagination, PaginationProps, PaginationArrow, PaginationEllipsis, PaginationItems, PaginationLabel, PaginationNumber, PaginationNumbers } from '@twilio-paste/core/pagination';
-            `.concat("\n"),
+            output: `import { Pagination, PaginationProps, PaginationArrow, PaginationEllipsis, PaginationItems, PaginationLabel, PaginationNumber, PaginationNumbers } from '@twilio-paste/core/pagination';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1881,9 +1835,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Popover, PopoverProps, PopoverBadgeButton, PopoverButton, PopoverContainer, usePopoverState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Popover, PopoverProps, PopoverBadgeButton, PopoverButton, PopoverContainer, usePopoverState } from '@twilio-paste/core/popover';
-            `.concat("\n"),
+            output: `import { Popover, PopoverProps, PopoverBadgeButton, PopoverButton, PopoverContainer, usePopoverState } from '@twilio-paste/core/popover';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1896,9 +1849,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { RadioButtonGroup, RadioButtonGroupProps, RadioButton } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { RadioButtonGroup, RadioButtonGroupProps, RadioButton } from '@twilio-paste/core/radio-button-group';
-            `.concat("\n"),
+            output: `import { RadioButtonGroup, RadioButtonGroupProps, RadioButton } from '@twilio-paste/core/radio-button-group';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1911,9 +1863,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { RadioGroup, RadioGroupProps, Radio } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { RadioGroup, RadioGroupProps, Radio } from '@twilio-paste/core/radio-group';
-            `.concat("\n"),
+            output: `import { RadioGroup, RadioGroupProps, Radio } from '@twilio-paste/core/radio-group';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1942,9 +1893,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Select, SelectProps, Option, OptionGroup, SelectElement } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Select, SelectProps, Option, OptionGroup, SelectElement } from '@twilio-paste/core/select';
-            `.concat("\n"),
+            output: `import { Select, SelectProps, Option, OptionGroup, SelectElement } from '@twilio-paste/core/select';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1989,9 +1939,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { SideModal, SideModalProps, SideModalBody, SideModalButton, SideModalContainer, SideModalFooter, SideModalFooterActions, SideModalHeader, SideModalHeading, useSideModalState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { SideModal, SideModalProps, SideModalBody, SideModalButton, SideModalContainer, SideModalFooter, SideModalFooterActions, SideModalHeader, SideModalHeading, useSideModalState } from '@twilio-paste/core/side-modal';
-            `.concat("\n"),
+            output: `import { SideModal, SideModalProps, SideModalBody, SideModalButton, SideModalContainer, SideModalFooter, SideModalFooterActions, SideModalHeader, SideModalHeading, useSideModalState } from '@twilio-paste/core/side-modal';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2004,9 +1953,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Sidebar, SidebarProps, SidebarCollapseButton, SidebarCollapseButtonWrapper, SidebarContext, SidebarHeader, SidebarOverlayContentWrapper, SidebarPushContentWrapper } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Sidebar, SidebarProps, SidebarCollapseButton, SidebarCollapseButtonWrapper, SidebarContext, SidebarHeader, SidebarOverlayContentWrapper, SidebarPushContentWrapper } from '@twilio-paste/core/sidebar';
-            `.concat("\n"),
+            output: `import { Sidebar, SidebarProps, SidebarCollapseButton, SidebarCollapseButtonWrapper, SidebarContext, SidebarHeader, SidebarOverlayContentWrapper, SidebarPushContentWrapper } from '@twilio-paste/core/sidebar';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2051,9 +1999,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Stack, StackProps, getStackChildMargins, getStackDisplay, getStackStyles } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Stack, StackProps, getStackChildMargins, getStackDisplay, getStackStyles } from '@twilio-paste/core/stack';
-            `.concat("\n"),
+            output: `import { Stack, StackProps, getStackChildMargins, getStackDisplay, getStackStyles } from '@twilio-paste/core/stack';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2066,9 +2013,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Switch, SwitchProps, SwitchGroup } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Switch, SwitchProps, SwitchGroup } from '@twilio-paste/core/switch';
-            `.concat("\n"),
+            output: `import { Switch, SwitchProps, SwitchGroup } from '@twilio-paste/core/switch';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2081,9 +2027,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Table, TableProps, TBody, TBodyPropTypes, TFoot, TFootPropTypes, THead, THeadPropTypes, TablePropTypes, Td, TdPropTypes, Th, ThPropTypes, Tr, TrPropTypes } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Table, TableProps, TBody, TBodyPropTypes, TFoot, TFootPropTypes, THead, THeadPropTypes, TablePropTypes, Td, TdPropTypes, Th, ThPropTypes, Tr, TrPropTypes } from '@twilio-paste/core/table';
-            `.concat("\n"),
+            output: `import { Table, TableProps, TBody, TBodyPropTypes, TFoot, TFootPropTypes, THead, THeadPropTypes, TablePropTypes, Td, TdPropTypes, Th, ThPropTypes, Tr, TrPropTypes } from '@twilio-paste/core/table';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2096,9 +2041,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Tabs, TabsProps, TabList, TabPanel, TabPanels, Tab, useTabState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Tabs, TabsProps, TabList, TabPanel, TabPanels, Tab, useTabState } from '@twilio-paste/core/tabs';
-            `.concat("\n"),
+            output: `import { Tabs, TabsProps, TabList, TabPanel, TabPanels, Tab, useTabState } from '@twilio-paste/core/tabs';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2111,9 +2055,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Text, TextProps, StyledText, TEXT_PROPS_TO_BLOCK, safelySpreadTextProps } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Text, TextProps, StyledText, TEXT_PROPS_TO_BLOCK, safelySpreadTextProps } from '@twilio-paste/core/text';
-            `.concat("\n"),
+            output: `import { Text, TextProps, StyledText, TEXT_PROPS_TO_BLOCK, safelySpreadTextProps } from '@twilio-paste/core/text';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2141,9 +2084,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { TimePicker, TimePickerProps, formatReturnTime } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { TimePicker, TimePickerProps, formatReturnTime } from '@twilio-paste/core/time-picker';
-            `.concat("\n"),
+            output: `import { TimePicker, TimePickerProps, formatReturnTime } from '@twilio-paste/core/time-picker';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2156,9 +2098,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Toast, ToastProps, AnimatedToast, ToastContainer, Toaster, useToaster } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Toast, ToastProps, AnimatedToast, ToastContainer, Toaster, useToaster } from '@twilio-paste/core/toast';
-            `.concat("\n"),
+            output: `import { Toast, ToastProps, AnimatedToast, ToastContainer, Toaster, useToaster } from '@twilio-paste/core/toast';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2171,9 +2112,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { Tooltip, TooltipProps, useTooltipState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { Tooltip, TooltipProps, useTooltipState } from '@twilio-paste/core/tooltip';
-            `.concat("\n"),
+            output: `import { Tooltip, TooltipProps, useTooltipState } from '@twilio-paste/core/tooltip';
+`,
             errors: [
                 {
                     messageId: "preferImport",
@@ -2186,9 +2126,8 @@ ruleTester.run("prefer-import", preferImport, {
             code: codeBlock`
                 import { TooltipPrimitive, TooltipPrimitiveProps, TooltipPrimitiveArrow, TooltipPrimitiveReference, useTooltipPrimitiveState } from '@twilio-paste/core';
             `,
-            output: codeBlock`
-                import { TooltipPrimitive, TooltipPrimitiveProps, TooltipPrimitiveArrow, TooltipPrimitiveReference, useTooltipPrimitiveState } from '@twilio-paste/core/tooltip-primitive';
-            `.concat("\n"),
+            output: `import { TooltipPrimitive, TooltipPrimitiveProps, TooltipPrimitiveArrow, TooltipPrimitiveReference, useTooltipPrimitiveState } from '@twilio-paste/core/tooltip-primitive';
+`,
             errors: [
                 {
                     messageId: "preferImport",

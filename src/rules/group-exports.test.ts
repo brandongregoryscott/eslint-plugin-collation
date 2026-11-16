@@ -62,25 +62,21 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "preserves file boundaries when the program starts with whitespace",
-            code:
-                "\n" +
-                codeBlock`
-                // file header
+            code: `
+// file header
 
-                export { a } from "mod";
-                export { b } from "mod";
+export { a } from "mod";
+export { b } from "mod";
 
-                /* file footer */
-            `.concat("\n"),
-            output:
-                "\n" +
-                codeBlock`
-                // file header
+/* file footer */
+`,
+            output: `
+// file header
 
-                export { a, b } from "mod";
+export { a, b } from "mod";
 
-                /* file footer */
-            `.concat("\n"),
+/* file footer */
+`,
             errors: [{ messageId: "groupExports" }],
         },
 
