@@ -13,7 +13,9 @@ ruleTester.run("sortExports", sortExports, {
     valid: [
         {
             name: "accepts sorted exports containing comments",
-            code: 'export { a, /* keep */ b } from "mod";',
+            code: codeBlock`
+                export { a, /* keep */ b } from "mod";
+            `,
         },
 
         {
@@ -35,44 +37,101 @@ ruleTester.run("sortExports", sortExports, {
     invalid: [
         {
             name: "moves trailing line comments with their specifier",
-            code: 'export { b, // b docs\n    a } from "mod";',
-            output: 'export {\n    a,\n    b, // b docs\n} from "mod";',
+            code: codeBlock`
+                export { b, // b docs
+                    a } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                    a,
+                    b, // b docs
+                } from "mod";
+            `,
             errors: [{ messageId: "sortExports" }],
         },
         {
             name: "moves block comments before commas with the preceding specifier",
-            code: 'export { b /* b docs */, a } from "mod";',
-            output: 'export { a, b /* b docs */ } from "mod";',
+            code: codeBlock`
+                export { b /* b docs */, a } from "mod";
+            `,
+            output: codeBlock`
+                export { a, b /* b docs */ } from "mod";
+            `,
             errors: [{ messageId: "sortExports" }],
         },
         {
             name: "preserves comments within aliases and individual type modifiers",
-            code: 'export { type Z, type /* a docs */ A, b as c } from "mod";',
-            output: 'export { type /* a docs */ A, b as c, type Z } from "mod";',
+            code: codeBlock`
+                export { type Z, type /* a docs */ A, b as c } from "mod";
+            `,
+            output: codeBlock`
+                export { type /* a docs */ A, b as c, type Z } from "mod";
+            `,
             errors: [{ messageId: "sortExports" }],
         },
         {
             name: "preserves CRLF when sorting commented exports",
-            code: 'export {\r\n    // b docs\r\n    b,\r\n    a,\r\n} from "mod";',
-            output: 'export {\r\n    a,\r\n    // b docs\r\n    b,\r\n} from "mod";',
+            code: codeBlock`
+                export {
+                    // b docs
+                    b,
+                    a,
+                } from "mod";
+            `.replaceAll("\n", "\r\n"),
+            output: codeBlock`
+                export {
+                    a,
+                    // b docs
+                    b,
+                } from "mod";
+            `.replaceAll("\n", "\r\n"),
             errors: [{ messageId: "sortExports" }],
         },
         {
             name: "moves leading block comments with export specifiers",
-            code: 'export { /* keep */ b, a } from "mod";',
-            output: 'export { a, /* keep */ b } from "mod";',
+            code: codeBlock`
+                export { /* keep */ b, a } from "mod";
+            `,
+            output: codeBlock`
+                export { a, /* keep */ b } from "mod";
+            `,
             errors: [{ messageId: "sortExports" }],
         },
         {
             name: "sorts the commented export list from issue 102",
-            code: 'export {\n // core\n reactive, ref,\n // utilities\n isRef,\n // advanced\n customRef,\n} from "@vue/reactivity";',
-            output: 'export {\n // advanced\n customRef,\n // utilities\n isRef,\n // core\n reactive,\n ref,\n} from "@vue/reactivity";',
+            code: codeBlock`
+                export {
+                    // core
+                    reactive, ref,
+                    // utilities
+                    isRef,
+                    // advanced
+                    customRef,
+                } from "@vue/reactivity";
+            `,
+            output: codeBlock`
+                export {
+                    // advanced
+                    customRef,
+                    // utilities
+                    isRef,
+                    // core
+                    reactive,
+                    ref,
+                } from "@vue/reactivity";
+            `,
             errors: [{ messageId: "sortExports" }],
         },
         {
             name: "preserves leading and trailing comments while sorting",
-            code: '// before\nexport { b, a } from "mod"; // after',
-            output: '// before\nexport { a, b } from "mod"; // after',
+            code: codeBlock`
+                // before
+                export { b, a } from "mod"; // after
+            `,
+            output: codeBlock`
+                // before
+                export { a, b } from "mod"; // after
+            `,
             errors: [{ messageId: "sortExports" }],
         },
         {

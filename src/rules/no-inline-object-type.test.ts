@@ -105,8 +105,14 @@ ruleTester.run("noInlineObjectType", noInlineObjectType, {
     invalid: [
         {
             name: "copies comments inside an extracted type",
-            code: "function foo(options: { /* keep */ id: string }) {}",
-            output: "type FooOptions = { /* keep */ id: string };\n\nfunction foo(options: FooOptions) {}",
+            code: codeBlock`
+                function foo(options: { /* keep */ id: string }) {}
+            `,
+            output: codeBlock`
+                type FooOptions = { /* keep */ id: string };
+
+                function foo(options: FooOptions) {}
+            `,
             errors: [{ messageId: "noInlineObjectType" }],
         },
 

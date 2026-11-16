@@ -47,28 +47,77 @@ ruleTester.run("groupExports", groupExports, {
     invalid: [
         {
             name: "preserves file header and footer comments outside the grouped list",
-            code: '/* file header */\nexport { a } from "mod";\nexport { b } from "mod";\n// file footer',
-            output: '/* file header */\nexport { a, b } from "mod";\n// file footer',
+            code: codeBlock`
+                /* file header */
+                export { a } from "mod";
+                export { b } from "mod";
+                // file footer
+            `,
+            output: codeBlock`
+                /* file header */
+                export { a, b } from "mod";
+                // file footer
+            `,
             errors: [{ messageId: "groupExports" }],
         },
         {
             name: "preserves file boundaries when the program starts with whitespace",
-            code: '\n// file header\n\nexport { a } from "mod";\nexport { b } from "mod";\n\n/* file footer */\n',
-            output: '\n// file header\n\nexport { a, b } from "mod";\n\n/* file footer */\n',
+            code:
+                "\n" +
+                codeBlock`
+                // file header
+
+                export { a } from "mod";
+                export { b } from "mod";
+
+                /* file footer */
+            `.concat("\n"),
+            output:
+                "\n" +
+                codeBlock`
+                // file header
+
+                export { a, b } from "mod";
+
+                /* file footer */
+            `.concat("\n"),
             errors: [{ messageId: "groupExports" }],
         },
 
         {
             name: "moves the final export's trailing comment with its specifier",
-            code: 'export { a } from "mod";\nexport { b } from "mod"; // b docs',
-            output: 'export {\n    a,\n    b, // b docs\n} from "mod";',
+            code: codeBlock`
+                export { a } from "mod";
+                export { b } from "mod"; // b docs
+            `,
+            output: codeBlock`
+                export {
+                    a,
+                    b, // b docs
+                } from "mod";
+            `,
             errors: [{ messageId: "groupExports" }],
         },
 
         {
             name: "moves statement comments with the correct module group",
-            code: '// a docs\nexport { a } from "one";\n// b docs\nexport { b } from "two";\nexport { c } from "one";\nexport { d } from "two";',
-            output: '// a docs\nexport { a, c } from "one";\nexport {\n    // b docs\n    b,\n    d,\n} from "two";',
+            code: codeBlock`
+                // a docs
+                export { a } from "one";
+                // b docs
+                export { b } from "two";
+                export { c } from "one";
+                export { d } from "two";
+            `,
+            output: codeBlock`
+                // a docs
+                export { a, c } from "one";
+                export {
+                    // b docs
+                    b,
+                    d,
+                } from "two";
+            `,
             errors: [
                 { messageId: "groupExports" },
                 { messageId: "groupExports" },
@@ -76,20 +125,44 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "groups internal comments and trailing specifier comments",
-            code: 'export {\n    // b docs\n    b, // b detail\n} from "mod";\nexport { a } from "mod";',
-            output: 'export {\n    // b docs\n    b, // b detail\n    a,\n} from "mod";',
+            code: codeBlock`
+                export {
+                    // b docs
+                    b, // b detail
+                } from "mod";
+                export { a } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                    // b docs
+                    b, // b detail
+                    a,
+                } from "mod";
+            `,
             errors: [{ messageId: "groupExports" }],
         },
         {
             name: "preserves comments inside empty exports",
-            code: 'export { /* empty */ } from "mod";\nexport { a } from "mod";',
-            output: 'export { /* empty */ a } from "mod";',
+            code: codeBlock`
+                export { /* empty */ } from "mod";
+                export { a } from "mod";
+            `,
+            output: codeBlock`
+                export { /* empty */ a } from "mod";
+            `,
             errors: [{ messageId: "groupExports" }],
         },
         {
             name: "preserves comments when all grouped exports are empty",
-            code: 'export { /* first */ } from "mod";\nexport { /* second */ } from "mod";',
-            output: 'export {\n/* first */ /* second */ \n} from "mod";',
+            code: codeBlock`
+                export { /* first */ } from "mod";
+                export { /* second */ } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                /* first */ /* second */${" "}
+                } from "mod";
+            `,
             errors: [{ messageId: "groupExports" }],
         },
         {
@@ -111,21 +184,44 @@ ruleTester.run("groupExports", groupExports, {
         },
         {
             name: "preserves a trailing line comment between exports",
-            code: 'export { a } from "mod"; // keep\nexport { b } from "mod";',
-            output: 'export {\n    a, // keep\n    b,\n} from "mod";',
+            code: codeBlock`
+                export { a } from "mod"; // keep
+                export { b } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                    a, // keep
+                    b,
+                } from "mod";
+            `,
             errors: [{ messageId: "groupExports" }],
         },
 
         {
             name: "groups exports with their comments",
-            code: 'export { /* keep */ a } from "mod";\nexport { b } from "mod";',
-            output: 'export { /* keep */ a, b } from "mod";',
+            code: codeBlock`
+                export { /* keep */ a } from "mod";
+                export { b } from "mod";
+            `,
+            output: codeBlock`
+                export { /* keep */ a, b } from "mod";
+            `,
             errors: [{ messageId: "groupExports" }],
         },
         {
             name: "preserves comments between grouped exports",
-            code: 'export { a } from "mod";\n// keep\nexport { b } from "mod";',
-            output: 'export {\n    a,\n    // keep\n    b,\n} from "mod";',
+            code: codeBlock`
+                export { a } from "mod";
+                // keep
+                export { b } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                    a,
+                    // keep
+                    b,
+                } from "mod";
+            `,
             errors: [{ messageId: "groupExports" }],
         },
         {

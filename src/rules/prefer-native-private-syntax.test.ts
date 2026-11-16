@@ -69,14 +69,22 @@ ruleTester.run("preferNativePrivateSyntax", preferNativePrivateSyntax, {
     invalid: [
         {
             name: "preserves comments before a private property",
-            code: "class Foo { private /* keep */ bar = 1; }",
-            output: "class Foo { /* keep */ #bar = 1; }",
+            code: codeBlock`
+                class Foo { private /* keep */ bar = 1; }
+            `,
+            output: codeBlock`
+                class Foo { /* keep */ #bar = 1; }
+            `,
             errors: [{ messageId: "preferPrivateHash" }],
         },
         {
             name: "preserves comments before a private method",
-            code: "class Foo { private /* keep */ bar() {} }",
-            output: "class Foo { /* keep */ #bar() {} }",
+            code: codeBlock`
+                class Foo { private /* keep */ bar() {} }
+            `,
+            output: codeBlock`
+                class Foo { /* keep */ #bar() {} }
+            `,
             errors: [{ messageId: "preferPrivateHash" }],
         },
         {

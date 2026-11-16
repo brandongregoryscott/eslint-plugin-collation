@@ -22,7 +22,9 @@ ruleTester.run("prefer-import", preferImport, {
                     },
                 },
             ],
-            code: "import { Box } from '@twilio-paste/core/box'",
+            code: codeBlock`
+                import { Box } from '@twilio-paste/core/box'
+            `,
         },
         {
             name: "global > aliased name is allowed regardless of module specifier",
@@ -34,8 +36,10 @@ ruleTester.run("prefer-import", preferImport, {
                     },
                 },
             ],
-            code: `import { SomeOtherNode as Node } from '@/types';
-const foo: Node = {}`,
+            code: codeBlock`
+                import { SomeOtherNode as Node } from '@/types';
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > import is allowed with same module specifier",
@@ -47,8 +51,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `import { Node } from '@/types';
-const foo: Node = {}`,
+            code: codeBlock`
+                import { Node } from '@/types';
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > import is allowed with different module specifier when no other rule to replace import is defined",
@@ -60,8 +66,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `import { Node } from '@/types/node';
-const foo: Node = {}`,
+            code: codeBlock`
+                import { Node } from '@/types/node';
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > no error is reported when type is defined locally",
@@ -73,8 +81,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `type Node = {};
-const foo: Node = {}`,
+            code: codeBlock`
+                type Node = {};
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > no error is reported when interface is defined locally",
@@ -86,8 +96,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `interface Node {};
-const foo: Node = {}`,
+            code: codeBlock`
+                interface Node {};
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > allows imported global object",
@@ -99,8 +111,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `import { Math } from '@/utilities';
-const foo = Math.floor(0.5)`,
+            code: codeBlock`
+                import { Math } from '@/utilities';
+                const foo = Math.floor(0.5)
+            `,
         },
         {
             name: "global > no error when local variable shadows global",
@@ -112,8 +126,10 @@ const foo = Math.floor(0.5)`,
                     },
                 },
             ],
-            code: `const Math = { floor: (n: number) => n };
-const foo = Math.floor(0.5)`,
+            code: codeBlock`
+                const Math = { floor: (n: number) => n };
+                const foo = Math.floor(0.5)
+            `,
         },
         {
             name: "global > allows imported JSX component",
@@ -132,8 +148,10 @@ const foo = Math.floor(0.5)`,
                     },
                 },
             },
-            code: `import { Text } from '@/components';
-const elem = <Text>Hello</Text>`,
+            code: codeBlock`
+                import { Text } from '@/components';
+                const elem = <Text>Hello</Text>
+            `,
         },
         {
             name: "global > no error when JSX component is a local variable",
@@ -152,15 +170,21 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             },
-            code: `const Text = (props) => <div>{props.children}</div>;
-const elem = <Text>Hello</Text>`,
+            code: codeBlock`
+                const Text = (props) => <div>{props.children}</div>;
+                const elem = <Text>Hello</Text>
+            `,
         },
     ],
     invalid: [
         {
             name: "preserves type-only imports while moving comments",
-            code: 'import type { /* docs */ Map } from "lodash";',
-            output: "import type { /* docs */ Map } from 'lodash/map';",
+            code: codeBlock`
+                import type { /* docs */ Map } from "lodash";
+            `,
+            output: codeBlock`
+                import type { /* docs */ Map } from 'lodash/map';
+            `,
             options: [
                 {
                     lodash: {
@@ -173,8 +197,12 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "preserves type-only flags when replacing a named import as default",
-            code: 'import { type /* docs */ Map as MyMap } from "lodash";',
-            output: "/* docs */ import type MyMap from 'lodash/map';",
+            code: codeBlock`
+                import { type /* docs */ Map as MyMap } from "lodash";
+            `,
+            output: codeBlock`
+                /* docs */ import type MyMap from 'lodash/map';
+            `,
             options: [
                 {
                     lodash: {
@@ -188,8 +216,13 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "keeps unmatched default imports with overlapping replacement rules",
-            code: 'import lodash, { /* map docs */ map } from "lodash";',
-            output: "import { /* map docs */ map } from 'lodash/map';\nimport lodash from \"lodash\";",
+            code: codeBlock`
+                import lodash, { /* map docs */ map } from "lodash";
+            `,
+            output: codeBlock`
+                import { /* map docs */ map } from 'lodash/map';
+                import lodash from "lodash";
+            `,
             options: [
                 {
                     lodash: [
@@ -208,8 +241,13 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "splits imports while retaining each specifier comment",
-            code: 'import { /* map docs */ map, /* filter docs */ filter } from "lodash";',
-            output: "import { /* map docs */ map } from 'lodash/map';\nimport { /* filter docs */ filter } from 'lodash/filter';",
+            code: codeBlock`
+                import { /* map docs */ map, /* filter docs */ filter } from "lodash";
+            `,
+            output: codeBlock`
+                import { /* map docs */ map } from 'lodash/map';
+                import { /* filter docs */ filter } from 'lodash/filter';
+            `,
             options: [
                 {
                     lodash: {
@@ -222,8 +260,12 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "moves comments when converting an aliased specifier to a default import",
-            code: 'import { /* map docs */ map /* alias docs */ as myMap /* tail */ } from "lodash";',
-            output: "/* map docs */ /* alias docs */ import myMap from 'lodash/map'; /* tail */ ",
+            code: codeBlock`
+                import { /* map docs */ map /* alias docs */ as myMap /* tail */ } from "lodash";
+            `,
+            output: codeBlock`
+                /* map docs */ /* alias docs */ import myMap from 'lodash/map'; /* tail */
+            `.concat(" "),
             options: [
                 {
                     lodash: {
@@ -237,8 +279,13 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "preserves an unmatched default import when all named specifiers move",
-            code: 'import lodash, { /* map docs */ map } from "lodash";',
-            output: "import { /* map docs */ map } from 'lodash/map';\nimport lodash from \"lodash\";",
+            code: codeBlock`
+                import lodash, { /* map docs */ map } from "lodash";
+            `,
+            output: codeBlock`
+                import { /* map docs */ map } from 'lodash/map';
+                import lodash from "lodash";
+            `,
             options: [
                 {
                     lodash: {
@@ -251,8 +298,13 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "keeps comments with unmatched specifiers",
-            code: 'import { map, /* filter docs */ filter } from "lodash";',
-            output: "import { map } from 'lodash/map';\nimport { /* filter docs */ filter } from \"lodash\";",
+            code: codeBlock`
+                import { map, /* filter docs */ filter } from "lodash";
+            `,
+            output: codeBlock`
+                import { map } from 'lodash/map';
+                import { /* filter docs */ filter } from "lodash";
+            `,
             options: [
                 {
                     lodash: {
@@ -265,8 +317,12 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "moves comments outside the braces when replacing an entire import",
-            code: 'import /* header */ { map } from /* source */ "lodash";',
-            output: "import { /* header */ map /* source */ } from 'lodash/map';",
+            code: codeBlock`
+                import /* header */ { map } from /* source */ "lodash";
+            `,
+            output: codeBlock`
+                import { /* header */ map /* source */ } from 'lodash/map';
+            `,
             options: [
                 {
                     lodash: {
@@ -279,8 +335,16 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "keeps trailing line comments with a moved specifier",
-            code: 'import { map, // map docs\n    filter } from "lodash";',
-            output: "import {\n    map, // map docs\n} from 'lodash/map';\nimport { filter } from \"lodash\";",
+            code: codeBlock`
+                import { map, // map docs
+                    filter } from "lodash";
+            `,
+            output: codeBlock`
+                import {
+                    map, // map docs
+                } from 'lodash/map';
+                import { filter } from "lodash";
+            `,
             options: [
                 {
                     lodash: {
@@ -293,8 +357,12 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "preserves comments when replacing an entire import",
-            code: 'import { /* keep */ map } from "lodash";',
-            output: "import { /* keep */ map } from 'lodash/map';",
+            code: codeBlock`
+                import { /* keep */ map } from "lodash";
+            `,
+            output: codeBlock`
+                import { /* keep */ map } from 'lodash/map';
+            `,
             options: [
                 {
                     lodash: {
@@ -307,8 +375,13 @@ const elem = <Text>Hello</Text>`,
         },
         {
             name: "preserves comments when replacing part of an import",
-            code: 'import { map /* keep */, filter } from "lodash";',
-            output: "import { map /* keep */ } from 'lodash/map';\nimport { filter } from \"lodash\";",
+            code: codeBlock`
+                import { map /* keep */, filter } from "lodash";
+            `,
+            output: codeBlock`
+                import { map /* keep */ } from 'lodash/map';
+                import { filter } from "lodash";
+            `,
             options: [
                 {
                     lodash: {
@@ -329,9 +402,12 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             ],
-            code: "import { Box } from '@twilio-paste/core'",
-            output: `import { Box } from '@twilio-paste/core/box';
-`, // This new line is not ideal, but can be cleaned up later
+            code: codeBlock`
+                import { Box } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { Box } from '@twilio-paste/core/box';
+            `.concat("\n"), // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -347,7 +423,9 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             ],
-            code: "import { Box, Heading } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { Box, Heading } from '@twilio-paste/core'
+            `,
             output: codeBlock`
                 import { Box } from '@twilio-paste/core/box';
                 import { Heading } from '@twilio-paste/core'
@@ -368,8 +446,12 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             ],
-            code: "import { isEmpty } from 'lodash'",
-            output: "import isEmpty from 'lodash/isEmpty';",
+            code: codeBlock`
+                import { isEmpty } from 'lodash'
+            `,
+            output: codeBlock`
+                import isEmpty from 'lodash/isEmpty';
+            `,
             errors: [
                 {
                     messageId: "preferImport",
@@ -386,12 +468,16 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             ],
-            code: `import { Node as SomeOtherNode } from '@/types';
-const foo: Node = {}`,
-            output: `import { Node as SomeOtherNode } from '@/types';
-import { Node } from '@/types';
+            code: codeBlock`
+                import { Node as SomeOtherNode } from '@/types';
+                const foo: Node = {}
+            `,
+            output: codeBlock`
+                import { Node as SomeOtherNode } from '@/types';
+                import { Node } from '@/types';
 
-const foo: Node = {}`,
+                const foo: Node = {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -412,10 +498,14 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `const foo: Node = {}`,
-            output: `import { Node } from '@/types';
+            code: codeBlock`
+                const foo: Node = {}
+            `,
+            output: codeBlock`
+                import { Node } from '@/types';
 
-const foo: Node = {}`,
+                const foo: Node = {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -436,12 +526,16 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `import { Comment } from '@/types';
-const foo: Node = {}`,
-            output: `import { Comment } from '@/types';
-import { Node } from '@/types';
+            code: codeBlock`
+                import { Comment } from '@/types';
+                const foo: Node = {}
+            `,
+            output: codeBlock`
+                import { Comment } from '@/types';
+                import { Node } from '@/types';
 
-const foo: Node = {}`,
+                const foo: Node = {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -462,10 +556,14 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `interface DisplayNode extends Node {}`,
-            output: `import { Node } from '@/types';
+            code: codeBlock`
+                interface DisplayNode extends Node {}
+            `,
+            output: codeBlock`
+                import { Node } from '@/types';
 
-interface DisplayNode extends Node {}`,
+                interface DisplayNode extends Node {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -486,10 +584,14 @@ interface DisplayNode extends Node {}`,
                     },
                 },
             ],
-            code: `class Foo implements Node {}`,
-            output: `import { Node } from '@/types';
+            code: codeBlock`
+                class Foo implements Node {}
+            `,
+            output: codeBlock`
+                import { Node } from '@/types';
 
-class Foo implements Node {}`,
+                class Foo implements Node {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -510,10 +612,14 @@ class Foo implements Node {}`,
                     },
                 },
             ],
-            code: `type DisplayNode = Node & { foo: number }`,
-            output: `import { Node } from '@/types';
+            code: codeBlock`
+                type DisplayNode = Node & { foo: number }
+            `,
+            output: codeBlock`
+                import { Node } from '@/types';
 
-type DisplayNode = Node & { foo: number }`,
+                type DisplayNode = Node & { foo: number }
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -534,10 +640,14 @@ type DisplayNode = Node & { foo: number }`,
                     },
                 },
             ],
-            code: `const foo = Math.floor(0.5)`,
-            output: `import { Math } from '@/utilities';
+            code: codeBlock`
+                const foo = Math.floor(0.5)
+            `,
+            output: codeBlock`
+                import { Math } from '@/utilities';
 
-const foo = Math.floor(0.5)`,
+                const foo = Math.floor(0.5)
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -565,11 +675,15 @@ const foo = Math.floor(0.5)`,
                     },
                 },
             },
-            code: `const elem = <Text>Hello</Text>`,
+            code: codeBlock`
+                const elem = <Text>Hello</Text>
+            `,
             output: [
-                `import { Text } from '@/components';
+                codeBlock`
+                    import { Text } from '@/components';
 
-const elem = <Text>Hello</Text>`,
+                    const elem = <Text>Hello</Text>
+                `,
             ],
             errors: [
                 {
@@ -598,11 +712,15 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             },
-            code: `const elem = <Button />`,
+            code: codeBlock`
+                const elem = <Button />
+            `,
             output: [
-                `import { Button } from '@/components';
+                codeBlock`
+                    import { Button } from '@/components';
 
-const elem = <Button />`,
+                    const elem = <Button />
+                `,
             ],
             errors: [
                 {
@@ -624,12 +742,16 @@ const elem = <Button />`,
                     },
                 },
             ],
-            code: `const foo = Math.floor(0.5);
-const bar = Math.ceil(1.5)`,
-            output: `import { Math } from '@/utilities';
+            code: codeBlock`
+                const foo = Math.floor(0.5);
+                const bar = Math.ceil(1.5)
+            `,
+            output: codeBlock`
+                import { Math } from '@/utilities';
 
-const foo = Math.floor(0.5);
-const bar = Math.ceil(1.5)`,
+                const foo = Math.floor(0.5);
+                const bar = Math.ceil(1.5)
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -663,19 +785,25 @@ const bar = Math.ceil(1.5)`,
                     ],
                 },
             ],
-            code: `const foo = Math.floor(0.5);
-const bar = Text.render()`,
+            code: codeBlock`
+                const foo = Math.floor(0.5);
+                const bar = Text.render()
+            `,
             output: [
-                `import { Math } from '@/utilities';
+                codeBlock`
+                    import { Math } from '@/utilities';
 
-const foo = Math.floor(0.5);
-const bar = Text.render()`,
-                `import { Math } from '@/utilities';
-import { Text } from '@/components';
+                    const foo = Math.floor(0.5);
+                    const bar = Text.render()
+                `,
+                codeBlock`
+                    import { Math } from '@/utilities';
+                    import { Text } from '@/components';
 
 
-const foo = Math.floor(0.5);
-const bar = Text.render()`,
+                    const foo = Math.floor(0.5);
+                    const bar = Text.render()
+                `,
             ],
             errors: [
                 {
@@ -705,8 +833,12 @@ const bar = Text.render()`,
                     },
                 },
             ],
-            code: "import { Box } from '@twilio-paste/core'",
-            output: "import { Box } from '@twilio-paste/core/box';", // This new line is not ideal, but can be cleaned up later
+            code: codeBlock`
+                import { Box } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { Box } from '@twilio-paste/core/box';
+            `, // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -728,10 +860,14 @@ const bar = Text.render()`,
                     },
                 },
             ],
-            code: "import { Box, Heading, Paragraph } from '@twilio-paste/core'",
-            output: `import { Box } from '@twilio-paste/core/box';
-import { Heading } from '@twilio-paste/core/heading';
-import { Paragraph } from '@twilio-paste/core/paragraph';`,
+            code: codeBlock`
+                import { Box, Heading, Paragraph } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { Box } from '@twilio-paste/core/box';
+                import { Heading } from '@twilio-paste/core/heading';
+                import { Paragraph } from '@twilio-paste/core/paragraph';
+            `,
             errors: [
                 {
                     messageId: "preferImportMultiple",
@@ -761,9 +897,12 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
                     ],
                 },
             ],
-            code: "import { Option } from '@twilio-paste/core'",
-            output: `import { Option } from '@twilio-paste/core/select';
-`, // This new line is not ideal, but can be cleaned up later
+            code: codeBlock`
+                import { Option } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { Option } from '@twilio-paste/core/select';
+            `.concat("\n"), // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -780,9 +919,12 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
                     },
                 },
             ],
-            code: "import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'",
-            output: `import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
-`, // This new line is not ideal, but can be cleaned up later
+            code: codeBlock`
+                import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
+            `.concat("\n"), // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -806,9 +948,12 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
                     },
                 },
             ],
-            code: "import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'",
-            output: `import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
-`, // This new line is not ideal, but can be cleaned up later
+            code: codeBlock`
+                import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
+            `.concat("\n"), // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -826,9 +971,13 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
                     },
                 },
             ],
-            code: "import { isEmpty, isNil } from 'lodash'",
-            output: `import isEmpty from 'lodash/isEmpty';
-import isNil from 'lodash/isNil';`,
+            code: codeBlock`
+                import { isEmpty, isNil } from 'lodash'
+            `,
+            output: codeBlock`
+                import isEmpty from 'lodash/isEmpty';
+                import isNil from 'lodash/isNil';
+            `,
             errors: [
                 {
                     messageId: "preferImportMultiple",
@@ -891,18 +1040,20 @@ import isNil from 'lodash/isNil';`,
                 import useSpace from 'hooks/use-space'
                 import useWorkspace from 'hooks/use-workspace'
             `,
-            output: `import React, { FC, useEffect, useState } from 'react'
-import { useQuery } from '@apollo/react-hooks'
-import { TBody, THead, Table, Td, Th, Tr } from '@twilio-paste/core/table';
-import { Button } from '@twilio-paste/core/button';
-import { Text } from '@twilio-paste/core/text';
-import { Truncate } from '@twilio-paste/core/truncate';
-import { EmptyState, Pane, Spinner, majorScale, useTheme } from 'evergreen-ui'
-import moment from 'moment'
-import useInfiniteScroll from 'hooks/use-infinite-scroll'
-import useRouter from 'hooks/use-router'
-import useSpace from 'hooks/use-space'
-import useWorkspace from 'hooks/use-workspace'`,
+            output: codeBlock`
+                import React, { FC, useEffect, useState } from 'react'
+                import { useQuery } from '@apollo/react-hooks'
+                import { TBody, THead, Table, Td, Th, Tr } from '@twilio-paste/core/table';
+                import { Button } from '@twilio-paste/core/button';
+                import { Text } from '@twilio-paste/core/text';
+                import { Truncate } from '@twilio-paste/core/truncate';
+                import { EmptyState, Pane, Spinner, majorScale, useTheme } from 'evergreen-ui'
+                import moment from 'moment'
+                import useInfiniteScroll from 'hooks/use-infinite-scroll'
+                import useRouter from 'hooks/use-router'
+                import useSpace from 'hooks/use-space'
+                import useWorkspace from 'hooks/use-workspace'
+            `,
             errors: [
                 {
                     messageId: "preferImportMultiple",
@@ -922,9 +1073,12 @@ import useWorkspace from 'hooks/use-workspace'`,
                     },
                 },
             ],
-            code: "import { Box as MyBox } from '@twilio-paste/core'",
-            output: `import { Box as MyBox } from '@twilio-paste/core/box';
-`,
+            code: codeBlock`
+                import { Box as MyBox } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { Box as MyBox } from '@twilio-paste/core/box';
+            `.concat("\n"),
             errors: [{ messageId: "preferImport" }],
         },
         {
@@ -938,7 +1092,9 @@ import useWorkspace from 'hooks/use-workspace'`,
                     },
                 },
             ],
-            code: "import { Paragraph as PasteParagraph, ParagraphProps as PasteParagraphProps } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { Paragraph as PasteParagraph, ParagraphProps as PasteParagraphProps } from '@twilio-paste/core'
+            `,
             output: codeBlock`
                 import { Paragraph as PasteParagraph } from '@twilio-paste/core/paragraph';
                 import { ParagraphProps as PasteParagraphProps } from '@twilio-paste/core/paragraph';
@@ -948,9 +1104,13 @@ import useWorkspace from 'hooks/use-workspace'`,
         {
             name: "uses alias name when named import is replaced as default",
             options: [LODASH_IMPORTS],
-            code: `import { kebabCase, isEmpty as lodashIsEmpty } from "lodash";`,
-            output: `import kebabCase from 'lodash/kebabCase';
-import lodashIsEmpty from 'lodash/isEmpty';`,
+            code: codeBlock`
+                import { kebabCase, isEmpty as lodashIsEmpty } from "lodash";
+            `,
+            output: codeBlock`
+                import kebabCase from 'lodash/kebabCase';
+                import lodashIsEmpty from 'lodash/isEmpty';
+            `,
             errors: [{ messageId: "preferImportMultiple" }],
         },
 
@@ -962,8 +1122,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Alert, AlertProps, AlertBackgroundColors, AlertRoles, AlertTextColors, AlertVariants } from '@twilio-paste/core';
             `,
-            output: `import { Alert, AlertProps, AlertBackgroundColors, AlertRoles, AlertTextColors, AlertVariants } from '@twilio-paste/core/alert';
-`,
+            output: codeBlock`
+                import { Alert, AlertProps, AlertBackgroundColors, AlertRoles, AlertTextColors, AlertVariants } from '@twilio-paste/core/alert';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -976,8 +1137,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { AlertDialog, AlertDialogProps } from '@twilio-paste/core';
             `,
-            output: `import { AlertDialog, AlertDialogProps } from '@twilio-paste/core/alert-dialog';
-`,
+            output: codeBlock`
+                import { AlertDialog, AlertDialogProps } from '@twilio-paste/core/alert-dialog';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -990,8 +1152,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Anchor, AnchorProps, isExternalUrl, secureExternalLink } from '@twilio-paste/core';
             `,
-            output: `import { Anchor, AnchorProps, isExternalUrl, secureExternalLink } from '@twilio-paste/core/anchor';
-`,
+            output: codeBlock`
+                import { Anchor, AnchorProps, isExternalUrl, secureExternalLink } from '@twilio-paste/core/anchor';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1020,8 +1183,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Avatar, AvatarProps } from '@twilio-paste/core';
             `,
-            output: `import { Avatar, AvatarProps } from '@twilio-paste/core/avatar';
-`,
+            output: codeBlock`
+                import { Avatar, AvatarProps } from '@twilio-paste/core/avatar';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1034,8 +1198,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { AvatarGroup, AvatarGroupProps } from '@twilio-paste/core';
             `,
-            output: `import { AvatarGroup, AvatarGroupProps } from '@twilio-paste/core/avatar';
-`,
+            output: codeBlock`
+                import { AvatarGroup, AvatarGroupProps } from '@twilio-paste/core/avatar';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1064,8 +1229,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Box, BoxProps, StyledBox, BOX_PROPS_TO_BLOCK, getCustomElementStyles, safelySpreadBoxProps } from '@twilio-paste/core';
             `,
-            output: `import { Box, BoxProps, StyledBox, BOX_PROPS_TO_BLOCK, getCustomElementStyles, safelySpreadBoxProps } from '@twilio-paste/core/box';
-`,
+            output: codeBlock`
+                import { Box, BoxProps, StyledBox, BOX_PROPS_TO_BLOCK, getCustomElementStyles, safelySpreadBoxProps } from '@twilio-paste/core/box';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1078,8 +1244,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Breadcrumb, BreadcrumbProps, BreadcrumbItem } from '@twilio-paste/core';
             `,
-            output: `import { Breadcrumb, BreadcrumbProps, BreadcrumbItem } from '@twilio-paste/core/breadcrumb';
-`,
+            output: codeBlock`
+                import { Breadcrumb, BreadcrumbProps, BreadcrumbItem } from '@twilio-paste/core/breadcrumb';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1092,8 +1259,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Button, ButtonProps, ButtonToggleStyles, DestructiveSecondaryButtonToggleStyles } from '@twilio-paste/core';
             `,
-            output: `import { Button, ButtonProps, ButtonToggleStyles, DestructiveSecondaryButtonToggleStyles } from '@twilio-paste/core/button';
-`,
+            output: codeBlock`
+                import { Button, ButtonProps, ButtonToggleStyles, DestructiveSecondaryButtonToggleStyles } from '@twilio-paste/core/button';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1106,8 +1274,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Callout, CalloutProps, CalloutHeading, CalloutList, CalloutListItem, CalloutText } from '@twilio-paste/core';
             `,
-            output: `import { Callout, CalloutProps, CalloutHeading, CalloutList, CalloutListItem, CalloutText } from '@twilio-paste/core/callout';
-`,
+            output: codeBlock`
+                import { Callout, CalloutProps, CalloutHeading, CalloutList, CalloutListItem, CalloutText } from '@twilio-paste/core/callout';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1136,8 +1305,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { ChatComposer, ChatComposerProps } from '@twilio-paste/core';
             `,
-            output: `import { ChatComposer, ChatComposerProps } from '@twilio-paste/core/chat-composer';
-`,
+            output: codeBlock`
+                import { ChatComposer, ChatComposerProps } from '@twilio-paste/core/chat-composer';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1150,8 +1320,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { ChatLog, ChatLogProps, ChatAttachment, ChatAttachmentDescription, ChatAttachmentLink, ChatBookend, ChatBookendItem, ChatBubble, ChatEvent, ChatLogger, ChatMessage, ChatMessageMeta, ChatMessageMetaItem, ComposerAttachmentCard, useChatLogger } from '@twilio-paste/core';
             `,
-            output: `import { ChatLog, ChatLogProps, ChatAttachment, ChatAttachmentDescription, ChatAttachmentLink, ChatBookend, ChatBookendItem, ChatBubble, ChatEvent, ChatLogger, ChatMessage, ChatMessageMeta, ChatMessageMetaItem, ComposerAttachmentCard, useChatLogger } from '@twilio-paste/core/chat-log';
-`,
+            output: codeBlock`
+                import { ChatLog, ChatLogProps, ChatAttachment, ChatAttachmentDescription, ChatAttachmentLink, ChatBookend, ChatBookendItem, ChatBubble, ChatEvent, ChatLogger, ChatMessage, ChatMessageMeta, ChatMessageMetaItem, ComposerAttachmentCard, useChatLogger } from '@twilio-paste/core/chat-log';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1164,8 +1335,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Checkbox, CheckboxProps, CheckboxDisclaimer, CheckboxGroup } from '@twilio-paste/core';
             `,
-            output: `import { Checkbox, CheckboxProps, CheckboxDisclaimer, CheckboxGroup } from '@twilio-paste/core/checkbox';
-`,
+            output: codeBlock`
+                import { Checkbox, CheckboxProps, CheckboxDisclaimer, CheckboxGroup } from '@twilio-paste/core/checkbox';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1178,8 +1350,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { CodeBlock, CodeBlockProps, CodeBlockHeader, CodeBlockTab, CodeBlockTabList, CodeBlockTabPanel, CodeBlockWrapper } from '@twilio-paste/core';
             `,
-            output: `import { CodeBlock, CodeBlockProps, CodeBlockHeader, CodeBlockTab, CodeBlockTabList, CodeBlockTabPanel, CodeBlockWrapper } from '@twilio-paste/core/code-block';
-`,
+            output: codeBlock`
+                import { CodeBlock, CodeBlockProps, CodeBlockHeader, CodeBlockTab, CodeBlockTabList, CodeBlockTabPanel, CodeBlockWrapper } from '@twilio-paste/core/code-block';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1192,8 +1365,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Combobox, ComboboxProps, ComboboxInputWrapper, ComboboxListbox, ComboboxListboxGroup, ComboboxListboxOption, MultiselectCombobox, useCombobox } from '@twilio-paste/core';
             `,
-            output: `import { Combobox, ComboboxProps, ComboboxInputWrapper, ComboboxListbox, ComboboxListboxGroup, ComboboxListboxOption, MultiselectCombobox, useCombobox } from '@twilio-paste/core/combobox';
-`,
+            output: codeBlock`
+                import { Combobox, ComboboxProps, ComboboxInputWrapper, ComboboxListbox, ComboboxListboxGroup, ComboboxListboxOption, MultiselectCombobox, useCombobox } from '@twilio-paste/core/combobox';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1206,8 +1380,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { ComboboxPrimitive, ComboboxPrimitiveProps, useComboboxPrimitive, useMultiSelectPrimitive } from '@twilio-paste/core';
             `,
-            output: `import { ComboboxPrimitive, ComboboxPrimitiveProps, useComboboxPrimitive, useMultiSelectPrimitive } from '@twilio-paste/core/combobox-primitive';
-`,
+            output: codeBlock`
+                import { ComboboxPrimitive, ComboboxPrimitiveProps, useComboboxPrimitive, useMultiSelectPrimitive } from '@twilio-paste/core/combobox-primitive';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1220,8 +1395,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { DataGrid, DataGridProps, DataGridBody, DataGridCell, DataGridFoot, DataGridHead, DataGridHeader, DataGridHeaderSort, DataGridRow } from '@twilio-paste/core';
             `,
-            output: `import { DataGrid, DataGridProps, DataGridBody, DataGridCell, DataGridFoot, DataGridHead, DataGridHeader, DataGridHeaderSort, DataGridRow } from '@twilio-paste/core/data-grid';
-`,
+            output: codeBlock`
+                import { DataGrid, DataGridProps, DataGridBody, DataGridCell, DataGridFoot, DataGridHead, DataGridHeader, DataGridHeaderSort, DataGridRow } from '@twilio-paste/core/data-grid';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1234,8 +1410,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { DatePicker, DatePickerProps, formatReturnDate } from '@twilio-paste/core';
             `,
-            output: `import { DatePicker, DatePickerProps, formatReturnDate } from '@twilio-paste/core/date-picker';
-`,
+            output: codeBlock`
+                import { DatePicker, DatePickerProps, formatReturnDate } from '@twilio-paste/core/date-picker';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1248,8 +1425,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { DescriptionList, DescriptionListProps, DescriptionListDetails, DescriptionListSet, DescriptionListTerm, StyledDescriptionListSet } from '@twilio-paste/core';
             `,
-            output: `import { DescriptionList, DescriptionListProps, DescriptionListDetails, DescriptionListSet, DescriptionListTerm, StyledDescriptionListSet } from '@twilio-paste/core/description-list';
-`,
+            output: codeBlock`
+                import { DescriptionList, DescriptionListProps, DescriptionListDetails, DescriptionListSet, DescriptionListTerm, StyledDescriptionListSet } from '@twilio-paste/core/description-list';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1278,8 +1456,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Disclosure, DisclosureProps, AnimatedDisclosureContent, DisclosureContent, DisclosureHeading, useDisclosureState } from '@twilio-paste/core';
             `,
-            output: `import { Disclosure, DisclosureProps, AnimatedDisclosureContent, DisclosureContent, DisclosureHeading, useDisclosureState } from '@twilio-paste/core/disclosure';
-`,
+            output: codeBlock`
+                import { Disclosure, DisclosureProps, AnimatedDisclosureContent, DisclosureContent, DisclosureHeading, useDisclosureState } from '@twilio-paste/core/disclosure';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1292,8 +1471,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { DisclosurePrimitive, DisclosurePrimitiveProps, DisclosurePrimitiveContent, useDisclosurePrimitiveState } from '@twilio-paste/core';
             `,
-            output: `import { DisclosurePrimitive, DisclosurePrimitiveProps, DisclosurePrimitiveContent, useDisclosurePrimitiveState } from '@twilio-paste/core/disclosure-primitive';
-`,
+            output: codeBlock`
+                import { DisclosurePrimitive, DisclosurePrimitiveProps, DisclosurePrimitiveContent, useDisclosurePrimitiveState } from '@twilio-paste/core/disclosure-primitive';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1322,8 +1502,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { DisplayPillGroup, DisplayPillGroupProps, DisplayPill } from '@twilio-paste/core';
             `,
-            output: `import { DisplayPillGroup, DisplayPillGroupProps, DisplayPill } from '@twilio-paste/core/display-pill-group';
-`,
+            output: codeBlock`
+                import { DisplayPillGroup, DisplayPillGroupProps, DisplayPill } from '@twilio-paste/core/display-pill-group';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1336,8 +1517,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { FilePicker, FilePickerProps, FilePickerButton } from '@twilio-paste/core';
             `,
-            output: `import { FilePicker, FilePickerProps, FilePickerButton } from '@twilio-paste/core/file-picker';
-`,
+            output: codeBlock`
+                import { FilePicker, FilePickerProps, FilePickerButton } from '@twilio-paste/core/file-picker';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1350,8 +1532,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { FileUploader, FileUploaderProps, FileUploaderDropzone, FileUploaderDropzoneText, FileUploaderErrorText, FileUploaderHelpText, FileUploaderItem, FileUploaderItemDescription, FileUploaderItemTitle, FileUploaderItemsList, FileUploaderLabel } from '@twilio-paste/core';
             `,
-            output: `import { FileUploader, FileUploaderProps, FileUploaderDropzone, FileUploaderDropzoneText, FileUploaderErrorText, FileUploaderHelpText, FileUploaderItem, FileUploaderItemDescription, FileUploaderItemTitle, FileUploaderItemsList, FileUploaderLabel } from '@twilio-paste/core/file-uploader';
-`,
+            output: codeBlock`
+                import { FileUploader, FileUploaderProps, FileUploaderDropzone, FileUploaderDropzoneText, FileUploaderErrorText, FileUploaderHelpText, FileUploaderItem, FileUploaderItemDescription, FileUploaderItemTitle, FileUploaderItemsList, FileUploaderLabel } from '@twilio-paste/core/file-uploader';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1380,8 +1563,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Form, FormProps, FormActions, FormControl, FormControlTwoColumn, FormSection, FormSectionDescription, FormSectionHeading } from '@twilio-paste/core';
             `,
-            output: `import { Form, FormProps, FormActions, FormControl, FormControlTwoColumn, FormSection, FormSectionDescription, FormSectionHeading } from '@twilio-paste/core/form';
-`,
+            output: codeBlock`
+                import { Form, FormProps, FormActions, FormControl, FormControlTwoColumn, FormSection, FormSectionDescription, FormSectionHeading } from '@twilio-paste/core/form';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1394,8 +1578,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { FormPillGroup, FormPillGroupProps, FormPill, useFormPillState } from '@twilio-paste/core';
             `,
-            output: `import { FormPillGroup, FormPillGroupProps, FormPill, useFormPillState } from '@twilio-paste/core/form-pill-group';
-`,
+            output: codeBlock`
+                import { FormPillGroup, FormPillGroupProps, FormPill, useFormPillState } from '@twilio-paste/core/form-pill-group';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1408,8 +1593,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Grid, GridProps, Column } from '@twilio-paste/core';
             `,
-            output: `import { Grid, GridProps, Column } from '@twilio-paste/core/grid';
-`,
+            output: codeBlock`
+                import { Grid, GridProps, Column } from '@twilio-paste/core/grid';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1422,8 +1608,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Heading, HeadingProps, HeadingPropTypes } from '@twilio-paste/core';
             `,
-            output: `import { Heading, HeadingProps, HeadingPropTypes } from '@twilio-paste/core/heading';
-`,
+            output: codeBlock`
+                import { Heading, HeadingProps, HeadingPropTypes } from '@twilio-paste/core/heading';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1436,8 +1623,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { HelpText, HelpTextProps, HelpTextVariants } from '@twilio-paste/core';
             `,
-            output: `import { HelpText, HelpTextProps, HelpTextVariants } from '@twilio-paste/core/help-text';
-`,
+            output: codeBlock`
+                import { HelpText, HelpTextProps, HelpTextVariants } from '@twilio-paste/core/help-text';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1450,8 +1638,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { InPageNavigation, InPageNavigationProps, InPageNavigationItem } from '@twilio-paste/core';
             `,
-            output: `import { InPageNavigation, InPageNavigationProps, InPageNavigationItem } from '@twilio-paste/core/in-page-navigation';
-`,
+            output: codeBlock`
+                import { InPageNavigation, InPageNavigationProps, InPageNavigationItem } from '@twilio-paste/core/in-page-navigation';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1496,8 +1685,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Input, InputProps, InputElement } from '@twilio-paste/core';
             `,
-            output: `import { Input, InputProps, InputElement } from '@twilio-paste/core/input';
-`,
+            output: codeBlock`
+                import { Input, InputProps, InputElement } from '@twilio-paste/core/input';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1510,8 +1700,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { InputBox, InputBoxProps, InputChevronWrapper, Prefix, Suffix, getInputChevronIconColor } from '@twilio-paste/core';
             `,
-            output: `import { InputBox, InputBoxProps, InputChevronWrapper, Prefix, Suffix, getInputChevronIconColor } from '@twilio-paste/core/input-box';
-`,
+            output: codeBlock`
+                import { InputBox, InputBoxProps, InputChevronWrapper, Prefix, Suffix, getInputChevronIconColor } from '@twilio-paste/core/input-box';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1524,8 +1715,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Label, LabelProps, RequiredDot } from '@twilio-paste/core';
             `,
-            output: `import { Label, LabelProps, RequiredDot } from '@twilio-paste/core/label';
-`,
+            output: codeBlock`
+                import { Label, LabelProps, RequiredDot } from '@twilio-paste/core/label';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1538,8 +1730,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { List, ListProps, ListItem, OrderedList, UnorderedList } from '@twilio-paste/core';
             `,
-            output: `import { List, ListProps, ListItem, OrderedList, UnorderedList } from '@twilio-paste/core/list';
-`,
+            output: codeBlock`
+                import { List, ListProps, ListItem, OrderedList, UnorderedList } from '@twilio-paste/core/list';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1552,8 +1745,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { ListboxPrimitive, ListboxPrimitiveProps, ListboxPrimitiveGroup, ListboxPrimitiveItem, useListboxPrimitiveState } from '@twilio-paste/core';
             `,
-            output: `import { ListboxPrimitive, ListboxPrimitiveProps, ListboxPrimitiveGroup, ListboxPrimitiveItem, useListboxPrimitiveState } from '@twilio-paste/core/listbox-primitive';
-`,
+            output: codeBlock`
+                import { ListboxPrimitive, ListboxPrimitiveProps, ListboxPrimitiveGroup, ListboxPrimitiveItem, useListboxPrimitiveState } from '@twilio-paste/core/listbox-primitive';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1566,8 +1760,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { MediaObject, MediaObjectProps, MediaBody, MediaFigure } from '@twilio-paste/core';
             `,
-            output: `import { MediaObject, MediaObjectProps, MediaBody, MediaFigure } from '@twilio-paste/core/media-object';
-`,
+            output: codeBlock`
+                import { MediaObject, MediaObjectProps, MediaBody, MediaFigure } from '@twilio-paste/core/media-object';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1580,8 +1775,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Menu, MenuProps, MenuButton, MenuGroup, MenuGroupContext, MenuItem, MenuSeparator, StyledMenuItem, SubMenuButton, useMenuState } from '@twilio-paste/core';
             `,
-            output: `import { Menu, MenuProps, MenuButton, MenuGroup, MenuGroupContext, MenuItem, MenuSeparator, StyledMenuItem, SubMenuButton, useMenuState } from '@twilio-paste/core/menu';
-`,
+            output: codeBlock`
+                import { Menu, MenuProps, MenuButton, MenuGroup, MenuGroupContext, MenuItem, MenuSeparator, StyledMenuItem, SubMenuButton, useMenuState } from '@twilio-paste/core/menu';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1594,8 +1790,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { MenuPrimitive, MenuPrimitiveProps, MenuPrimitiveButton, MenuPrimitiveGroup, MenuPrimitiveItem, MenuPrimitiveItemCheckbox, MenuPrimitiveItemRadioMenuItemRadio, MenuPrimitiveSeparator, useMenuPrimitiveState } from '@twilio-paste/core';
             `,
-            output: `import { MenuPrimitive, MenuPrimitiveProps, MenuPrimitiveButton, MenuPrimitiveGroup, MenuPrimitiveItem, MenuPrimitiveItemCheckbox, MenuPrimitiveItemRadioMenuItemRadio, MenuPrimitiveSeparator, useMenuPrimitiveState } from '@twilio-paste/core/menu-primitive';
-`,
+            output: codeBlock`
+                import { MenuPrimitive, MenuPrimitiveProps, MenuPrimitiveButton, MenuPrimitiveGroup, MenuPrimitiveItem, MenuPrimitiveItemCheckbox, MenuPrimitiveItemRadioMenuItemRadio, MenuPrimitiveSeparator, useMenuPrimitiveState } from '@twilio-paste/core/menu-primitive';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1608,8 +1805,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { MinimizableDialog, MinimizableDialogProps, MinimizableDialogButton, MinimizableDialogContainer, MinimizableDialogContent, MinimizableDialogHeader, useMinimizableDialogState } from '@twilio-paste/core';
             `,
-            output: `import { MinimizableDialog, MinimizableDialogProps, MinimizableDialogButton, MinimizableDialogContainer, MinimizableDialogContent, MinimizableDialogHeader, useMinimizableDialogState } from '@twilio-paste/core/minimizable-dialog';
-`,
+            output: codeBlock`
+                import { MinimizableDialog, MinimizableDialogProps, MinimizableDialogButton, MinimizableDialogContainer, MinimizableDialogContent, MinimizableDialogHeader, useMinimizableDialogState } from '@twilio-paste/core/minimizable-dialog';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1622,8 +1820,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Modal, ModalProps, ModalBody, ModalContext, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeader, ModalHeading, modalBodyStyles, modalFooterStyles, modalHeaderStyles, useModalContext } from '@twilio-paste/core';
             `,
-            output: `import { Modal, ModalProps, ModalBody, ModalContext, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeader, ModalHeading, modalBodyStyles, modalFooterStyles, modalHeaderStyles, useModalContext } from '@twilio-paste/core/modal';
-`,
+            output: codeBlock`
+                import { Modal, ModalProps, ModalBody, ModalContext, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeader, ModalHeading, modalBodyStyles, modalFooterStyles, modalHeaderStyles, useModalContext } from '@twilio-paste/core/modal';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1636,8 +1835,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { NonModalDialogPrimitive, NonModalDialogPrimitiveProps, NonModalDialogArrowPrimitive, NonModalDialogDisclosurePrimitive, useNonModalDialogPrimitiveState } from '@twilio-paste/core';
             `,
-            output: `import { NonModalDialogPrimitive, NonModalDialogPrimitiveProps, NonModalDialogArrowPrimitive, NonModalDialogDisclosurePrimitive, useNonModalDialogPrimitiveState } from '@twilio-paste/core/non-modal-dialog-primitive';
-`,
+            output: codeBlock`
+                import { NonModalDialogPrimitive, NonModalDialogPrimitiveProps, NonModalDialogArrowPrimitive, NonModalDialogDisclosurePrimitive, useNonModalDialogPrimitiveState } from '@twilio-paste/core/non-modal-dialog-primitive';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1650,8 +1850,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Pagination, PaginationProps, PaginationArrow, PaginationEllipsis, PaginationItems, PaginationLabel, PaginationNumber, PaginationNumbers } from '@twilio-paste/core';
             `,
-            output: `import { Pagination, PaginationProps, PaginationArrow, PaginationEllipsis, PaginationItems, PaginationLabel, PaginationNumber, PaginationNumbers } from '@twilio-paste/core/pagination';
-`,
+            output: codeBlock`
+                import { Pagination, PaginationProps, PaginationArrow, PaginationEllipsis, PaginationItems, PaginationLabel, PaginationNumber, PaginationNumbers } from '@twilio-paste/core/pagination';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1680,8 +1881,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Popover, PopoverProps, PopoverBadgeButton, PopoverButton, PopoverContainer, usePopoverState } from '@twilio-paste/core';
             `,
-            output: `import { Popover, PopoverProps, PopoverBadgeButton, PopoverButton, PopoverContainer, usePopoverState } from '@twilio-paste/core/popover';
-`,
+            output: codeBlock`
+                import { Popover, PopoverProps, PopoverBadgeButton, PopoverButton, PopoverContainer, usePopoverState } from '@twilio-paste/core/popover';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1694,8 +1896,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { RadioButtonGroup, RadioButtonGroupProps, RadioButton } from '@twilio-paste/core';
             `,
-            output: `import { RadioButtonGroup, RadioButtonGroupProps, RadioButton } from '@twilio-paste/core/radio-button-group';
-`,
+            output: codeBlock`
+                import { RadioButtonGroup, RadioButtonGroupProps, RadioButton } from '@twilio-paste/core/radio-button-group';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1708,8 +1911,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { RadioGroup, RadioGroupProps, Radio } from '@twilio-paste/core';
             `,
-            output: `import { RadioGroup, RadioGroupProps, Radio } from '@twilio-paste/core/radio-group';
-`,
+            output: codeBlock`
+                import { RadioGroup, RadioGroupProps, Radio } from '@twilio-paste/core/radio-group';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1738,8 +1942,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Select, SelectProps, Option, OptionGroup, SelectElement } from '@twilio-paste/core';
             `,
-            output: `import { Select, SelectProps, Option, OptionGroup, SelectElement } from '@twilio-paste/core/select';
-`,
+            output: codeBlock`
+                import { Select, SelectProps, Option, OptionGroup, SelectElement } from '@twilio-paste/core/select';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1784,8 +1989,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { SideModal, SideModalProps, SideModalBody, SideModalButton, SideModalContainer, SideModalFooter, SideModalFooterActions, SideModalHeader, SideModalHeading, useSideModalState } from '@twilio-paste/core';
             `,
-            output: `import { SideModal, SideModalProps, SideModalBody, SideModalButton, SideModalContainer, SideModalFooter, SideModalFooterActions, SideModalHeader, SideModalHeading, useSideModalState } from '@twilio-paste/core/side-modal';
-`,
+            output: codeBlock`
+                import { SideModal, SideModalProps, SideModalBody, SideModalButton, SideModalContainer, SideModalFooter, SideModalFooterActions, SideModalHeader, SideModalHeading, useSideModalState } from '@twilio-paste/core/side-modal';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1798,8 +2004,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Sidebar, SidebarProps, SidebarCollapseButton, SidebarCollapseButtonWrapper, SidebarContext, SidebarHeader, SidebarOverlayContentWrapper, SidebarPushContentWrapper } from '@twilio-paste/core';
             `,
-            output: `import { Sidebar, SidebarProps, SidebarCollapseButton, SidebarCollapseButtonWrapper, SidebarContext, SidebarHeader, SidebarOverlayContentWrapper, SidebarPushContentWrapper } from '@twilio-paste/core/sidebar';
-`,
+            output: codeBlock`
+                import { Sidebar, SidebarProps, SidebarCollapseButton, SidebarCollapseButtonWrapper, SidebarContext, SidebarHeader, SidebarOverlayContentWrapper, SidebarPushContentWrapper } from '@twilio-paste/core/sidebar';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1844,8 +2051,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Stack, StackProps, getStackChildMargins, getStackDisplay, getStackStyles } from '@twilio-paste/core';
             `,
-            output: `import { Stack, StackProps, getStackChildMargins, getStackDisplay, getStackStyles } from '@twilio-paste/core/stack';
-`,
+            output: codeBlock`
+                import { Stack, StackProps, getStackChildMargins, getStackDisplay, getStackStyles } from '@twilio-paste/core/stack';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1858,8 +2066,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Switch, SwitchProps, SwitchGroup } from '@twilio-paste/core';
             `,
-            output: `import { Switch, SwitchProps, SwitchGroup } from '@twilio-paste/core/switch';
-`,
+            output: codeBlock`
+                import { Switch, SwitchProps, SwitchGroup } from '@twilio-paste/core/switch';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1872,8 +2081,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Table, TableProps, TBody, TBodyPropTypes, TFoot, TFootPropTypes, THead, THeadPropTypes, TablePropTypes, Td, TdPropTypes, Th, ThPropTypes, Tr, TrPropTypes } from '@twilio-paste/core';
             `,
-            output: `import { Table, TableProps, TBody, TBodyPropTypes, TFoot, TFootPropTypes, THead, THeadPropTypes, TablePropTypes, Td, TdPropTypes, Th, ThPropTypes, Tr, TrPropTypes } from '@twilio-paste/core/table';
-`,
+            output: codeBlock`
+                import { Table, TableProps, TBody, TBodyPropTypes, TFoot, TFootPropTypes, THead, THeadPropTypes, TablePropTypes, Td, TdPropTypes, Th, ThPropTypes, Tr, TrPropTypes } from '@twilio-paste/core/table';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1886,8 +2096,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Tabs, TabsProps, TabList, TabPanel, TabPanels, Tab, useTabState } from '@twilio-paste/core';
             `,
-            output: `import { Tabs, TabsProps, TabList, TabPanel, TabPanels, Tab, useTabState } from '@twilio-paste/core/tabs';
-`,
+            output: codeBlock`
+                import { Tabs, TabsProps, TabList, TabPanel, TabPanels, Tab, useTabState } from '@twilio-paste/core/tabs';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1900,8 +2111,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Text, TextProps, StyledText, TEXT_PROPS_TO_BLOCK, safelySpreadTextProps } from '@twilio-paste/core';
             `,
-            output: `import { Text, TextProps, StyledText, TEXT_PROPS_TO_BLOCK, safelySpreadTextProps } from '@twilio-paste/core/text';
-`,
+            output: codeBlock`
+                import { Text, TextProps, StyledText, TEXT_PROPS_TO_BLOCK, safelySpreadTextProps } from '@twilio-paste/core/text';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1914,7 +2126,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Theme } from '@twilio-paste/core';
             `,
-            output: "import { Theme } from '@twilio-paste/core/theme';",
+            output: codeBlock`
+                import { Theme } from '@twilio-paste/core/theme';
+            `,
             errors: [
                 {
                     messageId: "preferImport",
@@ -1927,8 +2141,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { TimePicker, TimePickerProps, formatReturnTime } from '@twilio-paste/core';
             `,
-            output: `import { TimePicker, TimePickerProps, formatReturnTime } from '@twilio-paste/core/time-picker';
-`,
+            output: codeBlock`
+                import { TimePicker, TimePickerProps, formatReturnTime } from '@twilio-paste/core/time-picker';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1941,8 +2156,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Toast, ToastProps, AnimatedToast, ToastContainer, Toaster, useToaster } from '@twilio-paste/core';
             `,
-            output: `import { Toast, ToastProps, AnimatedToast, ToastContainer, Toaster, useToaster } from '@twilio-paste/core/toast';
-`,
+            output: codeBlock`
+                import { Toast, ToastProps, AnimatedToast, ToastContainer, Toaster, useToaster } from '@twilio-paste/core/toast';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1955,8 +2171,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Tooltip, TooltipProps, useTooltipState } from '@twilio-paste/core';
             `,
-            output: `import { Tooltip, TooltipProps, useTooltipState } from '@twilio-paste/core/tooltip';
-`,
+            output: codeBlock`
+                import { Tooltip, TooltipProps, useTooltipState } from '@twilio-paste/core/tooltip';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",
@@ -1969,8 +2186,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { TooltipPrimitive, TooltipPrimitiveProps, TooltipPrimitiveArrow, TooltipPrimitiveReference, useTooltipPrimitiveState } from '@twilio-paste/core';
             `,
-            output: `import { TooltipPrimitive, TooltipPrimitiveProps, TooltipPrimitiveArrow, TooltipPrimitiveReference, useTooltipPrimitiveState } from '@twilio-paste/core/tooltip-primitive';
-`,
+            output: codeBlock`
+                import { TooltipPrimitive, TooltipPrimitiveProps, TooltipPrimitiveArrow, TooltipPrimitiveReference, useTooltipPrimitiveState } from '@twilio-paste/core/tooltip-primitive';
+            `.concat("\n"),
             errors: [
                 {
                     messageId: "preferImport",

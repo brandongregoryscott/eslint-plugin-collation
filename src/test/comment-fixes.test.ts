@@ -1,3 +1,4 @@
+import { codeBlock } from "common-tags";
 import type { FlatConfig } from "@typescript-eslint/utils/ts-eslint";
 import { Linter } from "@typescript-eslint/utils/ts-eslint";
 import tsEslint from "typescript-eslint";
@@ -29,28 +30,26 @@ const config: FlatConfig.Config[] = [
 
 describe("comment-aware autofixes", () => {
     it("keeps comment ownership stable across grouping, sorting, and repeated fixes", () => {
-        const code = [
-            'export { /* z docs */ z } from "mod";',
-            "export {",
-            "    // b docs",
-            "    b, // b detail",
-            "    /* a docs */ a",
-            '} from "mod";',
-        ].join("\n");
+        const code = codeBlock`
+            export { /* z docs */ z } from "mod";
+            export {
+                // b docs
+                b, // b detail
+                /* a docs */ a
+            } from "mod";
+        `;
         const result = linter.verifyAndFix(code, config, {});
         expect(result.messages).toEqual([]);
-        expect(result.output).toBe(
-            [
-                "export {",
-                "    /* a docs */",
-                "    a,",
-                "    // b docs",
-                "    b, // b detail",
-                "    /* z docs */",
-                "    z,",
-                '} from "mod";',
-            ].join("\n")
-        );
+        expect(result.output).toBe(codeBlock`
+            export {
+                /* a docs */
+                a,
+                // b docs
+                b, // b detail
+                /* z docs */
+                z,
+            } from "mod";
+        `);
         expect(linter.verifyAndFix(result.output, config, {})).toMatchObject({
             fixed: false,
             output: result.output,
@@ -66,27 +65,28 @@ describe("comment-aware autofixes", () => {
         it(`preserves leading and trailing comment ownership for ${names.join(
             ", "
         )}`, () => {
-            const code =
-                "useEffect(() => {}, [\n" +
-                names
-                    .map(
-                        (name) =>
-                            `    /* ${name} leading */ ${name}, // ${name} trailing`
-                    )
-                    .join("\n") +
-                "\n])";
+            const dependencies = names.map(
+                (name) => codeBlock`
+                /* ${name} leading */ ${name}, // ${name} trailing
+            `
+            );
+            const code = codeBlock`
+                useEffect(() => {}, [
+                    ${dependencies}
+                ])
+            `;
             const result = linter.verifyAndFix(code, config, {});
             expect(result.messages).toEqual([]);
-            expect(result.output).toBe(
-                "useEffect(() => {}, [\n" +
-                    ["a", "b", "c"]
-                        .map(
-                            (name) =>
-                                `    /* ${name} leading */\n    ${name}, // ${name} trailing`
-                        )
-                        .join("\n") +
-                    "\n])"
-            );
+            expect(result.output).toBe(codeBlock`
+                useEffect(() => {}, [
+                    /* a leading */
+                    a, // a trailing
+                    /* b leading */
+                    b, // b trailing
+                    /* c leading */
+                    c, // c trailing
+                ])
+            `);
             expect(linter.verifyAndFix(result.output, config, {}).fixed).toBe(
                 false
             );
