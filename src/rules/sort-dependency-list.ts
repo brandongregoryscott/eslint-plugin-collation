@@ -1,3 +1,5 @@
+import sortBy from "lodash/sortBy";
+import isEqual from "lodash/isEqual";
 import type { TSESTree } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
 import type { RuleContext } from "@typescript-eslint/utils/ts-eslint";
@@ -7,7 +9,6 @@ import {
     groupNodesWithComments,
     printCommentedList,
 } from "../utils/comment-utils";
-import { isEqualJson } from "../utils/core-utils";
 
 const callExpressionNames = ["useCallback", "useEffect", "useMemo"];
 
@@ -129,15 +130,10 @@ const handleVisitArrayExpression = (
                 arrayExpression.range[0] + 1,
                 arrayExpression.range[1] - 1,
             ];
-            const groups = groupNodesWithComments(
-                identifiers,
-                range,
-                sourceCode
-            ).sort((left, right) => {
-                const a = getIdentifierName(left.node);
-                const b = getIdentifierName(right.node);
-                return a < b ? -1 : a > b ? 1 : 0;
-            });
+            const groups = sortBy(
+                groupNodesWithComments(identifiers, range, sourceCode),
+                ({ node }) => getIdentifierName(node)
+            );
             return fixer.replaceTextRange(
                 range,
                 printCommentedList(groups, sourceCode, false, range)
@@ -212,8 +208,8 @@ const isSorted = (
     identifiers: Array<TSESTree.Identifier | TSESTree.MemberExpression>
 ): boolean => {
     const current = identifiers.map(getIdentifierName);
-    const expected = [...current].sort();
-    return isEqualJson(current, expected);
+    const expected = sortBy(current);
+    return isEqual(current, expected);
 };
 
 export { sortDependencyList };

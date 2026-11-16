@@ -1,3 +1,4 @@
+import type { CommentedNode } from "../utils/comment-utils";
 import {
     groupNodesWithComments,
     printCommentedList,
@@ -21,7 +22,11 @@ import groupBy from "lodash/groupBy";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
 import type { TSESTree } from "@typescript-eslint/utils";
 import type { NamedExport } from "../types/named-export";
-import { last } from "../utils/collection-utils";
+import first from "lodash/first";
+import keyBy from "lodash/keyBy";
+import last from "lodash/last";
+
+type StatementGroups = Record<number, CommentedNode>;
 
 const groupExports = createRule({
     create: (context) => {
@@ -78,14 +83,44 @@ const getFixesForExports = (
         return [];
     }
 
-    const range = getExportListRange(lastExport.reference, sourceCode);
-    const parent = lastExport.reference.parent;
+    const statements = getExportStatementGroups(exports, sourceCode);
+    const replacement = getConsolidatedExportText(
+        exports,
+        lastExport,
+        statements,
+        sourceCode
+    );
+
+    return exports.map((_export) => {
+        const isLast = _export === lastExport;
+        const range = getExportFixRange(
+            _export.reference,
+            statements[_export.reference.range[0]],
+            sourceCode,
+            !isLast
+        );
+        return fixer.replaceTextRange(range, isLast ? replacement : "");
+    });
+};
+
+/** Associate statement comments without including file headers or footers. */
+const getExportStatementGroups = (
+    exports: NamedExport[],
+    sourceCode: SourceCode
+): StatementGroups => {
+    const reference = last(exports)?.reference;
+    if (reference == null) {
+        return {};
+    }
+
+    const parent = reference.parent;
     const body =
         parent.type === AST_NODE_TYPES.Program ||
         parent.type === AST_NODE_TYPES.TSModuleBlock
             ? parent.body
             : exports.map((_export) => _export.reference);
-    const lastStatement = body[body.length - 1];
+    const firstStatement = first(body);
+    const lastStatement = last(body);
     const trailing =
         lastStatement == null
             ? []
@@ -95,88 +130,132 @@ const getFixesForExports = (
                       (comment) =>
                           comment.loc.start.line === lastStatement.loc.end.line
                   );
-    // Program ranges include file-level comments in newer parser versions.
-    // Keep headers and footers outside the groups regardless of that range.
-    const statementRange: TSESTree.Range = [
-        parent.type === AST_NODE_TYPES.Program
-            ? body[0]?.range[0] ?? parent.range[0]
+
+    // Newer parsers include file-level comments in Program ranges.
+    const isProgram = parent.type === AST_NODE_TYPES.Program;
+    const range: TSESTree.Range = [
+        isProgram
+            ? firstStatement?.range[0] ?? parent.range[0]
             : parent.range[0],
         Math.max(
-            parent.type === AST_NODE_TYPES.Program
+            isProgram
                 ? lastStatement?.range[1] ?? parent.range[1]
                 : parent.range[1],
-            trailing[trailing.length - 1]?.range[1] ?? 0
+            last(trailing)?.range[1] ?? 0
         ),
     ];
-    const statements = groupNodesWithComments(body, statementRange, sourceCode);
-    const orphans: TSESTree.Comment[] = [];
-    const groups = exports.flatMap((_export) => {
+    return keyBy(
+        groupNodesWithComments(body, range, sourceCode),
+        ({ node }) => node.range[0]
+    );
+};
+
+/** Transfer statement comments to their specifiers, retaining empty-list comments. */
+const getExportSpecifierGroups = (
+    exports: NamedExport[],
+    retainedExport: NamedExport,
+    statements: StatementGroups,
+    sourceCode: SourceCode
+): {
+    emptyListComments: TSESTree.Comment[];
+    specifiers: CommentedNode<TSESTree.ExportSpecifier>[];
+} => {
+    const specifiers: CommentedNode<TSESTree.ExportSpecifier>[] = [];
+    const emptyListComments: TSESTree.Comment[] = [];
+
+    for (const _export of exports) {
         const reference = _export.reference;
-        const listRange = getExportListRange(reference, sourceCode);
+        // The retained declaration keeps comments outside its braces in place.
+        const range =
+            _export === retainedExport
+                ? getExportListRange(reference, sourceCode)
+                : reference.range;
         const items = groupNodesWithComments(
             reference.specifiers,
-            _export === lastExport ? listRange : reference.range,
+            range,
             sourceCode
         );
-        const statement = statements.find((item) => item.node === reference);
+        const statement = statements[reference.range[0]];
+
         if (items.length === 0) {
-            orphans.push(
+            emptyListComments.push(
                 ...(statement?.leading ?? []),
                 ...sourceCode
                     .getCommentsInside(reference)
                     .filter(
                         (comment) =>
-                            _export !== lastExport ||
-                            (comment.range[0] >= listRange[0] &&
-                                comment.range[1] <= listRange[1])
+                            comment.range[0] >= range[0] &&
+                            comment.range[1] <= range[1]
                     ),
                 ...(statement?.trailing ?? [])
             );
         } else {
-            items[0].leading.unshift(...(statement?.leading ?? []));
-            items[items.length - 1].trailing.push(
-                ...(statement?.trailing ?? [])
-            );
+            first(items)?.leading.unshift(...(statement?.leading ?? []));
+            last(items)?.trailing.push(...(statement?.trailing ?? []));
+            specifiers.push(...items);
         }
-        return items;
-    });
-    groups[0]?.leading.unshift(...orphans);
+    }
+
+    first(specifiers)?.leading.unshift(...emptyListComments);
+    return { emptyListComments, specifiers };
+};
+
+/** Replace only the retained declaration's list, preserving its surrounding source. */
+const getConsolidatedExportText = (
+    exports: NamedExport[],
+    retainedExport: NamedExport,
+    statements: StatementGroups,
+    sourceCode: SourceCode
+): string => {
+    const reference = retainedExport.reference;
+    const range = getExportListRange(reference, sourceCode);
+    const { specifiers, emptyListComments } = getExportSpecifierGroups(
+        exports,
+        retainedExport,
+        statements,
+        sourceCode
+    );
     const content =
-        groups.length === 0 && orphans.length > 0
-            ? "\n" + printComments(orphans, sourceCode) + "\n"
-            : printCommentedList(groups, sourceCode, true, range);
-    const replacement =
-        sourceCode.text.slice(lastExport.reference.range[0], range[0]) +
+        specifiers.length === 0 && emptyListComments.length > 0
+            ? "\n" + printComments(emptyListComments, sourceCode) + "\n"
+            : printCommentedList(specifiers, sourceCode, true, range);
+
+    return (
+        sourceCode.text.slice(reference.range[0], range[0]) +
         content +
-        sourceCode.text.slice(range[1], lastExport.reference.range[1]);
-    return exports.map((_export, index) => {
-        const reference = _export.reference;
-        const statement = statements.find((item) => item.node === reference);
-        const first = statement?.leading[0] ?? reference;
-        const last =
-            statement?.trailing[statement.trailing.length - 1] ?? reference;
-        let end = last.range[1];
-        if (index !== exports.length - 1) {
-            const next = sourceCode.getTokenAfter(last, {
-                includeComments: true,
-            });
-            if (
-                next != null &&
-                sourceCode.text.slice(end, next.range[0]).trim() === ""
-            ) {
-                end = next.range[0];
-            }
+        sourceCode.text.slice(range[1], reference.range[1])
+    );
+};
+
+/** Include attached comments and, for removed declarations, following whitespace. */
+const getExportFixRange = (
+    reference: TSESTree.ExportNamedDeclaration,
+    statement: CommentedNode | undefined,
+    sourceCode: SourceCode,
+    removeFollowingWhitespace: boolean
+): TSESTree.Range => {
+    const start = first(statement?.leading)?.range[0] ?? reference.range[0];
+    const endToken = last(statement?.trailing) ?? reference;
+    let end = endToken.range[1];
+
+    if (removeFollowingWhitespace) {
+        const next = sourceCode.getTokenAfter(endToken, {
+            includeComments: true,
+        });
+        if (
+            next != null &&
+            sourceCode.text.slice(end, next.range[0]).trim() === ""
+        ) {
+            end = next.range[0];
         }
-        return fixer.replaceTextRange(
-            [first.range[0], end],
-            index === exports.length - 1 ? replacement : ""
-        );
-    });
+    }
+
+    return [start, end];
 };
 
 /**
  * Group exports by kind (type or value) as well as the module they are exported from
- *  ny groups that contain more than 1 export will have their specifiers consolidated into one
+ * Any groups that contain more than 1 export will have their specifiers consolidated into one
  */
 const groupExportsByTypeAndModule = (
     exports: NamedExport[]

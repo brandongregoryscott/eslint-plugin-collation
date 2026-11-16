@@ -99,6 +99,36 @@ ruleTester.run("sortDependencyList", sortDependencyList, {
         },
     ],
     invalid: [
+        ...[
+            ["c", "b", "a"],
+            ["b", "a", "c"],
+            ["a", "c", "b"],
+        ].map((names) => ({
+            name: `preserves leading and trailing comments for ${names.join(
+                ", "
+            )}`,
+            code: codeBlock`
+                useEffect(() => {}, [
+                    ${names.map(
+                        (name) => codeBlock`
+                        /* ${name} leading */ ${name}, // ${name} trailing
+                    `
+                    )}
+                ])
+            `,
+            output: codeBlock`
+                useEffect(() => {}, [
+                    /* a leading */
+                    a, // a trailing
+                    /* b leading */
+                    b, // b trailing
+                    /* c leading */
+                    c, // c trailing
+                ])
+            `,
+            errors: [{ messageId: "sortDependencyList" as const }],
+        })),
+
         {
             name: "moves trailing line comments after commas with dependencies",
             code: codeBlock`

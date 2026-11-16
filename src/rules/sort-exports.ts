@@ -11,7 +11,7 @@ import {
     printCommentedList,
 } from "../utils/comment-utils";
 import type { NamedExport } from "../types/named-export";
-import { isEqualJson } from "../utils/core-utils";
+import isEqual from "lodash/isEqual";
 
 const sortExports = createRule({
     create: (context) => {
@@ -52,7 +52,7 @@ const reportErrors = (
     const sourceCode = context.sourceCode ?? context.getSourceCode();
     exports.forEach((_export) => {
         const sortedSpecifiers = sort(_export.specifiers);
-        if (isEqualJson(sortedSpecifiers, _export.specifiers)) {
+        if (isEqual(sortedSpecifiers, _export.specifiers)) {
             return;
         }
 

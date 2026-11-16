@@ -1,3 +1,7 @@
+import type { FlatConfig } from "@typescript-eslint/utils/ts-eslint";
+import { Linter } from "@typescript-eslint/utils/ts-eslint";
+import { expect, it } from "vitest";
+import { sortExports } from "./sort-exports";
 import { RuleTester } from "../test/test-utils";
 import { groupExports } from "./group-exports";
 import { codeBlock } from "common-tags";
@@ -319,4 +323,54 @@ export { a, b } from "mod";
             errors: [{ messageId: "groupExports" }],
         },
     ],
+});
+
+it("preserves comments when grouped exports are sorted across repeated autofixes", () => {
+    const linter = new Linter();
+    const config: FlatConfig.Config[] = [
+        {
+            languageOptions: { parser: tsEslint.parser },
+            plugins: {
+                collation: {
+                    rules: {
+                        "group-exports": groupExports,
+                        "sort-exports": sortExports,
+                    },
+                },
+            },
+            rules: {
+                "collation/group-exports": "error",
+                "collation/sort-exports": "error",
+            },
+        },
+    ];
+    const code = codeBlock`
+        export { /* z docs */ z } from "mod";
+        export {
+            // b docs
+            b, // b detail
+            /* a docs */ a
+        } from "mod";
+    `;
+    const expectedOutput = codeBlock`
+        export {
+            /* a docs */
+            a,
+            // b docs
+            b, // b detail
+            /* z docs */
+            z,
+        } from "mod";
+    `;
+
+    const result = linter.verifyAndFix(code, config, {});
+    const repeatedResult = linter.verifyAndFix(result.output, config, {});
+
+    expect(result.messages).toEqual([]);
+    expect(result.output).toBe(expectedOutput);
+    expect(repeatedResult).toMatchObject({
+        fixed: false,
+        output: expectedOutput,
+        messages: [],
+    });
 });
