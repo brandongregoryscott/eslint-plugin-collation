@@ -6,7 +6,11 @@ import type {
 } from "@typescript-eslint/utils/ts-eslint";
 import { AST_NODE_TYPES, ASTUtils } from "@typescript-eslint/utils";
 import { RuleName } from "../enums/rule-name";
-import { collectNodes, isIdentifier } from "../utils/node-utils";
+import {
+    collectNodes,
+    isContainedWithinRange,
+    isIdentifier,
+} from "../utils/node-utils";
 import { insertFunctionBodyDeclarations } from "../utils/fixer-utils";
 import { createRule } from "../utils/rule-utils";
 
@@ -71,8 +75,7 @@ const createPropsFix = (
             variable.defs.some(
                 (definition) =>
                     definition.type === "Parameter" &&
-                    definition.name.range[0] >= pattern.range[0] &&
-                    definition.name.range[1] <= pattern.range[1]
+                    isContainedWithinRange(definition.name.range, pattern.range)
             )
         );
     if (

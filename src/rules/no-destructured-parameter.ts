@@ -1,7 +1,12 @@
+import isEmpty from "lodash/isEmpty";
 import type { TSESTree } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
 import { RuleName } from "../enums/rule-name";
-import { collectNodes, isIdentifier } from "../utils/node-utils";
+import {
+    collectNodes,
+    isContainedWithinRange,
+    isIdentifier,
+} from "../utils/node-utils";
 import { insertFunctionBodyDeclarations } from "../utils/fixer-utils";
 import { createRule } from "../utils/rule-utils";
 
@@ -56,7 +61,7 @@ const noDestructuredParameter = createRule({
                 const pattern = getBindingPattern(parameter);
                 return pattern == null ? [] : [pattern];
             });
-            if (patterns.length === 0) {
+            if (isEmpty(patterns)) {
                 return;
             }
 
@@ -93,8 +98,10 @@ const noDestructuredParameter = createRule({
                     variable.defs.some(
                         (definition) =>
                             definition.type === "Parameter" &&
-                            definition.name.range[0] >= pattern.range[0] &&
-                            definition.name.range[1] <= pattern.range[1]
+                            isContainedWithinRange(
+                                definition.name.range,
+                                pattern.range
+                            )
                     )
                 )
             );

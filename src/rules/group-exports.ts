@@ -1,3 +1,5 @@
+import isEmpty from "lodash/isEmpty";
+import { isContainedWithinRange } from "../utils/node-utils";
 import type { CommentedNode } from "../utils/comment-utils";
 import {
     groupNodesWithComments,
@@ -27,6 +29,11 @@ import keyBy from "lodash/keyBy";
 import last from "lodash/last";
 
 type StatementGroups = Record<number, CommentedNode>;
+
+interface GetExportSpecifierGroupsResult {
+    emptyListComments: TSESTree.Comment[];
+    specifiers: CommentedNode<TSESTree.ExportSpecifier>[];
+}
 
 const groupExports = createRule({
     create: (context) => {
@@ -156,10 +163,7 @@ const getExportSpecifierGroups = (
     retainedExport: NamedExport,
     statements: StatementGroups,
     sourceCode: SourceCode
-): {
-    emptyListComments: TSESTree.Comment[];
-    specifiers: CommentedNode<TSESTree.ExportSpecifier>[];
-} => {
+): GetExportSpecifierGroupsResult => {
     const specifiers: CommentedNode<TSESTree.ExportSpecifier>[] = [];
     const emptyListComments: TSESTree.Comment[] = [];
 
@@ -177,15 +181,13 @@ const getExportSpecifierGroups = (
         );
         const statement = statements[reference.range[0]];
 
-        if (items.length === 0) {
+        if (isEmpty(items)) {
             emptyListComments.push(
                 ...(statement?.leading ?? []),
                 ...sourceCode
                     .getCommentsInside(reference)
-                    .filter(
-                        (comment) =>
-                            comment.range[0] >= range[0] &&
-                            comment.range[1] <= range[1]
+                    .filter((comment) =>
+                        isContainedWithinRange(comment.range, range)
                     ),
                 ...(statement?.trailing ?? [])
             );
@@ -216,7 +218,7 @@ const getConsolidatedExportText = (
         sourceCode
     );
     const content =
-        specifiers.length === 0 && emptyListComments.length > 0
+        isEmpty(specifiers) && !isEmpty(emptyListComments)
             ? "\n" + printComments(emptyListComments, sourceCode) + "\n"
             : printCommentedList(specifiers, sourceCode, true, range);
 

@@ -1,3 +1,5 @@
+import isEmpty from "lodash/isEmpty";
+import { isContainedWithinRange } from "./node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
 import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
 
@@ -24,16 +26,11 @@ const groupNodesWithComments = <T extends TSESTree.Node>(
     }));
     const comments = sourceCode
         .getAllComments()
-        .filter(
-            (comment) =>
-                comment.range[0] >= range[0] && comment.range[1] <= range[1]
-        );
+        .filter((comment) => isContainedWithinRange(comment.range, range));
     for (const comment of comments) {
         if (
-            nodes.some(
-                (node) =>
-                    comment.range[0] >= node.range[0] &&
-                    comment.range[1] <= node.range[1]
+            nodes.some((node) =>
+                isContainedWithinRange(comment.range, node.range)
             )
         ) {
             continue;
@@ -62,9 +59,7 @@ const groupNodesWithComments = <T extends TSESTree.Node>(
 };
 
 const hasGroupComments = (groups: CommentedNode[]): boolean =>
-    groups.some(
-        (group) => group.leading.length > 0 || group.trailing.length > 0
-    );
+    groups.some((group) => !isEmpty(group.leading) || !isEmpty(group.trailing));
 
 /** Print commas before trailing line comments so line comments never swallow syntax. */
 const printCommentedList = (
@@ -128,7 +123,7 @@ const printCommentedList = (
     if (multiline) {
         return newline + parts.join(newline) + newline + baseIndent;
     }
-    const padding = padded && parts.length > 0 ? " " : "";
+    const padding = padded && !isEmpty(parts) ? " " : "";
     return padding + parts.join(" ") + padding;
 };
 

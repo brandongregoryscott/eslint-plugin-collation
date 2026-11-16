@@ -374,7 +374,7 @@ const create = (
                             (group) =>
                                 !specifiersMarkedAsError.includes(group.node)
                         );
-                        if (remaining.length > 0) {
+                        if (!isEmpty(remaining)) {
                             fixes.push(
                                 replaceTextRange(
                                     listRange,
@@ -688,7 +688,7 @@ const getCommentedImportDeclarations = (
                                 : "") + group.node.local.name,
                             module
                         ) +
-                        (group.trailing.length === 0
+                        (isEmpty(group.trailing)
                             ? ""
                             : " " + printComments(group.trailing, sourceCode))
                     );
