@@ -1,13 +1,14 @@
+import sortBy from "lodash/sortBy";
+import isEqual from "lodash/isEqual";
 import type { TSESTree } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES } from "@typescript-eslint/utils";
-import type {
-    RuleContext,
-    RuleFix,
-    RuleFixer,
-} from "@typescript-eslint/utils/ts-eslint";
+import type { RuleContext } from "@typescript-eslint/utils/ts-eslint";
 import { RuleName } from "../enums/rule-name";
 import { createRule } from "../utils/rule-utils";
-import { isEqualJson } from "../utils/core-utils";
+import {
+    groupNodesWithComments,
+    printCommentedList,
+} from "../utils/comment-utils";
 
 const callExpressionNames = ["useCallback", "useEffect", "useMemo"];
 
@@ -120,37 +121,26 @@ const handleVisitArrayExpression = (
         return;
     }
 
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
     context.report({
         node: arrayExpression,
         messageId: "sortDependencyList",
-        fix: (fixer) => fixUnsortedDependencyList(fixer, arrayExpression),
+        fix: (fixer) => {
+            const range: TSESTree.Range = [
+                arrayExpression.range[0] + 1,
+                arrayExpression.range[1] - 1,
+            ];
+            const groups = sortBy(
+                groupNodesWithComments(identifiers, range, sourceCode),
+                ({ node }) => getIdentifierName(node)
+            );
+            return fixer.replaceTextRange(
+                range,
+                printCommentedList(groups, sourceCode, false, range)
+            );
+        },
     });
 };
-
-/**
- * Converts the given `ArrayExpression` to its string representation, assuming it only contains
- * `Identifier` and `MemberExpression` elements
- */
-const arrayExpressionToString = (
-    arrayExpression: TSESTree.ArrayExpression
-): string => {
-    const commaSeparatedValues = arrayExpression.elements.map((element) =>
-        getIdentifierName(
-            element as TSESTree.Identifier | TSESTree.MemberExpression
-        )
-    );
-
-    return `[${commaSeparatedValues.sort().join(", ")}]`;
-};
-
-const fixUnsortedDependencyList = (
-    fixer: RuleFixer,
-    arrayExpression: TSESTree.ArrayExpression
-): RuleFix =>
-    fixer.replaceText(
-        arrayExpression,
-        arrayExpressionToString(arrayExpression)
-    );
 
 const handleVisitCallExpression = (
     callExpression: TSESTree.CallExpression,
@@ -218,8 +208,8 @@ const isSorted = (
     identifiers: Array<TSESTree.Identifier | TSESTree.MemberExpression>
 ): boolean => {
     const current = identifiers.map(getIdentifierName);
-    const expected = [...current].sort();
-    return isEqualJson(current, expected);
+    const expected = sortBy(current);
+    return isEqual(current, expected);
 };
 
 export { sortDependencyList };

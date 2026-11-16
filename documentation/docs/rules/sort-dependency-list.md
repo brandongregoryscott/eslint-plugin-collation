@@ -41,3 +41,5 @@ const value = useMemo(() => {
     // ...business logic here
 }, [handleOpenDialog, setProject, theme.colors.gray900, x]);
 ```
+
+Comments move with their associated dependencies when sorting, including commented out dependencies. Standalone comments belong to the following dependency; same-line trailing comments stay with the preceding dependency.

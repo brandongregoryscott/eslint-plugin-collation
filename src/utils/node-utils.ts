@@ -65,6 +65,12 @@ const isCommaToken = (
 ): token is TSESTree.PunctuatorToken =>
     token?.type === TSESTree.AST_TOKEN_TYPES.Punctuator && token.value === ",";
 
+/** Whether the source range fits entirely within the target range. */
+const isContainedWithinRange = (
+    source: TSESTree.Range,
+    target: TSESTree.Range
+): boolean => source[0] >= target[0] && source[1] <= target[1];
+
 const isDeclaration = (node: TSESTree.Node): node is Declaration =>
     [
         AST_NODE_TYPES.ClassDeclaration,
@@ -143,6 +149,7 @@ export {
     getModuleSpecifier,
     getName,
     isCommaToken,
+    isContainedWithinRange,
     isDeclaration,
     isIdentifier,
     isIdentifierToken,

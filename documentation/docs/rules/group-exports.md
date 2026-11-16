@@ -80,3 +80,5 @@ const bar: Bar = "bar";
 export type { Bar, Foo };
 export { bar, foo };
 ```
+
+Comments are preserved with their associated specifiers when consolidating exports. Comments attached to an export statement move into the combined list with that statement’s specifiers.

@@ -22,7 +22,9 @@ ruleTester.run("prefer-import", preferImport, {
                     },
                 },
             ],
-            code: "import { Box } from '@twilio-paste/core/box'",
+            code: codeBlock`
+                import { Box } from '@twilio-paste/core/box'
+            `,
         },
         {
             name: "global > aliased name is allowed regardless of module specifier",
@@ -34,8 +36,10 @@ ruleTester.run("prefer-import", preferImport, {
                     },
                 },
             ],
-            code: `import { SomeOtherNode as Node } from '@/types';
-const foo: Node = {}`,
+            code: codeBlock`
+                import { SomeOtherNode as Node } from '@/types';
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > import is allowed with same module specifier",
@@ -47,8 +51,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `import { Node } from '@/types';
-const foo: Node = {}`,
+            code: codeBlock`
+                import { Node } from '@/types';
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > import is allowed with different module specifier when no other rule to replace import is defined",
@@ -60,8 +66,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `import { Node } from '@/types/node';
-const foo: Node = {}`,
+            code: codeBlock`
+                import { Node } from '@/types/node';
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > no error is reported when type is defined locally",
@@ -73,8 +81,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `type Node = {};
-const foo: Node = {}`,
+            code: codeBlock`
+                type Node = {};
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > no error is reported when interface is defined locally",
@@ -86,8 +96,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `interface Node {};
-const foo: Node = {}`,
+            code: codeBlock`
+                interface Node {};
+                const foo: Node = {}
+            `,
         },
         {
             name: "global > allows imported global object",
@@ -99,8 +111,10 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `import { Math } from '@/utilities';
-const foo = Math.floor(0.5)`,
+            code: codeBlock`
+                import { Math } from '@/utilities';
+                const foo = Math.floor(0.5)
+            `,
         },
         {
             name: "global > no error when local variable shadows global",
@@ -112,8 +126,10 @@ const foo = Math.floor(0.5)`,
                     },
                 },
             ],
-            code: `const Math = { floor: (n: number) => n };
-const foo = Math.floor(0.5)`,
+            code: codeBlock`
+                const Math = { floor: (n: number) => n };
+                const foo = Math.floor(0.5)
+            `,
         },
         {
             name: "global > allows imported JSX component",
@@ -132,8 +148,10 @@ const foo = Math.floor(0.5)`,
                     },
                 },
             },
-            code: `import { Text } from '@/components';
-const elem = <Text>Hello</Text>`,
+            code: codeBlock`
+                import { Text } from '@/components';
+                const elem = <Text>Hello</Text>
+            `,
         },
         {
             name: "global > no error when JSX component is a local variable",
@@ -152,11 +170,229 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             },
-            code: `const Text = (props) => <div>{props.children}</div>;
-const elem = <Text>Hello</Text>`,
+            code: codeBlock`
+                const Text = (props) => <div>{props.children}</div>;
+                const elem = <Text>Hello</Text>
+            `,
         },
     ],
     invalid: [
+        {
+            name: "preserves type-only imports while moving comments",
+            code: codeBlock`
+                import type { /* docs */ Map } from "lodash";
+            `,
+            output: codeBlock`
+                import type { /* docs */ Map } from 'lodash/map';
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "Map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "preserves type-only flags when replacing a named import as default",
+            code: codeBlock`
+                import { type /* docs */ Map as MyMap } from "lodash";
+            `,
+            output: codeBlock`
+                /* docs */ import type MyMap from 'lodash/map';
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "Map",
+                        replacementModuleSpecifier: "lodash/map",
+                        replaceAsDefault: true,
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "keeps unmatched default imports with overlapping replacement rules",
+            code: codeBlock`
+                import lodash, { /* map docs */ map } from "lodash";
+            `,
+            output: codeBlock`
+                import { /* map docs */ map } from 'lodash/map';
+                import lodash from "lodash";
+            `,
+            options: [
+                {
+                    lodash: [
+                        {
+                            importName: "map",
+                            replacementModuleSpecifier: "lodash/map",
+                        },
+                        {
+                            importName: "*",
+                            replacementModuleSpecifier: "lodash/{importName}",
+                        },
+                    ],
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "splits imports while retaining each specifier comment",
+            code: codeBlock`
+                import { /* map docs */ map, /* filter docs */ filter } from "lodash";
+            `,
+            output: codeBlock`
+                import { /* map docs */ map } from 'lodash/map';
+                import { /* filter docs */ filter } from 'lodash/filter';
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "*",
+                        replacementModuleSpecifier: "lodash/{importName}",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImportMultiple" }],
+        },
+        {
+            name: "moves comments when converting an aliased specifier to a default import",
+            code: codeBlock`
+                import { /* map docs */ map /* alias docs */ as myMap /* tail */ } from "lodash";
+            `,
+            output: codeBlock`
+                /* map docs */ /* alias docs */ import myMap from 'lodash/map'; /* tail */
+            `.concat(" "),
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                        replaceAsDefault: true,
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "preserves an unmatched default import when all named specifiers move",
+            code: codeBlock`
+                import lodash, { /* map docs */ map } from "lodash";
+            `,
+            output: codeBlock`
+                import { /* map docs */ map } from 'lodash/map';
+                import lodash from "lodash";
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "keeps comments with unmatched specifiers",
+            code: codeBlock`
+                import { map, /* filter docs */ filter } from "lodash";
+            `,
+            output: codeBlock`
+                import { map } from 'lodash/map';
+                import { /* filter docs */ filter } from "lodash";
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "moves comments outside the braces when replacing an entire import",
+            code: codeBlock`
+                import /* header */ { map } from /* source */ "lodash";
+            `,
+            output: codeBlock`
+                import { /* header */ map /* source */ } from 'lodash/map';
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "keeps trailing line comments with a moved specifier",
+            code: codeBlock`
+                import { map, // map docs
+                    filter } from "lodash";
+            `,
+            output: codeBlock`
+                import {
+                    map, // map docs
+                } from 'lodash/map';
+                import { filter } from "lodash";
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "preserves comments when replacing an entire import",
+            code: codeBlock`
+                import { /* keep */ map } from "lodash";
+            `,
+            output: codeBlock`
+                import { /* keep */ map } from 'lodash/map';
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "*",
+                        replacementModuleSpecifier: "lodash/{importName}",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+        {
+            name: "preserves comments when replacing part of an import",
+            code: codeBlock`
+                import { map /* keep */, filter } from "lodash";
+            `,
+            output: codeBlock`
+                import { map /* keep */ } from 'lodash/map';
+                import { filter } from "lodash";
+            `,
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                    },
+                },
+            ],
+            errors: [{ messageId: "preferImport" }],
+        },
+
         {
             options: [
                 {
@@ -166,7 +402,9 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             ],
-            code: "import { Box } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { Box } from '@twilio-paste/core'
+            `,
             output: `import { Box } from '@twilio-paste/core/box';
 `, // This new line is not ideal, but can be cleaned up later
             errors: [
@@ -184,7 +422,9 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             ],
-            code: "import { Box, Heading } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { Box, Heading } from '@twilio-paste/core'
+            `,
             output: codeBlock`
                 import { Box } from '@twilio-paste/core/box';
                 import { Heading } from '@twilio-paste/core'
@@ -205,8 +445,12 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             ],
-            code: "import { isEmpty } from 'lodash'",
-            output: "import isEmpty from 'lodash/isEmpty';",
+            code: codeBlock`
+                import { isEmpty } from 'lodash'
+            `,
+            output: codeBlock`
+                import isEmpty from 'lodash/isEmpty';
+            `,
             errors: [
                 {
                     messageId: "preferImport",
@@ -223,12 +467,16 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             ],
-            code: `import { Node as SomeOtherNode } from '@/types';
-const foo: Node = {}`,
-            output: `import { Node as SomeOtherNode } from '@/types';
-import { Node } from '@/types';
+            code: codeBlock`
+                import { Node as SomeOtherNode } from '@/types';
+                const foo: Node = {}
+            `,
+            output: codeBlock`
+                import { Node as SomeOtherNode } from '@/types';
+                import { Node } from '@/types';
 
-const foo: Node = {}`,
+                const foo: Node = {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -249,10 +497,14 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `const foo: Node = {}`,
-            output: `import { Node } from '@/types';
+            code: codeBlock`
+                const foo: Node = {}
+            `,
+            output: codeBlock`
+                import { Node } from '@/types';
 
-const foo: Node = {}`,
+                const foo: Node = {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -273,12 +525,16 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `import { Comment } from '@/types';
-const foo: Node = {}`,
-            output: `import { Comment } from '@/types';
-import { Node } from '@/types';
+            code: codeBlock`
+                import { Comment } from '@/types';
+                const foo: Node = {}
+            `,
+            output: codeBlock`
+                import { Comment } from '@/types';
+                import { Node } from '@/types';
 
-const foo: Node = {}`,
+                const foo: Node = {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -299,10 +555,14 @@ const foo: Node = {}`,
                     },
                 },
             ],
-            code: `interface DisplayNode extends Node {}`,
-            output: `import { Node } from '@/types';
+            code: codeBlock`
+                interface DisplayNode extends Node {}
+            `,
+            output: codeBlock`
+                import { Node } from '@/types';
 
-interface DisplayNode extends Node {}`,
+                interface DisplayNode extends Node {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -323,10 +583,14 @@ interface DisplayNode extends Node {}`,
                     },
                 },
             ],
-            code: `class Foo implements Node {}`,
-            output: `import { Node } from '@/types';
+            code: codeBlock`
+                class Foo implements Node {}
+            `,
+            output: codeBlock`
+                import { Node } from '@/types';
 
-class Foo implements Node {}`,
+                class Foo implements Node {}
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -347,10 +611,14 @@ class Foo implements Node {}`,
                     },
                 },
             ],
-            code: `type DisplayNode = Node & { foo: number }`,
-            output: `import { Node } from '@/types';
+            code: codeBlock`
+                type DisplayNode = Node & { foo: number }
+            `,
+            output: codeBlock`
+                import { Node } from '@/types';
 
-type DisplayNode = Node & { foo: number }`,
+                type DisplayNode = Node & { foo: number }
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -371,10 +639,14 @@ type DisplayNode = Node & { foo: number }`,
                     },
                 },
             ],
-            code: `const foo = Math.floor(0.5)`,
-            output: `import { Math } from '@/utilities';
+            code: codeBlock`
+                const foo = Math.floor(0.5)
+            `,
+            output: codeBlock`
+                import { Math } from '@/utilities';
 
-const foo = Math.floor(0.5)`,
+                const foo = Math.floor(0.5)
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -402,11 +674,15 @@ const foo = Math.floor(0.5)`,
                     },
                 },
             },
-            code: `const elem = <Text>Hello</Text>`,
+            code: codeBlock`
+                const elem = <Text>Hello</Text>
+            `,
             output: [
-                `import { Text } from '@/components';
+                codeBlock`
+                    import { Text } from '@/components';
 
-const elem = <Text>Hello</Text>`,
+                    const elem = <Text>Hello</Text>
+                `,
             ],
             errors: [
                 {
@@ -435,11 +711,15 @@ const elem = <Text>Hello</Text>`,
                     },
                 },
             },
-            code: `const elem = <Button />`,
+            code: codeBlock`
+                const elem = <Button />
+            `,
             output: [
-                `import { Button } from '@/components';
+                codeBlock`
+                    import { Button } from '@/components';
 
-const elem = <Button />`,
+                    const elem = <Button />
+                `,
             ],
             errors: [
                 {
@@ -461,12 +741,16 @@ const elem = <Button />`,
                     },
                 },
             ],
-            code: `const foo = Math.floor(0.5);
-const bar = Math.ceil(1.5)`,
-            output: `import { Math } from '@/utilities';
+            code: codeBlock`
+                const foo = Math.floor(0.5);
+                const bar = Math.ceil(1.5)
+            `,
+            output: codeBlock`
+                import { Math } from '@/utilities';
 
-const foo = Math.floor(0.5);
-const bar = Math.ceil(1.5)`,
+                const foo = Math.floor(0.5);
+                const bar = Math.ceil(1.5)
+            `,
             errors: [
                 {
                     messageId: "bannedGlobalType",
@@ -500,19 +784,25 @@ const bar = Math.ceil(1.5)`,
                     ],
                 },
             ],
-            code: `const foo = Math.floor(0.5);
-const bar = Text.render()`,
+            code: codeBlock`
+                const foo = Math.floor(0.5);
+                const bar = Text.render()
+            `,
             output: [
-                `import { Math } from '@/utilities';
+                codeBlock`
+                    import { Math } from '@/utilities';
 
-const foo = Math.floor(0.5);
-const bar = Text.render()`,
-                `import { Math } from '@/utilities';
-import { Text } from '@/components';
+                    const foo = Math.floor(0.5);
+                    const bar = Text.render()
+                `,
+                codeBlock`
+                    import { Math } from '@/utilities';
+                    import { Text } from '@/components';
 
 
-const foo = Math.floor(0.5);
-const bar = Text.render()`,
+                    const foo = Math.floor(0.5);
+                    const bar = Text.render()
+                `,
             ],
             errors: [
                 {
@@ -542,8 +832,12 @@ const bar = Text.render()`,
                     },
                 },
             ],
-            code: "import { Box } from '@twilio-paste/core'",
-            output: "import { Box } from '@twilio-paste/core/box';", // This new line is not ideal, but can be cleaned up later
+            code: codeBlock`
+                import { Box } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { Box } from '@twilio-paste/core/box';
+            `, // This new line is not ideal, but can be cleaned up later
             errors: [
                 {
                     messageId: "preferImport",
@@ -565,10 +859,14 @@ const bar = Text.render()`,
                     },
                 },
             ],
-            code: "import { Box, Heading, Paragraph } from '@twilio-paste/core'",
-            output: `import { Box } from '@twilio-paste/core/box';
-import { Heading } from '@twilio-paste/core/heading';
-import { Paragraph } from '@twilio-paste/core/paragraph';`,
+            code: codeBlock`
+                import { Box, Heading, Paragraph } from '@twilio-paste/core'
+            `,
+            output: codeBlock`
+                import { Box } from '@twilio-paste/core/box';
+                import { Heading } from '@twilio-paste/core/heading';
+                import { Paragraph } from '@twilio-paste/core/paragraph';
+            `,
             errors: [
                 {
                     messageId: "preferImportMultiple",
@@ -598,7 +896,9 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
                     ],
                 },
             ],
-            code: "import { Option } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { Option } from '@twilio-paste/core'
+            `,
             output: `import { Option } from '@twilio-paste/core/select';
 `, // This new line is not ideal, but can be cleaned up later
             errors: [
@@ -617,7 +917,9 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
                     },
                 },
             ],
-            code: "import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'
+            `,
             output: `import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
 `, // This new line is not ideal, but can be cleaned up later
             errors: [
@@ -643,7 +945,9 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
                     },
                 },
             ],
-            code: "import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core'
+            `,
             output: `import { ModalBody, ModalDialogContent, ModalDialogOverlay, ModalFooter, ModalFooterActions, ModalHeading } from '@twilio-paste/core/modal';
 `, // This new line is not ideal, but can be cleaned up later
             errors: [
@@ -663,9 +967,13 @@ import { Paragraph } from '@twilio-paste/core/paragraph';`,
                     },
                 },
             ],
-            code: "import { isEmpty, isNil } from 'lodash'",
-            output: `import isEmpty from 'lodash/isEmpty';
-import isNil from 'lodash/isNil';`,
+            code: codeBlock`
+                import { isEmpty, isNil } from 'lodash'
+            `,
+            output: codeBlock`
+                import isEmpty from 'lodash/isEmpty';
+                import isNil from 'lodash/isNil';
+            `,
             errors: [
                 {
                     messageId: "preferImportMultiple",
@@ -728,18 +1036,20 @@ import isNil from 'lodash/isNil';`,
                 import useSpace from 'hooks/use-space'
                 import useWorkspace from 'hooks/use-workspace'
             `,
-            output: `import React, { FC, useEffect, useState } from 'react'
-import { useQuery } from '@apollo/react-hooks'
-import { TBody, THead, Table, Td, Th, Tr } from '@twilio-paste/core/table';
-import { Button } from '@twilio-paste/core/button';
-import { Text } from '@twilio-paste/core/text';
-import { Truncate } from '@twilio-paste/core/truncate';
-import { EmptyState, Pane, Spinner, majorScale, useTheme } from 'evergreen-ui'
-import moment from 'moment'
-import useInfiniteScroll from 'hooks/use-infinite-scroll'
-import useRouter from 'hooks/use-router'
-import useSpace from 'hooks/use-space'
-import useWorkspace from 'hooks/use-workspace'`,
+            output: codeBlock`
+                import React, { FC, useEffect, useState } from 'react'
+                import { useQuery } from '@apollo/react-hooks'
+                import { TBody, THead, Table, Td, Th, Tr } from '@twilio-paste/core/table';
+                import { Button } from '@twilio-paste/core/button';
+                import { Text } from '@twilio-paste/core/text';
+                import { Truncate } from '@twilio-paste/core/truncate';
+                import { EmptyState, Pane, Spinner, majorScale, useTheme } from 'evergreen-ui'
+                import moment from 'moment'
+                import useInfiniteScroll from 'hooks/use-infinite-scroll'
+                import useRouter from 'hooks/use-router'
+                import useSpace from 'hooks/use-space'
+                import useWorkspace from 'hooks/use-workspace'
+            `,
             errors: [
                 {
                     messageId: "preferImportMultiple",
@@ -759,7 +1069,9 @@ import useWorkspace from 'hooks/use-workspace'`,
                     },
                 },
             ],
-            code: "import { Box as MyBox } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { Box as MyBox } from '@twilio-paste/core'
+            `,
             output: `import { Box as MyBox } from '@twilio-paste/core/box';
 `,
             errors: [{ messageId: "preferImport" }],
@@ -775,7 +1087,9 @@ import useWorkspace from 'hooks/use-workspace'`,
                     },
                 },
             ],
-            code: "import { Paragraph as PasteParagraph, ParagraphProps as PasteParagraphProps } from '@twilio-paste/core'",
+            code: codeBlock`
+                import { Paragraph as PasteParagraph, ParagraphProps as PasteParagraphProps } from '@twilio-paste/core'
+            `,
             output: codeBlock`
                 import { Paragraph as PasteParagraph } from '@twilio-paste/core/paragraph';
                 import { ParagraphProps as PasteParagraphProps } from '@twilio-paste/core/paragraph';
@@ -785,9 +1099,13 @@ import useWorkspace from 'hooks/use-workspace'`,
         {
             name: "uses alias name when named import is replaced as default",
             options: [LODASH_IMPORTS],
-            code: `import { kebabCase, isEmpty as lodashIsEmpty } from "lodash";`,
-            output: `import kebabCase from 'lodash/kebabCase';
-import lodashIsEmpty from 'lodash/isEmpty';`,
+            code: codeBlock`
+                import { kebabCase, isEmpty as lodashIsEmpty } from "lodash";
+            `,
+            output: codeBlock`
+                import kebabCase from 'lodash/kebabCase';
+                import lodashIsEmpty from 'lodash/isEmpty';
+            `,
             errors: [{ messageId: "preferImportMultiple" }],
         },
 
@@ -1751,7 +2069,9 @@ import lodashIsEmpty from 'lodash/isEmpty';`,
             code: codeBlock`
                 import { Theme } from '@twilio-paste/core';
             `,
-            output: "import { Theme } from '@twilio-paste/core/theme';",
+            output: codeBlock`
+                import { Theme } from '@twilio-paste/core/theme';
+            `,
             errors: [
                 {
                     messageId: "preferImport",

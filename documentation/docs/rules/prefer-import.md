@@ -214,3 +214,5 @@ This rule does not perform any module resolution to determine if the `replacemen
 ### Multiple Import Declarations
 
 When `importPropsFromSameModule` is `true` (which is the default behavior), this rule may produce multiple `ImportDeclaration` statements for the same `replacementModuleSpecifier`. Usually, imports from the same module should be consolidated into one statement (unless they are separated due to being value/type imports). The [`imports/no-duplicates`](https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-duplicates.md) rule can be used to auto-fix these duplicate import statements if desired.
+
+Comments move with their associated specifiers when imports are replaced or split. Comments on unmatched specifiers stay in the original import.

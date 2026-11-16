@@ -27,8 +27,10 @@ const preferNativePrivateSyntax = createRule<never[], MessageIds>({
                     if (privateKeyword && privateKeyword.value === "private") {
                         fixes.push(fixer.remove(privateKeyword));
 
-                        const nextToken =
-                            sourceCode.getTokenAfter(privateKeyword);
+                        const nextToken = sourceCode.getTokenAfter(
+                            privateKeyword,
+                            { includeComments: true }
+                        );
                         if (nextToken) {
                             const spaceRange: [number, number] = [
                                 privateKeyword.range[1],

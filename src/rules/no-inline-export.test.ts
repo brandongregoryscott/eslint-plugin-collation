@@ -40,8 +40,86 @@ ruleTester.run("noInlineExport", noInlineExport, {
     ],
     invalid: [
         {
+            name: "keeps trailing comments on the declaration when inserting an export",
+            code: codeBlock`
+                export const a = 1; // a docs
+            `,
+            output: codeBlock`
+                const a = 1; // a docs
+                export { a };
+            `,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+
+        {
+            name: "preserves line comments before a multiline default declaration",
+            code: codeBlock`
+                export default // keep
+                function a() {
+                    // body
+                }
+            `,
+            output: codeBlock`
+                // keep
+                function a() {
+                    // body
+                }
+                export default a;
+            `,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+
+        {
+            name: "preserves a line comment between export and declaration",
+            code: codeBlock`
+                export // keep
+                const a = 1;
+            `,
+            output: codeBlock`
+                // keep
+                const a = 1;
+                export { a };
+            `,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
+            name: "preserves comments before a named declaration",
+            code: codeBlock`
+                export /* keep */ const a = 1;
+            `,
+            output: codeBlock`
+                /* keep */ const a = 1;
+                export { a };
+            `,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
+            name: "preserves comments before a default declaration",
+            code: codeBlock`
+                export default /* keep */ function a() {}
+            `,
+            output: codeBlock`
+                /* keep */ function a() {}
+                export default a;
+            `,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
+            name: "copies comments inside an inline declaration",
+            code: codeBlock`
+                export function a() { /* keep */ }
+            `,
+            output: codeBlock`
+                function a() { /* keep */ }
+                export { a };
+            `,
+            errors: [{ messageId: "noInlineExport" }],
+        },
+        {
             name: "should move inline named export to end of file",
-            code: "export const foo = 5;",
+            code: codeBlock`
+                export const foo = 5;
+            `,
             output: codeBlock`
                 const foo = 5;
                 export { foo };
@@ -50,7 +128,9 @@ ruleTester.run("noInlineExport", noInlineExport, {
         },
         {
             name: "should move inline interface export to end of file",
-            code: "export interface Foo {}",
+            code: codeBlock`
+                export interface Foo {}
+            `,
             output: codeBlock`
                 interface Foo {}
                 export { Foo };
@@ -59,7 +139,9 @@ ruleTester.run("noInlineExport", noInlineExport, {
         },
         {
             name: "should move inline type alias export to end of file",
-            code: "export type Foo = string;",
+            code: codeBlock`
+                export type Foo = string;
+            `,
             output: codeBlock`
                 type Foo = string;
                 export { Foo };
@@ -68,7 +150,9 @@ ruleTester.run("noInlineExport", noInlineExport, {
         },
         {
             name: "should move inline default export to end of file",
-            code: "export default function foo() {};",
+            code: codeBlock`
+                export default function foo() {};
+            `,
             output: codeBlock`
                 function foo() {};
                 export default foo;

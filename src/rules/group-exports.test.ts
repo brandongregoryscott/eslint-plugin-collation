@@ -1,3 +1,7 @@
+import type { FlatConfig } from "@typescript-eslint/utils/ts-eslint";
+import { Linter } from "@typescript-eslint/utils/ts-eslint";
+import { expect, it } from "vitest";
+import { sortExports } from "./sort-exports";
 import { RuleTester } from "../test/test-utils";
 import { groupExports } from "./group-exports";
 import { codeBlock } from "common-tags";
@@ -45,6 +49,181 @@ ruleTester.run("groupExports", groupExports, {
         },
     ],
     invalid: [
+        {
+            name: "preserves file header and footer comments outside the grouped list",
+            code: codeBlock`
+                /* file header */
+                export { a } from "mod";
+                export { b } from "mod";
+                // file footer
+            `,
+            output: codeBlock`
+                /* file header */
+                export { a, b } from "mod";
+                // file footer
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "preserves file boundaries when the program starts with whitespace",
+            code: `
+// file header
+
+export { a } from "mod";
+export { b } from "mod";
+
+/* file footer */
+`,
+            output: `
+// file header
+
+export { a, b } from "mod";
+
+/* file footer */
+`,
+            errors: [{ messageId: "groupExports" }],
+        },
+
+        {
+            name: "moves the final export's trailing comment with its specifier",
+            code: codeBlock`
+                export { a } from "mod";
+                export { b } from "mod"; // b docs
+            `,
+            output: codeBlock`
+                export {
+                    a,
+                    b, // b docs
+                } from "mod";
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
+
+        {
+            name: "moves statement comments with the correct module group",
+            code: codeBlock`
+                // a docs
+                export { a } from "one";
+                // b docs
+                export { b } from "two";
+                export { c } from "one";
+                export { d } from "two";
+            `,
+            output: codeBlock`
+                // a docs
+                export { a, c } from "one";
+                export {
+                    // b docs
+                    b,
+                    d,
+                } from "two";
+            `,
+            errors: [
+                { messageId: "groupExports" },
+                { messageId: "groupExports" },
+            ],
+        },
+        {
+            name: "groups internal comments and trailing specifier comments",
+            code: codeBlock`
+                export {
+                    // b docs
+                    b, // b detail
+                } from "mod";
+                export { a } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                    // b docs
+                    b, // b detail
+                    a,
+                } from "mod";
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "preserves comments inside empty exports",
+            code: codeBlock`
+                export { /* empty */ } from "mod";
+                export { a } from "mod";
+            `,
+            output: codeBlock`
+                export { /* empty */ a } from "mod";
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "preserves comments when all grouped exports are empty",
+            code: codeBlock`
+                export { /* first */ } from "mod";
+                export { /* second */ } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                /* first */ /* second */${" "}
+                } from "mod";
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "groups both commented and comment-free exports",
+            code: codeBlock`
+                export { /* keep */ a } from "a";
+                export { b } from "a";
+                export { c } from "b";
+                export { d } from "b";
+            `,
+            output: codeBlock`
+                export { /* keep */ a, b } from "a";
+                export { c, d } from "b";
+            `,
+            errors: [
+                { messageId: "groupExports" },
+                { messageId: "groupExports" },
+            ],
+        },
+        {
+            name: "preserves a trailing line comment between exports",
+            code: codeBlock`
+                export { a } from "mod"; // keep
+                export { b } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                    a, // keep
+                    b,
+                } from "mod";
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
+
+        {
+            name: "groups exports with their comments",
+            code: codeBlock`
+                export { /* keep */ a } from "mod";
+                export { b } from "mod";
+            `,
+            output: codeBlock`
+                export { /* keep */ a, b } from "mod";
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
+        {
+            name: "preserves comments between grouped exports",
+            code: codeBlock`
+                export { a } from "mod";
+                // keep
+                export { b } from "mod";
+            `,
+            output: codeBlock`
+                export {
+                    a,
+                    // keep
+                    b,
+                } from "mod";
+            `,
+            errors: [{ messageId: "groupExports" }],
+        },
         {
             name: "should consolidate multiple export statements into one",
             code: codeBlock`
@@ -144,4 +323,54 @@ ruleTester.run("groupExports", groupExports, {
             errors: [{ messageId: "groupExports" }],
         },
     ],
+});
+
+it("preserves comments when grouped exports are sorted across repeated autofixes", () => {
+    const linter = new Linter();
+    const config: FlatConfig.Config[] = [
+        {
+            languageOptions: { parser: tsEslint.parser },
+            plugins: {
+                collation: {
+                    rules: {
+                        "group-exports": groupExports,
+                        "sort-exports": sortExports,
+                    },
+                },
+            },
+            rules: {
+                "collation/group-exports": "error",
+                "collation/sort-exports": "error",
+            },
+        },
+    ];
+    const code = codeBlock`
+        export { /* z docs */ z } from "mod";
+        export {
+            // b docs
+            b, // b detail
+            /* a docs */ a
+        } from "mod";
+    `;
+    const expectedOutput = codeBlock`
+        export {
+            /* a docs */
+            a,
+            // b docs
+            b, // b detail
+            /* z docs */
+            z,
+        } from "mod";
+    `;
+
+    const result = linter.verifyAndFix(code, config, {});
+    const repeatedResult = linter.verifyAndFix(result.output, config, {});
+
+    expect(result.messages).toEqual([]);
+    expect(result.output).toBe(expectedOutput);
+    expect(repeatedResult).toMatchObject({
+        fixed: false,
+        output: expectedOutput,
+        messages: [],
+    });
 });

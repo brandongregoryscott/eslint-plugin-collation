@@ -104,6 +104,19 @@ ruleTester.run("noInlineObjectType", noInlineObjectType, {
     ],
     invalid: [
         {
+            name: "copies comments inside an extracted type",
+            code: codeBlock`
+                function foo(options: { /* keep */ id: string }) {}
+            `,
+            output: codeBlock`
+                type FooOptions = { /* keep */ id: string };
+
+                function foo(options: FooOptions) {}
+            `,
+            errors: [{ messageId: "noInlineObjectType" }],
+        },
+
+        {
             name: "should handle defaulted destructured parameter",
             code: codeBlock`
                 function foo({ id }: { id: string } = { id: "" }) {}

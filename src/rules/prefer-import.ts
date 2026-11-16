@@ -1,3 +1,9 @@
+import type { CommentedNode } from "../utils/comment-utils";
+import {
+    groupNodesWithComments,
+    printCommentedList,
+    printComments,
+} from "../utils/comment-utils";
 import { RuleName } from "../enums/rule-name";
 import { createRule, tryRule } from "../utils/rule-utils";
 import type { CaseTransformation } from "../utils/string-utils";
@@ -29,17 +35,20 @@ import {
 } from "../utils/node-utils";
 import { minimatch } from "minimatch";
 import {
+    hasCommentsInRange,
     insertTextAfter,
     insertTextBefore,
     insertTextBeforeRange,
     remove,
     removeImportClause,
+    replaceTextRange,
 } from "../utils/fixer-utils";
 import { getValues, iterate, updateIn } from "../utils/map-utils";
 import type {
     RuleContext,
     RuleFix,
     RuleListener,
+    SourceCode,
 } from "@typescript-eslint/utils/ts-eslint";
 import type { JSONSchema4 } from "@typescript-eslint/utils/json-schema";
 
@@ -296,16 +305,105 @@ const create = (
                     const replacementData: ErrorMessageReplacementData[] = [];
 
                     const fixes: RuleFix[] = [];
+                    const hasComments = hasCommentsInRange(
+                        sourceCode,
+                        importDeclaration.range
+                    );
+                    const namedSpecifiers =
+                        importDeclaration.specifiers.filter(isImportSpecifier);
+                    const open = sourceCode.getFirstToken(
+                        importDeclaration,
+                        (token) => token.value === "{"
+                    );
+                    const close =
+                        open == null
+                            ? null
+                            : sourceCode.getTokenAfter(
+                                  namedSpecifiers[namedSpecifiers.length - 1] ??
+                                      open,
+                                  (token) => token.value === "}"
+                              );
+                    const listRange: TSESTree.Range =
+                        open == null || close == null
+                            ? importDeclaration.range
+                            : [open.range[1], close.range[0]];
+                    const groups = groupNodesWithComments(
+                        namedSpecifiers,
+                        listRange,
+                        sourceCode
+                    );
 
                     const shouldRemoveEntireImport =
-                        importDeclaration.specifiers.length <=
-                        specifiersMarkedAsError.length;
+                        importDeclaration.specifiers.every((specifier) =>
+                            specifiersMarkedAsError.some(
+                                (marked) => marked === specifier
+                            )
+                        );
 
                     if (shouldRemoveEntireImport) {
                         fixes.push(remove(importDeclaration));
                     }
 
-                    if (!shouldRemoveEntireImport) {
+                    if (hasComments && shouldRemoveEntireImport) {
+                        const outside = sourceCode
+                            .getCommentsInside(importDeclaration)
+                            .filter(
+                                (comment) =>
+                                    comment.range[1] <= listRange[0] ||
+                                    comment.range[0] >= listRange[1]
+                            );
+                        groups[0]?.leading.unshift(
+                            ...outside.filter(
+                                (comment) => comment.range[1] <= listRange[0]
+                            )
+                        );
+                        groups[groups.length - 1]?.trailing.push(
+                            ...outside.filter(
+                                (comment) => comment.range[0] >= listRange[1]
+                            )
+                        );
+                    }
+
+                    if (
+                        hasComments &&
+                        !shouldRemoveEntireImport &&
+                        open != null &&
+                        close != null
+                    ) {
+                        const remaining = groups.filter(
+                            (group) =>
+                                !specifiersMarkedAsError.includes(group.node)
+                        );
+                        if (!isEmpty(remaining)) {
+                            fixes.push(
+                                replaceTextRange(
+                                    listRange,
+                                    printCommentedList(
+                                        remaining,
+                                        sourceCode,
+                                        true,
+                                        listRange
+                                    )
+                                )
+                            );
+                        } else {
+                            const comma = sourceCode.getTokenBefore(open);
+                            if (comma?.value === ",") {
+                                const gap = sourceCode.text.slice(
+                                    comma.range[1],
+                                    open.range[0]
+                                );
+                                fixes.push(
+                                    replaceTextRange(
+                                        [comma.range[0], close.range[1]],
+                                        gap.trim() === "" ? "" : gap
+                                    )
+                                );
+                            }
+                        }
+                    }
+
+                    if (!hasComments && !shouldRemoveEntireImport) {
                         fixes.push(
                             ...specifiersMarkedAsError.flatMap(
                                 removeImportClause(sourceCode)
@@ -388,10 +486,23 @@ const create = (
                         fixes.push(
                             insertTextBefore(
                                 importDeclaration,
-                                getReplacementImportDeclarations(
-                                    remainingSpecifiersToFix,
-                                    rule
-                                )
+                                hasComments
+                                    ? getCommentedImportDeclarations(
+                                          groups.filter((group) =>
+                                              remainingSpecifiersToFix.includes(
+                                                  group.node
+                                              )
+                                          ),
+                                          rule,
+                                          sourceCode,
+                                          listRange,
+                                          importDeclaration.importKind ===
+                                              "type"
+                                      ) + (shouldRemoveEntireImport ? "" : "\n")
+                                    : getReplacementImportDeclarations(
+                                          remainingSpecifiersToFix,
+                                          rule
+                                      )
                             )
                         );
                     });
@@ -536,6 +647,57 @@ const getMatchingSpecifiers = (
     );
 
     return matchingSpecifiers;
+};
+
+const getCommentedImportDeclarations = (
+    groups: CommentedNode<TSESTree.ImportSpecifier>[],
+    rule: ImportRule,
+    sourceCode: SourceCode,
+    range: TSESTree.Range,
+    typeOnly: boolean
+): string => {
+    const named = (
+        items: CommentedNode<TSESTree.ImportSpecifier>[],
+        module: string
+    ) =>
+        `import ${typeOnly ? "type " : ""}{${printCommentedList(
+            items,
+            sourceCode,
+            true,
+            range
+        )}} from '${module}';`;
+    if (
+        rule.replaceAsDefault === true ||
+        hasImportNameVariable(rule.replacementModuleSpecifier)
+    ) {
+        return groups
+            .map((group) => {
+                const module = getReplacementModuleSpecifier(rule, group.node);
+                if (rule.replaceAsDefault === true) {
+                    return (
+                        printComments(
+                            [
+                                ...group.leading,
+                                ...sourceCode.getCommentsInside(group.node),
+                            ],
+                            sourceCode
+                        ) +
+                        toDefaultImportDeclaration(
+                            (typeOnly || group.node.importKind === "type"
+                                ? "type "
+                                : "") + group.node.local.name,
+                            module
+                        ) +
+                        (isEmpty(group.trailing)
+                            ? ""
+                            : " " + printComments(group.trailing, sourceCode))
+                    );
+                }
+                return named([group], module);
+            })
+            .join("\n");
+    }
+    return named(groups, getReplacementModuleSpecifier(rule, groups[0]?.node));
 };
 
 const getReplacementImportDeclarations = (

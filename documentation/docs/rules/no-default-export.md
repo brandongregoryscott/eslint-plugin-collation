@@ -37,3 +37,7 @@ will be transformed to:
 ```ts
 export function noop() {}
 ```
+
+## Notes
+
+Comments around and inside exported declarations are preserved when converting default exports to named exports.
