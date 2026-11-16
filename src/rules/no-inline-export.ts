@@ -1,134 +1,93 @@
+import { isEmpty } from "lodash";
+import {
+    isExportDefaultDeclaration,
+    isIdentifier,
+    isTSModuleBlock,
+} from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
-import { AST_NODE_TYPES } from "@typescript-eslint/utils";
-import type {
-    RuleFix,
-    RuleFixer,
-    SourceCode,
-} from "@typescript-eslint/utils/ts-eslint";
-import { RuleName } from "../enums/rule-name";
-import { getName } from "../utils/node-utils";
-import { createRule } from "../utils/rule-utils";
-import { isInlineExport } from "../utils/export-utils";
-import { last } from "../utils/collection-utils";
+import { createRule } from "../utils/create-rule";
+import { declarationNames } from "../utils/ast";
 
 const noInlineExport = createRule({
-    create: (context) => {
-        return {
-            ExportDefaultDeclaration: (defaultExport): void => {
-                const sourceCode =
-                    context.sourceCode ?? context.getSourceCode();
-                if (!isInlineDefaultExport(defaultExport)) {
-                    return;
-                }
-
-                context.report({
-                    node: defaultExport,
-                    messageId: "noInlineExport",
-                    fix: (fixer) =>
-                        fixInlineExport(fixer, defaultExport, sourceCode),
-                });
-            },
-            ExportNamedDeclaration: (namedExport): void => {
-                if (!isInlineExport(namedExport)) {
-                    return;
-                }
-
-                const sourceCode =
-                    context.sourceCode ?? context.getSourceCode();
-
-                context.report({
-                    node: namedExport,
-                    messageId: "noInlineExport",
-                    fix: (fixer) =>
-                        fixInlineExport(fixer, namedExport, sourceCode),
-                });
-            },
-        };
+    name: "no-inline-export",
+    meta: {
+        type: "suggestion",
+        docs: { description: "Separate declarations from exports." },
+        fixable: "code",
+        schema: [],
+        messages: {
+            noInlineExport: "Move this export after the declarations.",
+        },
     },
     defaultOptions: [],
-    meta: {
-        docs: {
-            description: "Enforces exports to appear at the end of the file",
-        },
-        fixable: "code",
-        messages: {
-            noInlineExport: "Expected export to appear at end of file",
-        },
-        schema: [],
-        type: "suggestion",
-    },
-    name: RuleName.NoInlineExport,
-});
+    create(context) {
+        const source = context.sourceCode;
 
-const fixInlineExport = (
-    fixer: RuleFixer,
-    exportDeclaration:
-        | TSESTree.ExportDefaultDeclaration
-        | TSESTree.ExportNamedDeclaration,
-    sourceCode: SourceCode
-): RuleFix | RuleFix[] | null => {
-    const { declaration } = exportDeclaration;
-    const isDefault =
-        exportDeclaration.type === AST_NODE_TYPES.ExportDefaultDeclaration;
-    const lastStatement = getLastStatement(exportDeclaration, sourceCode);
+        function check(
+            node:
+                | TSESTree.ExportNamedDeclaration
+                | TSESTree.ExportDefaultDeclaration
+        ) {
+            const declaration = node.declaration;
+            if (declaration == null || isIdentifier(declaration)) {
+                return;
+            }
 
-    const name = getName(declaration);
+            const names = declarationNames(declaration);
+            if (isEmpty(names)) {
+                return;
+            }
 
-    if (lastStatement == null || declaration == null || name == null) {
-        return [];
-    }
+            context.report({
+                node,
+                messageId: "noInlineExport",
+                fix(fixer) {
+                    const removals = source
+                        .getTokens(node)
+                        .filter(
+                            (token) =>
+                                token.range[1] <= declaration.range[0] &&
+                                (token.value === "export" ||
+                                    token.value === "default")
+                        );
 
-    const exportStatement = isDefault
-        ? `\nexport default ${name};`
-        : `\nexport { ${name} };`;
+                    const fixes = removals.map((token) =>
+                        fixer.removeRange([
+                            token.range[0],
+                            token.range[1] +
+                                (source.text[token.range[1]] === " " ? 1 : 0),
+                        ])
+                    );
 
-    const keywords = sourceCode
-        .getTokens(exportDeclaration)
-        .filter(
-            (token) =>
-                token.range[1] <= declaration.range[0] &&
-                (token.value === "export" || token.value === "default")
-        );
-    const trailing = sourceCode
-        .getCommentsAfter(lastStatement)
-        .filter(
-            (comment) => comment.loc.start.line === lastStatement.loc.end.line
-        );
-    const insertionPoint = trailing[trailing.length - 1] ?? lastStatement;
-    return [
-        ...keywords.map((token) => {
-            const next = sourceCode.getTokenAfter(token, {
-                includeComments: true,
+                    const text = isExportDefaultDeclaration(node)
+                        ? `export default ${names[0]};`
+                        : `export { ${names.join(", ")} };`;
+
+                    const parent = node.parent;
+
+                    if (isTSModuleBlock(parent)) {
+                        const last = parent.body[parent.body.length - 1];
+
+                        fixes.push(fixer.insertTextAfter(last, `\n${text}`));
+                        return fixes;
+                    }
+
+                    fixes.push(
+                        fixer.insertTextAfterRange(
+                            [source.text.length, source.text.length],
+                            `\n${text}`
+                        )
+                    );
+                    return fixes;
+                },
             });
-            return fixer.removeRange([
-                token.range[0],
-                next?.range[0] ?? token.range[1],
-            ]);
-        }),
-        fixer.insertTextAfter(insertionPoint, exportStatement),
-    ];
-};
+        }
 
-const isInlineDefaultExport = (
-    defaultExport: TSESTree.ExportDefaultDeclaration
-): boolean =>
-    defaultExport.declaration.type === AST_NODE_TYPES.FunctionDeclaration ||
-    defaultExport.declaration.type === AST_NODE_TYPES.ClassDeclaration ||
-    defaultExport.declaration.type === AST_NODE_TYPES.TSInterfaceDeclaration;
-
-const getLastStatement = (
-    exportDeclaration:
-        | TSESTree.ExportDefaultDeclaration
-        | TSESTree.ExportNamedDeclaration,
-    sourceCode: SourceCode
-): TSESTree.Node | undefined => {
-    const lastStatementInFile = last(sourceCode.ast.body);
-    const { parent } = exportDeclaration;
-    if (parent?.type === AST_NODE_TYPES.TSModuleBlock) {
-        return last(parent.body);
-    }
-
-    return lastStatementInFile;
-};
+        return {
+            ExportNamedDeclaration: check,
+            ExportDefaultDeclaration: check,
+        };
+    },
+});
 
 export { noInlineExport };

@@ -1,330 +1,68 @@
-import type { TSESTree } from "@typescript-eslint/utils";
-import type {
-    RuleFix,
-    RuleFixer,
-    SourceCode,
-} from "@typescript-eslint/utils/ts-eslint";
-import { AST_NODE_TYPES, ASTUtils } from "@typescript-eslint/utils";
-import { RuleName } from "../enums/rule-name";
-import {
-    collectNodes,
-    isContainedWithinRange,
-    isIdentifier,
-} from "../utils/node-utils";
-import { insertFunctionBodyDeclarations } from "../utils/fixer-utils";
-import { createRule } from "../utils/rule-utils";
-
-type ComponentFunction =
-    | TSESTree.ArrowFunctionExpression
-    | TSESTree.FunctionDeclaration
-    | TSESTree.FunctionExpression;
-
-interface FunctionFrame {
-    returnsJsx: boolean;
-}
-
-const returnsJsx = (node: TSESTree.Node | null): boolean => {
-    if (node == null) {
-        return false;
-    }
-    switch (node.type) {
-        case AST_NODE_TYPES.JSXElement:
-        case AST_NODE_TYPES.JSXFragment:
-            return true;
-        case AST_NODE_TYPES.ConditionalExpression:
-            return returnsJsx(node.consequent) || returnsJsx(node.alternate);
-        case AST_NODE_TYPES.LogicalExpression:
-            return returnsJsx(node.left) || returnsJsx(node.right);
-        case AST_NODE_TYPES.TSAsExpression:
-        case AST_NODE_TYPES.TSNonNullExpression:
-        case AST_NODE_TYPES.TSSatisfiesExpression:
-        case AST_NODE_TYPES.TSTypeAssertion:
-            return returnsJsx(node.expression);
-        default:
-            return false;
-    }
-};
-
-interface PropsFix {
-    apply: (fixer: RuleFixer) => RuleFix[];
-    automatic: boolean;
-}
-
-const createPropsFix = (
-    sourceCode: SourceCode,
-    node: ComponentFunction,
-    pattern: TSESTree.ObjectPattern
-): PropsFix | undefined => {
-    const nodes = collectNodes(node, sourceCode);
-    const identifiers = new Set(
-        nodes.filter(isIdentifier).map((child) => child.name)
-    );
-    // Dynamic scope, arguments mapping, and generators need a manual rewrite.
-    if (
-        identifiers.has("eval") ||
-        identifiers.has("arguments") ||
-        node.generator === true ||
-        node.async ||
-        pattern.optional
-    ) {
-        return undefined;
-    }
-    const bindings = sourceCode
-        .getDeclaredVariables(node)
-        .filter((variable) =>
-            variable.defs.some(
-                (definition) =>
-                    definition.type === "Parameter" &&
-                    isContainedWithinRange(definition.name.range, pattern.range)
-            )
-        );
-    if (
-        bindings.some((variable) =>
-            variable.defs.some((definition) => definition.type !== "Parameter")
-        )
-    ) {
-        return undefined;
-    }
-    const names = new Set(bindings.map((variable) => variable.name));
-    // Moving these bindings into the body would break a later parameter initializer.
-    const laterParameters = node.params.slice(1);
-    if (
-        laterParameters.some((parameter) =>
-            collectNodes(parameter, sourceCode).some(
-                (child) =>
-                    child.type === AST_NODE_TYPES.Identifier &&
-                    names.has(child.name)
-            )
-        )
-    ) {
-        return undefined;
-    }
-    let propsName = "props";
-    let suffix = 2;
-    while (identifiers.has(propsName)) {
-        propsName = `props${suffix++}`;
-    }
-    const annotation = pattern.typeAnnotation;
-    const patternText = sourceCode.text.slice(
-        pattern.range[0],
-        annotation?.range[0] ?? pattern.range[1]
-    );
-    const typeText = annotation == null ? "" : sourceCode.getText(annotation);
-    const keyword = bindings.some((variable) =>
-        variable.references.some(
-            (reference) => reference.isWrite() && reference.init !== true
-        )
-    )
-        ? "let"
-        : "const";
-    const declaration = `${keyword} ${patternText} = ${propsName};`;
-    const hasExpressions = collectNodes(pattern, sourceCode).some(
-        (child) =>
-            child.type === AST_NODE_TYPES.AssignmentPattern ||
-            (child.type === AST_NODE_TYPES.Property && child.computed)
-    );
-    const automatic =
-        node.params[0].type === AST_NODE_TYPES.ObjectPattern &&
-        !hasExpressions &&
-        laterParameters.every(
-            (parameter) => parameter.type === AST_NODE_TYPES.Identifier
-        );
-    return {
-        automatic,
-        apply: (fixer) => {
-            const bodyFixes = insertFunctionBodyDeclarations({
-                declarations: [declaration],
-                node,
-                sourceCode,
-            });
-            if (bodyFixes == null) {
-                return [];
-            }
-            return [
-                fixer.replaceText(pattern, `${propsName}${typeText}`),
-                ...bodyFixes,
-            ];
-        },
-    };
-};
+import { isEmpty } from "lodash";
+import { createRule } from "../utils/create-rule";
+import type { FunctionNode } from "../utils/ast";
+import { parameterMover } from "../utils/parameter-move";
+import { reactComponents } from "../utils/react-component";
 
 const noDestructuredPropsParameter = createRule({
-    create: (context) => {
-        const frames: FunctionFrame[] = [];
-        const isReactImport = (
-            identifier: TSESTree.Identifier,
-            names?: string[]
-        ): boolean => {
-            const variable = ASTUtils.findVariable(
-                context.sourceCode.getScope(identifier),
-                identifier.name
-            );
-            if (variable == null) {
-                return names == null && identifier.name === "React";
-            }
-            return variable.defs.some((definition) => {
-                if (
-                    definition.type !== "ImportBinding" ||
-                    definition.parent.type !==
-                        AST_NODE_TYPES.ImportDeclaration ||
-                    definition.parent.source.value !== "react"
-                ) {
-                    return false;
-                }
-                const specifier = definition.node;
-                if (names == null) {
-                    return specifier.type !== AST_NODE_TYPES.ImportSpecifier;
-                }
-                return (
-                    specifier.type === AST_NODE_TYPES.ImportSpecifier &&
-                    specifier.imported.type === AST_NODE_TYPES.Identifier &&
-                    names.includes(specifier.imported.name)
-                );
-            });
-        };
-
-        const isWrapper = (node: TSESTree.Node): boolean => {
-            if (node.type !== AST_NODE_TYPES.CallExpression) {
-                return false;
-            }
-            const { callee } = node;
-            if (callee.type === AST_NODE_TYPES.Identifier) {
-                return isReactImport(callee, ["memo", "forwardRef"]);
-            }
-            return (
-                callee.type === AST_NODE_TYPES.MemberExpression &&
-                !callee.computed &&
-                callee.object.type === AST_NODE_TYPES.Identifier &&
-                isReactImport(callee.object) &&
-                callee.property.type === AST_NODE_TYPES.Identifier &&
-                ["memo", "forwardRef"].includes(callee.property.name)
-            );
-        };
-
-        const isComponentType = (node: TSESTree.Node | undefined): boolean => {
-            if (node?.type !== AST_NODE_TYPES.TSTypeReference) {
-                return false;
-            }
-            const { typeName } = node;
-            if (typeName.type === AST_NODE_TYPES.Identifier) {
-                return isReactImport(typeName, ["FC", "FunctionComponent"]);
-            }
-            return (
-                typeName.type === AST_NODE_TYPES.TSQualifiedName &&
-                typeName.left.type === AST_NODE_TYPES.Identifier &&
-                isReactImport(typeName.left) &&
-                ["FC", "FunctionComponent"].includes(typeName.right.name)
-            );
-        };
-
-        const enterFunction = (): void => {
-            frames.push({ returnsJsx: false });
-        };
-
-        const exitFunction = (node: ComponentFunction): void => {
-            const frame = frames.pop();
-            const parameter = node.params[0];
-            const pattern =
-                parameter?.type === AST_NODE_TYPES.AssignmentPattern
-                    ? parameter.left
-                    : parameter;
-            if (pattern?.type !== AST_NODE_TYPES.ObjectPattern) {
-                return;
-            }
-
-            let expression: TSESTree.Node = node;
-            let parent = node.parent;
-            while (
-                parent.type === AST_NODE_TYPES.TSAsExpression ||
-                parent.type === AST_NODE_TYPES.TSSatisfiesExpression
-            ) {
-                expression = parent;
-                parent = parent.parent;
-            }
-            const wrapped =
-                isWrapper(parent) &&
-                parent.type === AST_NODE_TYPES.CallExpression &&
-                parent.arguments[0] === expression;
-            const declaration =
-                parent.type === AST_NODE_TYPES.VariableDeclarator
-                    ? parent
-                    : undefined;
-            let name: string | undefined;
-            if (
-                node.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
-                node.id != null
-            ) {
-                name = node.id.name;
-            } else if (declaration?.id.type === AST_NODE_TYPES.Identifier) {
-                name = declaration.id.name;
-            }
-            const typed = isComponentType(
-                declaration?.id.typeAnnotation?.typeAnnotation
-            );
-            const named = name != null && /^[A-Z]/.test(name);
-            const defaultExport =
-                parent.type === AST_NODE_TYPES.ExportDefaultDeclaration;
-            const jsx = frame?.returnsJsx === true || returnsJsx(node.body);
-
-            if (wrapped || typed || (jsx && (named || defaultExport))) {
-                const propsFix = createPropsFix(
-                    context.sourceCode,
-                    node,
-                    pattern
-                );
-                context.report({
-                    messageId: "destructureInBody",
-                    node: pattern,
-                    fix:
-                        propsFix?.automatic === true
-                            ? propsFix.apply
-                            : undefined,
-                    suggest:
-                        propsFix != null && !propsFix.automatic
-                            ? [
-                                  {
-                                      messageId: "reviewDestructureInBody",
-                                      fix: propsFix.apply,
-                                  },
-                              ]
-                            : undefined,
-                });
-            }
-        };
-
-        return {
-            ArrowFunctionExpression: enterFunction,
-            "ArrowFunctionExpression:exit": exitFunction,
-            FunctionDeclaration: enterFunction,
-            "FunctionDeclaration:exit": exitFunction,
-            FunctionExpression: enterFunction,
-            "FunctionExpression:exit": exitFunction,
-            ReturnStatement: (node): void => {
-                const frame = frames[frames.length - 1];
-                if (frame != null && returnsJsx(node.argument)) {
-                    frame.returnsJsx = true;
-                }
-            },
-        };
-    },
-    defaultOptions: [],
+    name: "no-destructured-props-parameter",
     meta: {
+        type: "suggestion",
         docs: {
-            description:
-                "Require component props to be destructured inside the function body instead of its parameters",
+            description: "Destructure component props in the function body.",
         },
         fixable: "code",
         hasSuggestions: true,
-        messages: {
-            reviewDestructureInBody:
-                "Move props destructuring into the body (review default evaluation and scope).",
-            destructureInBody:
-                "Accept a props parameter and destructure it inside the component body.",
-        },
         schema: [],
-        type: "suggestion",
+        messages: {
+            destructureInBody:
+                "Move props destructuring into the function body.",
+            reviewDestructureInBody:
+                "Move destructuring into the body after reviewing evaluation order.",
+        },
     },
-    name: RuleName.NoDestructuredPropsParameter,
+    defaultOptions: [],
+    create(context) {
+        const mover = parameterMover(context);
+        const react = reactComponents(context.sourceCode);
+
+        function check(node: FunctionNode) {
+            if (!react.isComponent(node)) {
+                return;
+            }
+
+            const moves = mover.plan(node, "props", true);
+            if (isEmpty(moves)) {
+                return;
+            }
+
+            const safety = mover.safety(node, moves);
+
+            context.report({
+                node: moves[0].pattern,
+                messageId: "destructureInBody",
+                fix:
+                    safety === "safe"
+                        ? (fixer) => mover.fix(node, moves, fixer)
+                        : undefined,
+                suggest:
+                    safety === "review"
+                        ? [
+                              {
+                                  messageId: "reviewDestructureInBody",
+                                  fix: (fixer) => mover.fix(node, moves, fixer),
+                              },
+                          ]
+                        : [],
+            });
+        }
+
+        return {
+            FunctionDeclaration: check,
+            FunctionExpression: check,
+            ArrowFunctionExpression: check,
+        };
+    },
 });
 
 export { noDestructuredPropsParameter };
