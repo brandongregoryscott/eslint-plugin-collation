@@ -1,29 +1,18 @@
+import type { TSESTree } from "@typescript-eslint/utils";
 import { RuleName } from "../enums/rule-name";
 import { isIdentifier } from "../utils/node-utils";
-import type { TSESTree } from "@typescript-eslint/utils";
 import { createRule } from "../utils/rule-utils";
 
 const preferNativePrivateSyntax = createRule({
-    name: RuleName.PreferNativePrivateSyntax,
-    meta: {
-        type: "suggestion",
-        docs: { description: "Use native private members." },
-        fixable: "code",
-        schema: [],
-        messages: { preferPrivateHash: "Use native private syntax." },
-    },
-    defaultOptions: [],
     create(context) {
         function check(
-            node: TSESTree.PropertyDefinition | TSESTree.MethodDefinition
+            node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition
         ) {
             if (node.accessibility !== "private") {
                 return;
             }
 
             context.report({
-                node,
-                messageId: "preferPrivateHash",
                 fix(fixer) {
                     if (!isIdentifier(node.key) || node.computed) {
                         return null;
@@ -48,11 +37,22 @@ const preferNativePrivateSyntax = createRule({
                         fixer.insertTextBefore(node.key, "#"),
                     ];
                 },
+                messageId: "preferPrivateHash",
+                node,
             });
         }
 
-        return { PropertyDefinition: check, MethodDefinition: check };
+        return { MethodDefinition: check, PropertyDefinition: check };
     },
+    defaultOptions: [],
+    meta: {
+        docs: { description: "Use native private members." },
+        fixable: "code",
+        messages: { preferPrivateHash: "Use native private syntax." },
+        schema: [],
+        type: "suggestion",
+    },
+    name: RuleName.PreferNativePrivateSyntax,
 });
 
 export { preferNativePrivateSyntax };

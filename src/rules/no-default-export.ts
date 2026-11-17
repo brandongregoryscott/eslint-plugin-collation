@@ -1,39 +1,29 @@
-import { RuleName } from "../enums/rule-name";
 import isEmpty from "lodash/isEmpty";
+import { RuleName } from "../enums/rule-name";
+import { declarationNames } from "../utils/ast";
+import { stringifyComments } from "../utils/node-comment-utils";
 import {
     isExportNamedDeclaration,
     isIdentifier,
     isVariableDeclarator,
 } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
-import { stringifyComments } from "../utils/node-comment-utils";
-import { declarationNames } from "../utils/ast";
 
 const noDefaultExport = createRule({
-    name: RuleName.NoDefaultExport,
-    meta: {
-        type: "suggestion",
-        docs: { description: "Prefer named exports." },
-        fixable: "code",
-        schema: [],
-        messages: { noDefaultExport: "Use a named export." },
-    },
-    defaultOptions: [],
     create(context) {
         const source = context.sourceCode;
 
         return {
             ExportDefaultDeclaration(node) {
                 context.report({
-                    node,
-                    messageId: "noDefaultExport",
                     fix(fixer) {
-                        const declaration = node.declaration;
+                        const { declaration } = node;
 
                         if (isIdentifier(declaration)) {
                             const scope = source.getScope(node);
                             const variable = scope.set.get(declaration.name);
                             const definition = variable?.defs[0];
+
                             if (
                                 definition == null ||
                                 definition.type === "ImportBinding"
@@ -42,6 +32,7 @@ const noDefaultExport = createRule({
                             }
 
                             let target = definition.node;
+
                             if (isVariableDeclarator(target)) {
                                 target = target.parent;
                             }
@@ -75,6 +66,7 @@ const noDefaultExport = createRule({
                         const keyword = source
                             .getTokens(node)
                             .find((token) => token.value === "default");
+
                         if (keyword == null) {
                             return null;
                         }
@@ -85,10 +77,21 @@ const noDefaultExport = createRule({
                                 (source.text[keyword.range[1]] === " " ? 1 : 0),
                         ]);
                     },
+                    messageId: "noDefaultExport",
+                    node,
                 });
             },
         };
     },
+    defaultOptions: [],
+    meta: {
+        docs: { description: "Prefer named exports." },
+        fixable: "code",
+        messages: { noDefaultExport: "Use a named export." },
+        schema: [],
+        type: "suggestion",
+    },
+    name: RuleName.NoDefaultExport,
 });
 
 export { noDefaultExport };

@@ -1,47 +1,36 @@
-import { RuleName } from "../enums/rule-name";
+import type { TSESTree } from "@typescript-eslint/utils";
 import isEmpty from "lodash/isEmpty";
+import { RuleName } from "../enums/rule-name";
+import { declarationNames } from "../utils/ast";
 import {
     isExportDefaultDeclaration,
     isIdentifier,
     isTSModuleBlock,
 } from "../utils/node-utils";
-import type { TSESTree } from "@typescript-eslint/utils";
 import { createRule } from "../utils/rule-utils";
-import { declarationNames } from "../utils/ast";
 
 const noInlineExport = createRule({
-    name: RuleName.NoInlineExport,
-    meta: {
-        type: "suggestion",
-        docs: { description: "Separate declarations from exports." },
-        fixable: "code",
-        schema: [],
-        messages: {
-            noInlineExport: "Move this export after the declarations.",
-        },
-    },
-    defaultOptions: [],
     create(context) {
         const source = context.sourceCode;
 
         function check(
             node:
-                | TSESTree.ExportNamedDeclaration
                 | TSESTree.ExportDefaultDeclaration
+                | TSESTree.ExportNamedDeclaration
         ) {
-            const declaration = node.declaration;
+            const { declaration } = node;
+
             if (declaration == null || isIdentifier(declaration)) {
                 return;
             }
 
             const names = declarationNames(declaration);
+
             if (isEmpty(names)) {
                 return;
             }
 
             context.report({
-                node,
-                messageId: "noInlineExport",
                 fix(fixer) {
                     const removals = source
                         .getTokens(node)
@@ -64,12 +53,13 @@ const noInlineExport = createRule({
                         ? `export default ${names[0]};`
                         : `export { ${names.join(", ")} };`;
 
-                    const parent = node.parent;
+                    const { parent } = node;
 
                     if (isTSModuleBlock(parent)) {
                         const last = parent.body[parent.body.length - 1];
 
                         fixes.push(fixer.insertTextAfter(last, `\n${text}`));
+
                         return fixes;
                     }
 
@@ -79,16 +69,30 @@ const noInlineExport = createRule({
                             `\n${text}`
                         )
                     );
+
                     return fixes;
                 },
+                messageId: "noInlineExport",
+                node,
             });
         }
 
         return {
-            ExportNamedDeclaration: check,
             ExportDefaultDeclaration: check,
+            ExportNamedDeclaration: check,
         };
     },
+    defaultOptions: [],
+    meta: {
+        docs: { description: "Separate declarations from exports." },
+        fixable: "code",
+        messages: {
+            noInlineExport: "Move this export after the declarations.",
+        },
+        schema: [],
+        type: "suggestion",
+    },
+    name: RuleName.NoInlineExport,
 });
 
 export { noInlineExport };

@@ -1,21 +1,21 @@
-import { RuleName } from "../enums/rule-name";
+import type { TSESTree } from "@typescript-eslint/utils";
 import isEqual from "lodash/isEqual";
 import orderBy from "lodash/orderBy";
+import { RuleName } from "../enums/rule-name";
+import {
+    stringifyCommentedNodes,
+    groupNodesWithComments,
+} from "../utils/node-comment-utils";
 import {
     isArrayExpression,
     isIdentifier,
     isMemberExpression,
 } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
-import {
-    stringifyCommentedNodes,
-    groupNodesWithComments,
-} from "../utils/node-comment-utils";
-import type { TSESTree } from "@typescript-eslint/utils";
 
 // Restrict sorting to identifier paths; computed access and call results can
 // evaluate side effects even when the outer node is a member expression.
-function isDependencyReference(node: TSESTree.Node | null): boolean {
+function isDependencyReference(node: null | TSESTree.Node): boolean {
     return (
         isIdentifier(node) ||
         (isMemberExpression(node) &&
@@ -27,15 +27,6 @@ function isDependencyReference(node: TSESTree.Node | null): boolean {
 const HOOK_NAMES = ["useEffect", "useMemo", "useCallback"];
 
 const sortDependencyList = createRule({
-    name: RuleName.SortDependencyList,
-    meta: {
-        type: "suggestion",
-        docs: { description: "Sort hook dependencies." },
-        fixable: "code",
-        schema: [],
-        messages: { sortDependencyList: "Sort the dependency list." },
-    },
-    defaultOptions: [],
     create(context) {
         const source = context.sourceCode;
 
@@ -48,7 +39,7 @@ const sortDependencyList = createRule({
                     return;
                 }
 
-                const list = node.arguments[1];
+                const [, list] = node.arguments;
 
                 if (
                     !isArrayExpression(list) ||
@@ -74,17 +65,26 @@ const sortDependencyList = createRule({
                 }
 
                 context.report({
-                    node: list,
-                    messageId: "sortDependencyList",
                     fix: (fixer) =>
                         fixer.replaceText(
                             list,
                             stringifyCommentedNodes(source, sorted, "[]")
                         ),
+                    messageId: "sortDependencyList",
+                    node: list,
                 });
             },
         };
     },
+    defaultOptions: [],
+    meta: {
+        docs: { description: "Sort hook dependencies." },
+        fixable: "code",
+        messages: { sortDependencyList: "Sort the dependency list." },
+        schema: [],
+        type: "suggestion",
+    },
+    name: RuleName.SortDependencyList,
 });
 
 export { sortDependencyList };

@@ -1,4 +1,8 @@
+import type { TSESTree } from "@typescript-eslint/utils";
+import type { SourceCode, RuleFixer } from "@typescript-eslint/utils/ts-eslint";
+import type { FunctionNode, Pattern } from "./ast";
 import { SafetyClassification } from "../enums/safety-classification";
+import { declarationNames, descendants, freshName, isPattern } from "./ast";
 import {
     isAssignmentPattern,
     isBlockStatement,
@@ -10,22 +14,18 @@ import {
     isRestElement,
     isTSAbstractMethodDefinition,
 } from "./node-utils";
-import type { TSESTree } from "@typescript-eslint/utils";
-import type { SourceCode, RuleFixer } from "@typescript-eslint/utils/ts-eslint";
-import { declarationNames, descendants, freshName, isPattern } from "./ast";
-import type { FunctionNode, Pattern } from "./ast";
 
-interface ParameterMove {
+type ParameterMove = {
     declaration: string;
     pattern: Pattern;
     replacement: string;
-}
+};
 
-interface ParameterPlanOptions {
+type ParameterPlanOptions = {
     baseName: string;
     firstOnly?: boolean;
     node: FunctionNode;
-}
+};
 
 class ParameterMover {
     readonly #source: SourceCode;
@@ -34,7 +34,72 @@ class ParameterMover {
         this.#source = source;
     }
 
-    plan({ node, baseName, firstOnly = false }: ParameterPlanOptions) {
+    fix(node: FunctionNode, moves: ParameterMove[], fixer: RuleFixer) {
+        if (!("body" in node) || node.body == null) {
+            return null;
+        }
+
+        const fixes = moves.map((move) =>
+            fixer.replaceTextRange(
+                [
+                    move.pattern.range[0],
+                    move.pattern.typeAnnotation?.range[0] ??
+                        move.pattern.range[1],
+                ],
+                move.replacement
+            )
+        );
+
+        const declarations = moves.map((move) => move.declaration).join("\n");
+
+        if (isBlockStatement(node.body)) {
+            let position = node.body.range[0] + 1;
+
+            for (const statement of node.body.body) {
+                if (
+                    !isExpressionStatement(statement) ||
+                    statement.directive == null
+                ) {
+                    break;
+                }
+
+                [, position] = statement.range;
+            }
+
+            fixes.push(
+                fixer.insertTextAfterRange(
+                    [position, position],
+                    `\n${declarations}\n`
+                )
+            );
+        } else {
+            const arrow = this.#source.getTokenBefore(
+                node.body,
+                (token) => token.value === "=>"
+            );
+
+            if (arrow == null) {
+                return null;
+            }
+
+            // Start after => to retain parentheses and comments excluded from
+            // the expression node's range.
+            const [, start] = arrow.range;
+            const [, end] = node.range;
+            const expression = this.#source.text.slice(start, end).trim();
+
+            fixes.push(
+                fixer.replaceTextRange(
+                    [start, end],
+                    ` {\n${declarations}\nreturn (\n${expression}\n);\n}`
+                )
+            );
+        }
+
+        return fixes;
+    }
+
+    plan({ baseName, firstOnly = false, node }: ParameterPlanOptions) {
         const used = new Set<string>();
 
         for (const child of descendants(node, this.#source)) {
@@ -91,11 +156,11 @@ class ParameterMover {
             );
 
             moves.push({
-                pattern: param,
-                replacement: name,
                 declaration: `${
                     mutable ? "let" : "const"
                 } ${bindingText} = ${name};`,
+                pattern: param,
+                replacement: name,
             });
         }
 
@@ -124,7 +189,7 @@ class ParameterMover {
             return SafetyClassification.Blocked;
         }
 
-        const bodyStart = node.body.range[0];
+        const [bodyStart] = node.body.range;
 
         const names = new Set(
             moves.flatMap((move) => declarationNames(move.pattern))
@@ -180,71 +245,6 @@ class ParameterMover {
         }
 
         return review ? SafetyClassification.Review : SafetyClassification.Safe;
-    }
-
-    fix(node: FunctionNode, moves: ParameterMove[], fixer: RuleFixer) {
-        if (!("body" in node) || node.body == null) {
-            return null;
-        }
-
-        const fixes = moves.map((move) =>
-            fixer.replaceTextRange(
-                [
-                    move.pattern.range[0],
-                    move.pattern.typeAnnotation?.range[0] ??
-                        move.pattern.range[1],
-                ],
-                move.replacement
-            )
-        );
-
-        const declarations = moves.map((move) => move.declaration).join("\n");
-
-        if (isBlockStatement(node.body)) {
-            let position = node.body.range[0] + 1;
-
-            for (const statement of node.body.body) {
-                if (
-                    !isExpressionStatement(statement) ||
-                    statement.directive == null
-                ) {
-                    break;
-                }
-
-                position = statement.range[1];
-            }
-
-            fixes.push(
-                fixer.insertTextAfterRange(
-                    [position, position],
-                    `\n${declarations}\n`
-                )
-            );
-        } else {
-            const arrow = this.#source.getTokenBefore(
-                node.body,
-                (token) => token.value === "=>"
-            );
-
-            if (arrow == null) {
-                return null;
-            }
-
-            // Start after => to retain parentheses and comments excluded from
-            // the expression node's range.
-            const start = arrow.range[1];
-            const end = node.range[1];
-            const expression = this.#source.text.slice(start, end).trim();
-
-            fixes.push(
-                fixer.replaceTextRange(
-                    [start, end],
-                    ` {\n${declarations}\nreturn (\n${expression}\n);\n}`
-                )
-            );
-        }
-
-        return fixes;
     }
 }
 

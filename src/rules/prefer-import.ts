@@ -1,98 +1,76 @@
-import { RuleName } from "../enums/rule-name";
-import isEmpty from "lodash/isEmpty";
+import type { JSONSchema, TSESTree } from "@typescript-eslint/utils";
 import isArray from "lodash/isArray";
+import isEmpty from "lodash/isEmpty";
 import kebabCase from "lodash/kebabCase";
+import { minimatch } from "minimatch";
+import type { CommentedNode } from "../utils/node-comment-utils";
+import { RuleName } from "../enums/rule-name";
+import {
+    stringifyComments,
+    stringifyCommentedNodes,
+    groupNodesWithComments,
+} from "../utils/node-comment-utils";
 import {
     isIdentifier,
     isImportDeclaration,
     isImportSpecifier,
     isJSXClosingElement,
 } from "../utils/node-utils";
-import type { JSONSchema, TSESTree } from "@typescript-eslint/utils";
-import { minimatch } from "minimatch";
 import { createRule } from "../utils/rule-utils";
-import {
-    stringifyComments,
-    stringifyCommentedNodes,
-    groupNodesWithComments,
-} from "../utils/node-comment-utils";
-import type { CommentedNode } from "../utils/node-comment-utils";
 
-interface ImportReplacement {
+type ImportReplacement = {
     importName: string | string[];
     replaceAsDefault?: boolean;
     replacementModuleSpecifier: string;
     transformImportName?: "kebab-case";
-}
+};
 
 type PreferImportOptions = Record<
     string,
     ImportReplacement | ImportReplacement[]
 >;
 
-interface ReplacementGroup {
+type ReplacementGroup = {
     items: CommentedNode[];
     module: string;
     names: string[];
     rule: ImportReplacement;
     specifiers: TSESTree.ImportSpecifier[];
-}
+};
 
 const replacementSchema: JSONSchema.JSONSchema4 = {
-    type: "object",
+    additionalProperties: false,
     properties: {
         importName: {
             anyOf: [
                 { type: "string" },
-                { type: "array", items: { type: "string" } },
+                { items: { type: "string" }, type: "array" },
             ],
         },
         replaceAsDefault: { type: "boolean" },
         replacementModuleSpecifier: { type: "string" },
-        transformImportName: { type: "string", enum: ["kebab-case"] },
+        transformImportName: { enum: ["kebab-case"], type: "string" },
     },
     required: ["importName", "replacementModuleSpecifier"],
-    additionalProperties: false,
+    type: "object",
 };
 
 const preferImport = createRule<
     [PreferImportOptions],
-    "preferImport" | "preferImportMultiple" | "bannedGlobalType"
+    "bannedGlobalType" | "preferImport" | "preferImportMultiple"
 >({
-    name: RuleName.PreferImport,
-    meta: {
-        type: "suggestion",
-        docs: {
-            description:
-                "Prefer configured imports over other modules or globals.",
-        },
-        fixable: "code",
-        schema: [
-            {
-                type: "object",
-                additionalProperties: {
-                    anyOf: [
-                        replacementSchema,
-                        { type: "array", items: replacementSchema },
-                    ],
-                },
-            },
-        ],
-        messages: {
-            preferImport:
-                "Import '{{importName}}' from '{{replacementModuleSpecifier}}'.",
-            preferImportMultiple: "{{message}}",
-            bannedGlobalType:
-                "Import '{{importName}}' from '{{replacementModuleSpecifier}}' instead of using the global.",
-        },
-    },
-    defaultOptions: [{}],
     create(context, [options]) {
         const source = context.sourceCode;
 
         const asArray = (
             rules: ImportReplacement | ImportReplacement[] | undefined
-        ) => (rules == null ? [] : isArray(rules) ? rules : [rules]);
+        ) => {
+            if (rules == null) {
+                return [];
+            }
+
+            return isArray(rules) ? rules : [rules];
+        };
 
         const importedName = (specifier: TSESTree.ImportSpecifier) =>
             isIdentifier(specifier.imported)
@@ -269,17 +247,12 @@ const preferImport = createRule<
                       }.`;
 
             context.report({
-                node,
-                messageId:
-                    modules.size === 1
-                        ? "preferImport"
-                        : "preferImportMultiple",
                 data: {
                     importName: groups
                         .flatMap((group) => group.names)
                         .join(", "),
-                    replacementModuleSpecifier: groups[0].module,
                     message,
+                    replacementModuleSpecifier: groups[0].module,
                 },
                 fix(fixer) {
                     const output = groups.flatMap((group) =>
@@ -311,6 +284,11 @@ const preferImport = createRule<
                         output.join("\n") + (extraNewline ? "\n" : "")
                     );
                 },
+                messageId:
+                    modules.size === 1
+                        ? "preferImport"
+                        : "preferImportMultiple",
+                node,
             });
         }
 
@@ -330,7 +308,7 @@ const preferImport = createRule<
 
             for (const scope of source.scopeManager?.scopes ?? []) {
                 for (const reference of scope.references) {
-                    const identifier = reference.identifier;
+                    const { identifier } = reference;
 
                     if (isJSXClosingElement(identifier.parent)) {
                         continue;
@@ -360,8 +338,6 @@ const preferImport = createRule<
                     const module = destination(rule, identifier.name);
 
                     context.report({
-                        node: identifier,
-                        messageId: "bannedGlobalType",
                         data: {
                             importName: identifier.name,
                             replacementModuleSpecifier: module,
@@ -383,6 +359,8 @@ const preferImport = createRule<
                                       `\n${statement}\n`
                                   );
                         },
+                        messageId: "bannedGlobalType",
+                        node: identifier,
                     });
                 }
             }
@@ -393,6 +371,34 @@ const preferImport = createRule<
             "Program:exit": checkGlobals,
         };
     },
+    defaultOptions: [{}],
+    meta: {
+        docs: {
+            description:
+                "Prefer configured imports over other modules or globals.",
+        },
+        fixable: "code",
+        messages: {
+            bannedGlobalType:
+                "Import '{{importName}}' from '{{replacementModuleSpecifier}}' instead of using the global.",
+            preferImport:
+                "Import '{{importName}}' from '{{replacementModuleSpecifier}}'.",
+            preferImportMultiple: "{{message}}",
+        },
+        schema: [
+            {
+                additionalProperties: {
+                    anyOf: [
+                        replacementSchema,
+                        { items: replacementSchema, type: "array" },
+                    ],
+                },
+                type: "object",
+            },
+        ],
+        type: "suggestion",
+    },
+    name: RuleName.PreferImport,
 });
 
 export type { PreferImportOptions };

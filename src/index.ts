@@ -2,9 +2,9 @@ import { LODASH_IMPORTS } from "./constants/lodash-imports";
 import { TWILIO_PASTE_IMPORTS } from "./constants/twilio-paste-imports";
 import { RuleName } from "./enums/rule-name";
 import { groupExports } from "./rules/group-exports";
+import { noDefaultExport } from "./rules/no-default-export";
 import { noDestructuredParameter } from "./rules/no-destructured-parameter";
 import { noDestructuredPropsParameter } from "./rules/no-destructured-props-parameter";
-import { noDefaultExport } from "./rules/no-default-export";
 import { noInlineExport } from "./rules/no-inline-export";
 import { noInlineObjectType } from "./rules/no-inline-object-type";
 import { preferImport } from "./rules/prefer-import";
@@ -49,17 +49,17 @@ const strict = {
 };
 
 const configs = {
-    "prefer-import.lodash": preferImportLodash,
     "prefer-import.@twilio-paste": preferImportTwilioPaste,
+    "prefer-import.lodash": preferImportLodash,
     recommended,
     strict,
 };
 
 const rules = {
     [RuleName.GroupExports]: groupExports,
+    [RuleName.NoDefaultExport]: noDefaultExport,
     [RuleName.NoDestructuredParameter]: noDestructuredParameter,
     [RuleName.NoDestructuredPropsParameter]: noDestructuredPropsParameter,
-    [RuleName.NoDefaultExport]: noDefaultExport,
     [RuleName.NoInlineExport]: noInlineExport,
     [RuleName.NoInlineObjectType]: noInlineObjectType,
     [RuleName.PreferImport]: preferImport,

@@ -1,12 +1,12 @@
-import isEmpty from "lodash/isEmpty";
 import type { TSESTree } from "@typescript-eslint/utils";
 import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
+import isEmpty from "lodash/isEmpty";
 
-interface CommentedNode {
+type CommentedNode = {
     leading: TSESTree.Comment[];
     text: string;
     trailing: TSESTree.Comment[];
-}
+};
 
 function isInRange(inner: TSESTree.Range, outer: TSESTree.Range): boolean {
     return inner[0] >= outer[0] && inner[1] <= outer[1];
@@ -87,6 +87,7 @@ function stringifyCommentedNodes(
     multiline = false
 ): string {
     const newline = source.text.includes("\r\n") ? "\r\n" : "\n";
+
     const commentText = (comment: TSESTree.Comment) => source.getText(comment);
 
     multiline ||= items.some((item) =>

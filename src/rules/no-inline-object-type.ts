@@ -1,59 +1,32 @@
-import { RuleName } from "../enums/rule-name";
-import upperFirst from "lodash/upperFirst";
-import {
-    isAssignmentPattern,
-    isIdentifier,
-    isTSTypeLiteral,
-} from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
-import { createRule } from "../utils/rule-utils";
+import upperFirst from "lodash/upperFirst";
+import type { FunctionNode } from "../utils/ast";
+import { RuleName } from "../enums/rule-name";
 import {
     descendants,
     freshName,
     functionName,
     statementContainer,
 } from "../utils/ast";
-import type { FunctionNode } from "../utils/ast";
+import {
+    isAssignmentPattern,
+    isIdentifier,
+    isTSTypeLiteral,
+} from "../utils/node-utils";
+import { createRule } from "../utils/rule-utils";
 
-interface Options {
+type Options = {
     parameterTypeNamePattern?: string;
     returnTypeNamePattern?: string;
-}
+};
 
 const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
-    name: RuleName.NoInlineObjectType,
-    meta: {
-        type: "suggestion",
-        docs: { description: "Name object types used in function signatures." },
-        fixable: "code",
-        schema: [
-            {
-                type: "object",
-                properties: {
-                    parameterTypeNamePattern: {
-                        type: "string",
-                        description:
-                            "Pattern for the generated type name for inline parameter types. Supports {{functionName}}, {{upperFirstFunctionName}}, {{paramName}}, and {{upperFirstParamName}} placeholders.",
-                    },
-                    returnTypeNamePattern: {
-                        type: "string",
-                        description:
-                            "Pattern for the generated type name for inline return types. Supports {{functionName}} and {{upperFirstFunctionName}} placeholders.",
-                    },
-                },
-                additionalProperties: false,
-            },
-        ],
-        messages: {
-            noInlineObjectType: "Extract this object type to a named type.",
-        },
-    },
-    defaultOptions: [{}],
     create(context, [options]) {
         const source = context.sourceCode;
 
         function check(node: FunctionNode) {
             const name = functionName(node);
+
             if (name == null) {
                 return;
             }
@@ -93,8 +66,8 @@ const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
 
                 const values: Record<string, string> = {
                     functionName: name,
-                    upperFirstFunctionName: upperFirst(name),
                     paramName: paramName ?? "",
+                    upperFirstFunctionName: upperFirst(name),
                     upperFirstParamName:
                         paramName == null ? "" : upperFirst(paramName),
                 };
@@ -108,8 +81,6 @@ const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
                 const target = statementContainer(node);
 
                 context.report({
-                    node: annotation.typeAnnotation,
-                    messageId: "noInlineObjectType",
                     fix: (fixer) => [
                         fixer.insertTextBefore(
                             target,
@@ -119,6 +90,8 @@ const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
                         ),
                         fixer.replaceText(annotation.typeAnnotation, typeName),
                     ],
+                    messageId: "noInlineObjectType",
+                    node: annotation.typeAnnotation,
                 });
             };
 
@@ -139,14 +112,42 @@ const noInlineObjectType = createRule<[Options], "noInlineObjectType">({
         }
 
         return {
+            ArrowFunctionExpression: check,
             FunctionDeclaration: check,
             FunctionExpression: check,
-            ArrowFunctionExpression: check,
             TSDeclareFunction: check,
-            TSMethodSignature: check,
             TSEmptyBodyFunctionExpression: check,
+            TSMethodSignature: check,
         };
     },
+    defaultOptions: [{}],
+    meta: {
+        docs: { description: "Name object types used in function signatures." },
+        fixable: "code",
+        messages: {
+            noInlineObjectType: "Extract this object type to a named type.",
+        },
+        schema: [
+            {
+                additionalProperties: false,
+                properties: {
+                    parameterTypeNamePattern: {
+                        description:
+                            "Pattern for the generated type name for inline parameter types. Supports {{functionName}}, {{upperFirstFunctionName}}, {{paramName}}, and {{upperFirstParamName}} placeholders.",
+                        type: "string",
+                    },
+                    returnTypeNamePattern: {
+                        description:
+                            "Pattern for the generated type name for inline return types. Supports {{functionName}} and {{upperFirstFunctionName}} placeholders.",
+                        type: "string",
+                    },
+                },
+                type: "object",
+            },
+        ],
+        type: "suggestion",
+    },
+    name: RuleName.NoInlineObjectType,
 });
 
 export { noInlineObjectType };
