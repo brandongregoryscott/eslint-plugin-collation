@@ -1,6 +1,6 @@
 import { RuleName } from "../enums/rule-name";
 import { hasSameOrder } from "../utils/collection-utils";
-import { orderBy } from "lodash";
+import orderBy from "lodash/orderBy";
 import { isIdentifier } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
 import {

@@ -1,5 +1,5 @@
 import { RuleName } from "../enums/rule-name";
-import { upperFirst } from "lodash";
+import upperFirst from "lodash/upperFirst";
 import {
     isAssignmentPattern,
     isIdentifier,

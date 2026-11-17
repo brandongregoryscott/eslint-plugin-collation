@@ -1,5 +1,5 @@
 import { RuleName } from "../enums/rule-name";
-import { isEmpty } from "lodash";
+import isEmpty from "lodash/isEmpty";
 import { isExportNamedDeclaration } from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
 import { createRule } from "../utils/rule-utils";

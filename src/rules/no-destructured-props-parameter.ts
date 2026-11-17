@@ -1,6 +1,6 @@
 import { RuleName } from "../enums/rule-name";
 import { SafetyClassification } from "../enums/safety-classification";
-import { isEmpty } from "lodash";
+import isEmpty from "lodash/isEmpty";
 import { createRule } from "../utils/rule-utils";
 import type { FunctionNode } from "../utils/ast";
 import { ParameterMover } from "../utils/parameter-mover";

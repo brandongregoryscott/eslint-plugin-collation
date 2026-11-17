@@ -1,5 +1,7 @@
 import { RuleName } from "../enums/rule-name";
-import { isEmpty, isArray, kebabCase } from "lodash";
+import isEmpty from "lodash/isEmpty";
+import isArray from "lodash/isArray";
+import kebabCase from "lodash/kebabCase";
 import {
     isIdentifier,
     isImportDeclaration,
