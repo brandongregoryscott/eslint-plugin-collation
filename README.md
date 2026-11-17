@@ -6,11 +6,11 @@
         <img src="https://raw.githubusercontent.com/brandongregoryscott/collation/main/documentation/static/img/collation-hero-dark.png" width="75%" height="75%"/>
     </a>
     <br/>
-    <a href="https://github.com/brandongregoryscott/collation/actions/workflows/build.yaml">
-        <img alt="build status" src="https://github.com/brandongregoryscott/collation/actions/workflows/build.yaml/badge.svg"/>
+    <a href="https://github.com/brandongregoryscott/collation/actions/workflows/build.generated.yml">
+        <img alt="build status" src="https://github.com/brandongregoryscott/collation/actions/workflows/build.generated.yml/badge.svg"/>
     </a>
-    <a href="https://github.com/brandongregoryscott/collation/actions/workflows/smoke-test.yaml">
-        <img alt="smoke test status" src="https://github.com/brandongregoryscott/collation/actions/workflows/smoke-test.yaml/badge.svg"/>
+    <a href="https://github.com/brandongregoryscott/collation/actions/workflows/smoke-test.generated.yml">
+        <img alt="smoke test status" src="https://github.com/brandongregoryscott/collation/actions/workflows/smoke-test.generated.yml/badge.svg"/>
     </a>
     <a href="https://github.com/prettier/prettier">
         <img alt="code style: prettier" src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square"/>
