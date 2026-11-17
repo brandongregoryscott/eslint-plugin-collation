@@ -8,6 +8,10 @@ interface CommentedNode {
     trailing: TSESTree.Comment[];
 }
 
+function isInRange(inner: TSESTree.Range, outer: TSESTree.Range): boolean {
+    return inner[0] >= outer[0] && inner[1] <= outer[1];
+}
+
 // Keep ownership separate from formatting so sorting and splitting use the same rules.
 function groupNodesWithComments(
     source: SourceCode,
@@ -24,19 +28,10 @@ function groupNodesWithComments(
 
     const comments = source
         .getAllComments()
-        .filter(
-            (comment) =>
-                comment.range[0] >= range[0] && comment.range[1] <= range[1]
-        );
+        .filter((comment) => isInRange(comment.range, range));
 
     for (const comment of comments) {
-        if (
-            nodes.some(
-                (node) =>
-                    comment.range[0] >= node.range[0] &&
-                    comment.range[1] <= node.range[1]
-            )
-        ) {
+        if (nodes.some((node) => isInRange(comment.range, node.range))) {
             continue;
         }
 
