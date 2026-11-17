@@ -86,7 +86,7 @@
         "format:fix": "prettier src --ignore-unknown --write",
         "lint": "eslint src package.json --max-warnings 0",
         "lint:fix": "npm run lint -- --fix",
-        "lint:remote": "eslint-remote-tester",
+        "lint:remote": "eslint-remote-tester --config eslint-remote-tester.config.mjs",
         "prepare": "husky install",
         "prepublishOnly": "npm run clean && npm run build",
         "postpublish": "[ \"$(git branch --show-current)\" = \"main\" ] && npm run deploy:docs || echo \"Skipping deploy:docs\"",

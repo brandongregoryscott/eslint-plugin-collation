@@ -18,7 +18,8 @@ const TEST = job("test", {
             uses: "AriPerkkio/eslint-remote-tester-run-action@v6",
             with: {
                 "issue-title": "Results of scheduled smoke test",
-                "eslint-remote-tester-config": "eslint-remote-tester.config.js",
+                "eslint-remote-tester-config":
+                    "eslint-remote-tester.config.mjs",
             },
         }),
     ],
