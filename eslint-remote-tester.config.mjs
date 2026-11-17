@@ -1,12 +1,12 @@
-const {
+import {
     getRepositories,
     getPathIgnorePattern,
-} = require("eslint-remote-tester-repositories");
-const collation = require("eslint-plugin-collation");
-const parser = require("@typescript-eslint/parser");
+} from "eslint-remote-tester-repositories";
+import collation from "eslint-plugin-collation";
+import parser from "@typescript-eslint/parser";
 
 /** @type {import('eslint-remote-tester').Config} */
-module.exports = {
+export default {
     eslintConfig: {
         files: ["**/*.{js,jsx,ts,tsx}"],
         languageOptions: {
