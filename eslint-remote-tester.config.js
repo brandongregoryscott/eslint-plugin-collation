@@ -2,19 +2,23 @@ const {
     getRepositories,
     getPathIgnorePattern,
 } = require("eslint-remote-tester-repositories");
+const collation = require("eslint-plugin-collation");
+const parser = require("@typescript-eslint/parser");
 
 /** @type {import('eslint-remote-tester').Config} */
 module.exports = {
-    eslintrc: {
-        extends: ["plugin:collation/recommended"],
-        parser: "@typescript-eslint/parser",
-        parserOptions: {
-            ecmaFeatures: {
-                jsx: true,
+    eslintConfig: {
+        files: ["**/*.{js,jsx,ts,tsx}"],
+        languageOptions: {
+            parser,
+            parserOptions: {
+                ecmaFeatures: {
+                    jsx: true,
+                },
             },
         },
-        plugins: ["collation"],
-        root: true,
+        plugins: { collation },
+        rules: collation.configs.recommended.rules,
     },
     extensions: ["js", "jsx", "ts", "tsx"],
     pathIgnorePattern: getPathIgnorePattern(),
