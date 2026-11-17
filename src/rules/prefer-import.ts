@@ -10,7 +10,7 @@ import type { JSONSchema, TSESTree } from "@typescript-eslint/utils";
 import { minimatch } from "minimatch";
 import { createRule } from "../utils/rule-utils";
 import {
-    printComments,
+    stringifyComments,
     stringifyCommentedNodes,
     groupNodesWithComments,
 } from "../utils/node-comment-utils";
@@ -130,7 +130,7 @@ const preferImport = createRule<
                 const inside = source.getCommentsInside(specifier);
                 const comments = [...item.leading, ...inside];
 
-                const prefix = printComments(comments, source);
+                const prefix = stringifyComments(comments, source);
 
                 const tail = item.trailing
                     .map((comment) => ` ${source.getText(comment)} `)

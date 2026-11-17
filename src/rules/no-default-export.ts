@@ -6,7 +6,7 @@ import {
     isVariableDeclarator,
 } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
-import { printComments } from "../utils/node-comment-utils";
+import { stringifyComments } from "../utils/node-comment-utils";
 import { declarationNames } from "../utils/ast";
 
 const noDefaultExport = createRule({
@@ -57,7 +57,7 @@ const noDefaultExport = createRule({
                                         comment.range[1] <= declaration.range[0]
                                 );
 
-                            const prefix = printComments(comments, source);
+                            const prefix = stringifyComments(comments, source);
 
                             return [
                                 fixer.insertTextBefore(

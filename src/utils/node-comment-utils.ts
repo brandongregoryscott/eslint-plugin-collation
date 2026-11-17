@@ -70,7 +70,7 @@ function groupNodesWithComments(
     return items;
 }
 
-function printComments(
+function stringifyComments(
     comments: TSESTree.Comment[],
     source: SourceCode
 ): string {
@@ -144,4 +144,4 @@ function stringifyCommentedNodes(
 }
 
 export type { CommentedNode };
-export { groupNodesWithComments, printComments, stringifyCommentedNodes };
+export { groupNodesWithComments, stringifyCommentedNodes, stringifyComments };
