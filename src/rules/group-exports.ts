@@ -1,30 +1,21 @@
-import { RuleName } from "../enums/rule-name";
-import isEmpty from "lodash/isEmpty";
-import { isExportNamedDeclaration } from "../utils/node-utils";
 import type { TSESTree } from "@typescript-eslint/utils";
-import { createRule } from "../utils/rule-utils";
+import isEmpty from "lodash/isEmpty";
+import type { CommentedNode } from "../utils/node-comment-utils";
+import { RuleName } from "../enums/rule-name";
+import { exportListRange } from "../utils/ast";
 import {
     stringifyCommentedNodes,
     groupNodesWithComments,
 } from "../utils/node-comment-utils";
-import type { CommentedNode } from "../utils/node-comment-utils";
-import { exportListRange } from "../utils/ast";
+import { isExportNamedDeclaration } from "../utils/node-utils";
+import { createRule } from "../utils/rule-utils";
 
-interface ExportEdit {
+type ExportEdit = {
     range: TSESTree.Range;
     text: string;
-}
+};
 
 const groupExports = createRule({
-    name: RuleName.GroupExports,
-    meta: {
-        type: "suggestion",
-        docs: { description: "Group exports from the same module." },
-        fixable: "code",
-        schema: [],
-        messages: { groupExports: "Combine these export declarations." },
-    },
-    defaultOptions: [],
     create(context) {
         const source = context.sourceCode;
 
@@ -104,8 +95,6 @@ const groupExports = createRule({
 
             if (isEmpty(items)) {
                 return {
-                    items,
-                    range,
                     emptyComments: [
                         ...leading,
                         ...beforeList,
@@ -117,13 +106,15 @@ const groupExports = createRule({
                         ...afterList,
                         ...trailing,
                     ],
+                    items,
+                    range,
                 };
             }
 
             items[0].leading.unshift(...leading, ...beforeList);
             items[items.length - 1].trailing.push(...afterList, ...trailing);
 
-            return { items, range, emptyComments: [] };
+            return { emptyComments: [], items, range };
         }
 
         function removalRange([start, end]: TSESTree.Range): TSESTree.Range {
@@ -149,8 +140,9 @@ const groupExports = createRule({
         function combine(
             group: TSESTree.ExportNamedDeclaration[]
         ): ExportEdit[] {
-            const first = group[0];
+            const [first] = group;
             const firstRange = exportListRange(first, source);
+
             if (firstRange == null) {
                 return [];
             }
@@ -161,6 +153,7 @@ const groupExports = createRule({
 
             for (const node of group) {
                 const listRange = exportListRange(node, source);
+
                 if (listRange == null) {
                     return [];
                 }
@@ -211,17 +204,26 @@ const groupExports = createRule({
 
                 for (const group of groups) {
                     context.report({
-                        node: group[0],
-                        messageId: "groupExports",
                         fix: (fixer) =>
                             edits.map((edit) =>
                                 fixer.replaceTextRange(edit.range, edit.text)
                             ),
+                        messageId: "groupExports",
+                        node: group[0],
                     });
                 }
             },
         };
     },
+    defaultOptions: [],
+    meta: {
+        docs: { description: "Group exports from the same module." },
+        fixable: "code",
+        messages: { groupExports: "Combine these export declarations." },
+        schema: [],
+        type: "suggestion",
+    },
+    name: RuleName.GroupExports,
 });
 
 export { groupExports };

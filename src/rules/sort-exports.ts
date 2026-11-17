@@ -1,25 +1,16 @@
-import { RuleName } from "../enums/rule-name";
+import type { TSESTree } from "@typescript-eslint/utils";
 import isEqual from "lodash/isEqual";
 import orderBy from "lodash/orderBy";
-import { isIdentifier } from "../utils/node-utils";
-import { createRule } from "../utils/rule-utils";
+import { RuleName } from "../enums/rule-name";
+import { exportListRange } from "../utils/ast";
 import {
     stringifyCommentedNodes,
     groupNodesWithComments,
 } from "../utils/node-comment-utils";
-import type { TSESTree } from "@typescript-eslint/utils";
-import { exportListRange } from "../utils/ast";
+import { isIdentifier } from "../utils/node-utils";
+import { createRule } from "../utils/rule-utils";
 
 const sortExports = createRule({
-    name: RuleName.SortExports,
-    meta: {
-        type: "suggestion",
-        docs: { description: "Sort named exports." },
-        fixable: "code",
-        schema: [],
-        messages: { sortExports: "Sort the export specifiers." },
-    },
-    defaultOptions: [],
     create(context) {
         const source = context.sourceCode;
 
@@ -47,6 +38,7 @@ const sortExports = createRule({
                 }
 
                 const range = exportListRange(node, source);
+
                 if (range == null) {
                     return;
                 }
@@ -62,17 +54,26 @@ const sortExports = createRule({
                 );
 
                 context.report({
-                    node,
-                    messageId: "sortExports",
                     fix: (fixer) =>
                         fixer.replaceTextRange(
                             range,
                             stringifyCommentedNodes(source, reordered)
                         ),
+                    messageId: "sortExports",
+                    node,
                 });
             },
         };
     },
+    defaultOptions: [],
+    meta: {
+        docs: { description: "Sort named exports." },
+        fixable: "code",
+        messages: { sortExports: "Sort the export specifiers." },
+        schema: [],
+        type: "suggestion",
+    },
+    name: RuleName.SortExports,
 });
 
 export { sortExports };

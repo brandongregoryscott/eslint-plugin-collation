@@ -1,3 +1,5 @@
+import type { TSESTree } from "@typescript-eslint/utils";
+import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
 import isArray from "lodash/isArray";
 import {
     isArrayPattern,
@@ -15,22 +17,20 @@ import {
     isVariableDeclaration,
     isVariableDeclarator,
 } from "./node-utils";
-import type { TSESTree } from "@typescript-eslint/utils";
-import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
 
 type FunctionNode =
+    | TSESTree.ArrowFunctionExpression
     | TSESTree.FunctionDeclaration
     | TSESTree.FunctionExpression
-    | TSESTree.ArrowFunctionExpression
+    | TSESTree.TSCallSignatureDeclaration
+    | TSESTree.TSConstructorType
+    | TSESTree.TSConstructSignatureDeclaration
     | TSESTree.TSDeclareFunction
     | TSESTree.TSEmptyBodyFunctionExpression
-    | TSESTree.TSMethodSignature
     | TSESTree.TSFunctionType
-    | TSESTree.TSConstructorType
-    | TSESTree.TSCallSignatureDeclaration
-    | TSESTree.TSConstructSignatureDeclaration;
+    | TSESTree.TSMethodSignature;
 
-type Pattern = TSESTree.ObjectPattern | TSESTree.ArrayPattern;
+type Pattern = TSESTree.ArrayPattern | TSESTree.ObjectPattern;
 
 function isPattern(node: TSESTree.Node): node is Pattern {
     return isObjectPattern(node) || isArrayPattern(node);
@@ -79,7 +79,7 @@ function functionName(node: FunctionNode): string | undefined {
         return node.id.name;
     }
 
-    const parent = node.parent;
+    const { parent } = node;
 
     if (isVariableDeclarator(parent) && isIdentifier(parent.id)) {
         return parent.id.name;
@@ -105,7 +105,7 @@ function statementContainer(node: TSESTree.Node): TSESTree.Node {
     let current = node;
 
     while (
-        current.parent &&
+        current.parent != null &&
         !isProgram(current.parent) &&
         !isBlockStatement(current.parent) &&
         !isTSModuleBlock(current.parent)
@@ -159,12 +159,14 @@ function exportListRange(
     source: SourceCode
 ): TSESTree.Range | undefined {
     const open = source.getFirstToken(node, (token) => token.value === "{");
+
     if (open == null) {
         return undefined;
     }
 
     const last = node.specifiers[node.specifiers.length - 1] ?? open;
     const close = source.getTokenAfter(last, (token) => token.value === "}");
+
     if (close == null) {
         return undefined;
     }
