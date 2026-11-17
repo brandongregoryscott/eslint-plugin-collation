@@ -1,5 +1,5 @@
 import { RuleName } from "../enums/rule-name";
-import { hasSameOrder } from "../utils/collection-utils";
+import isEqual from "lodash/isEqual";
 import orderBy from "lodash/orderBy";
 import {
     isArrayExpression,
@@ -69,7 +69,7 @@ const sortDependencyList = createRule({
                     ["asc", "desc"]
                 );
 
-                if (hasSameOrder(items, sorted)) {
+                if (isEqual(items, sorted)) {
                     return;
                 }
 

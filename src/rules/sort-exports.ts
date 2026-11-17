@@ -1,5 +1,5 @@
 import { RuleName } from "../enums/rule-name";
-import { hasSameOrder } from "../utils/collection-utils";
+import isEqual from "lodash/isEqual";
 import orderBy from "lodash/orderBy";
 import { isIdentifier } from "../utils/node-utils";
 import { createRule } from "../utils/rule-utils";
@@ -42,7 +42,7 @@ const sortExports = createRule({
                     ["asc", "desc"]
                 );
 
-                if (hasSameOrder(node.specifiers, sorted)) {
+                if (isEqual(node.specifiers, sorted)) {
                     return;
                 }
 
