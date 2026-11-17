@@ -1,161 +1,256 @@
-import type { SourceCode } from "@typescript-eslint/utils/ts-eslint";
-import { TSESTree, AST_NODE_TYPES } from "@typescript-eslint/utils";
-import type { Declaration } from "../types/declaration";
-import { arrify } from "./collection-utils";
-import { isString } from "./core-utils";
+import type { TSESTree } from "@typescript-eslint/utils";
 
-/**
- * Returns the full text of the ImportSpecifier, taking into account aliasing, i.e.
- * Box as MyBox
- */
-const getImportSpecifierText = (
-    specifier: TSESTree.ImportSpecifier | string
-) => {
-    if (isString(specifier)) {
-        return specifier;
-    }
-
-    const name = getName(specifier);
-    const alias = specifier.local.name;
-    const isAliased = alias !== name;
-    if (isAliased) {
-        return `${name} as ${alias}`;
-    }
-
-    return name;
-};
-
-const getName = (
+function isArrayExpression(
     node: TSESTree.Node | null | undefined
-): string | undefined => {
-    if (node == null) {
-        return undefined;
-    }
+): node is TSESTree.ArrayExpression {
+    return node?.type === "ArrayExpression";
+}
 
-    switch (node.type) {
-        case AST_NODE_TYPES.ClassDeclaration:
-        case AST_NODE_TYPES.FunctionDeclaration:
-        case AST_NODE_TYPES.TSEnumDeclaration:
-        case AST_NODE_TYPES.TSInterfaceDeclaration:
-        case AST_NODE_TYPES.TSTypeAliasDeclaration:
-            return node.id?.name;
-        case AST_NODE_TYPES.VariableDeclaration:
-            const declarator = node.declarations.find(
-                (declarator) => declarator.id.type === AST_NODE_TYPES.Identifier
-            );
+function isArrayPattern(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ArrayPattern {
+    return node?.type === "ArrayPattern";
+}
 
-            if (declarator == null) {
-                return undefined;
-            }
+function isAssignmentPattern(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.AssignmentPattern {
+    return node?.type === "AssignmentPattern";
+}
 
-            return (declarator.id as TSESTree.Identifier).name;
-        case AST_NODE_TYPES.ImportSpecifier:
-            return isIdentifier(node.imported) ? node.imported.name : undefined;
-        default:
-            return undefined;
-    }
-};
+function isBlockStatement(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.BlockStatement {
+    return node?.type === "BlockStatement";
+}
 
-const getModuleSpecifier = (
-    importDeclaration: TSESTree.ImportDeclaration
-): string => importDeclaration.source.value;
+function isCallExpression(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.CallExpression {
+    return node?.type === "CallExpression";
+}
 
-const isCommaToken = (
-    token: TSESTree.Token | null | undefined
-): token is TSESTree.PunctuatorToken =>
-    token?.type === TSESTree.AST_TOKEN_TYPES.Punctuator && token.value === ",";
+function isConditionalExpression(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ConditionalExpression {
+    return node?.type === "ConditionalExpression";
+}
 
-/** Whether the source range fits entirely within the target range. */
-const isContainedWithinRange = (
-    source: TSESTree.Range,
-    target: TSESTree.Range
-): boolean => source[0] >= target[0] && source[1] <= target[1];
+function isExportDefaultDeclaration(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ExportDefaultDeclaration {
+    return node?.type === "ExportDefaultDeclaration";
+}
 
-const isDeclaration = (node: TSESTree.Node): node is Declaration =>
-    [
-        AST_NODE_TYPES.ClassDeclaration,
-        AST_NODE_TYPES.FunctionDeclaration,
-        AST_NODE_TYPES.TSEnumDeclaration,
-        AST_NODE_TYPES.VariableDeclaration,
-    ].includes(node.type);
+function isExportNamedDeclaration(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ExportNamedDeclaration {
+    return node?.type === "ExportNamedDeclaration";
+}
 
-const isIdentifierToken = (
-    token: TSESTree.Token | undefined,
-    value?: string
-): token is TSESTree.IdentifierToken => {
-    const isIdentifier = token?.type === TSESTree.AST_TOKEN_TYPES.Identifier;
-    if (value != null) {
-        return isIdentifier && token.value === value;
-    }
+function isExpressionStatement(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ExpressionStatement {
+    return node?.type === "ExpressionStatement";
+}
 
-    return isIdentifier;
-};
+function isIdentifier(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.Identifier {
+    return node?.type === "Identifier";
+}
 
-const isImportDeclaration = (
-    node: TSESTree.Node | TSESTree.Token | null | undefined
-): node is TSESTree.ImportDeclaration =>
-    node?.type === TSESTree.AST_NODE_TYPES.ImportDeclaration;
+function isImportDeclaration(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ImportDeclaration {
+    return node?.type === "ImportDeclaration";
+}
 
-const isImportSpecifier = (
-    node: TSESTree.ImportClause | null | undefined
-): node is TSESTree.ImportSpecifier =>
-    node?.type === TSESTree.AST_NODE_TYPES.ImportSpecifier;
+function isImportDefaultSpecifier(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ImportDefaultSpecifier {
+    return node?.type === "ImportDefaultSpecifier";
+}
 
-const toDefaultImportDeclaration = (
-    specifier: string,
-    moduleSpecifier: string
-): string => `import ${specifier} from '${moduleSpecifier}';`;
+function isImportNamespaceSpecifier(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ImportNamespaceSpecifier {
+    return node?.type === "ImportNamespaceSpecifier";
+}
 
-const toImportDeclaration = (
-    specifiers: string[] | string,
-    moduleSpecifier: string
-): string =>
-    `import { ${arrify(specifiers).join(", ")} } from '${moduleSpecifier}';`;
+function isImportSpecifier(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ImportSpecifier {
+    return node?.type === "ImportSpecifier";
+}
 
-const isIdentifier = (node: TSESTree.Node): node is TSESTree.Identifier =>
-    node.type === AST_NODE_TYPES.Identifier;
+function isJSXClosingElement(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.JSXClosingElement {
+    return node?.type === "JSXClosingElement";
+}
 
-const isJsxIdentifier = (node: TSESTree.Node): node is TSESTree.JSXIdentifier =>
-    node.type === AST_NODE_TYPES.JSXIdentifier;
+function isJSXElement(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.JSXElement {
+    return node?.type === "JSXElement";
+}
 
-const collectNodes = (
-    node: TSESTree.Node,
-    sourceCode: SourceCode
-): TSESTree.Node[] => {
-    const nodes = [node];
-    for (const key of sourceCode.visitorKeys[node.type] ?? []) {
-        const child = (
-            node as unknown as Record<
-                string,
-                TSESTree.Node | TSESTree.Node[] | null
-            >
-        )[key];
-        if (Array.isArray(child)) {
-            for (const item of child) {
-                if (item != null) {
-                    nodes.push(...collectNodes(item, sourceCode));
-                }
-            }
-        } else if (child != null) {
-            nodes.push(...collectNodes(child, sourceCode));
-        }
-    }
-    return nodes;
-};
+function isJSXFragment(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.JSXFragment {
+    return node?.type === "JSXFragment";
+}
+
+function isLogicalExpression(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.LogicalExpression {
+    return node?.type === "LogicalExpression";
+}
+
+function isMemberExpression(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.MemberExpression {
+    return node?.type === "MemberExpression";
+}
+
+function isMethodDefinition(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.MethodDefinition {
+    return node?.type === "MethodDefinition";
+}
+
+function isObjectPattern(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ObjectPattern {
+    return node?.type === "ObjectPattern";
+}
+
+function isProgram(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.Program {
+    return node?.type === "Program";
+}
+
+function isProperty(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.Property {
+    return node?.type === "Property";
+}
+
+function isRestElement(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.RestElement {
+    return node?.type === "RestElement";
+}
+
+function isReturnStatement(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.ReturnStatement {
+    return node?.type === "ReturnStatement";
+}
+
+function isTSAbstractMethodDefinition(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSAbstractMethodDefinition {
+    return node?.type === "TSAbstractMethodDefinition";
+}
+
+function isTSAsExpression(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSAsExpression {
+    return node?.type === "TSAsExpression";
+}
+
+function isTSMethodSignature(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSMethodSignature {
+    return node?.type === "TSMethodSignature";
+}
+
+function isTSModuleBlock(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSModuleBlock {
+    return node?.type === "TSModuleBlock";
+}
+
+function isTSNonNullExpression(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSNonNullExpression {
+    return node?.type === "TSNonNullExpression";
+}
+
+function isTSQualifiedName(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSQualifiedName {
+    return node?.type === "TSQualifiedName";
+}
+
+function isTSSatisfiesExpression(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSSatisfiesExpression {
+    return node?.type === "TSSatisfiesExpression";
+}
+
+function isTSTypeLiteral(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSTypeLiteral {
+    return node?.type === "TSTypeLiteral";
+}
+
+function isTSTypeReference(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.TSTypeReference {
+    return node?.type === "TSTypeReference";
+}
+
+function isVariableDeclaration(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.VariableDeclaration {
+    return node?.type === "VariableDeclaration";
+}
+
+function isVariableDeclarator(
+    node: TSESTree.Node | null | undefined
+): node is TSESTree.VariableDeclarator {
+    return node?.type === "VariableDeclarator";
+}
 
 export {
-    collectNodes,
-    getImportSpecifierText,
-    getModuleSpecifier,
-    getName,
-    isCommaToken,
-    isContainedWithinRange,
-    isDeclaration,
+    isArrayExpression,
+    isArrayPattern,
+    isAssignmentPattern,
+    isBlockStatement,
+    isCallExpression,
+    isConditionalExpression,
+    isExportDefaultDeclaration,
+    isExportNamedDeclaration,
+    isExpressionStatement,
     isIdentifier,
-    isIdentifierToken,
     isImportDeclaration,
+    isImportDefaultSpecifier,
+    isImportNamespaceSpecifier,
     isImportSpecifier,
-    isJsxIdentifier,
-    toDefaultImportDeclaration,
-    toImportDeclaration,
+    isJSXClosingElement,
+    isJSXElement,
+    isJSXFragment,
+    isLogicalExpression,
+    isMemberExpression,
+    isMethodDefinition,
+    isObjectPattern,
+    isProgram,
+    isProperty,
+    isRestElement,
+    isReturnStatement,
+    isTSAbstractMethodDefinition,
+    isTSAsExpression,
+    isTSMethodSignature,
+    isTSModuleBlock,
+    isTSNonNullExpression,
+    isTSQualifiedName,
+    isTSSatisfiesExpression,
+    isTSTypeLiteral,
+    isTSTypeReference,
+    isVariableDeclaration,
+    isVariableDeclarator,
 };

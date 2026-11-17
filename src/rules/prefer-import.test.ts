@@ -177,6 +177,24 @@ ruleTester.run("prefer-import", preferImport, {
         },
     ],
     invalid: [
+        ...["\n", "\r\n"].map((newline) => ({
+            name: `preserves comment separators when converting to a default import: ${JSON.stringify(
+                newline
+            )}`,
+            code: `import { /* block */ // line${newline}map } from "lodash";`,
+            output: `/* block */ // line${newline}import map from 'lodash/map';`,
+            options: [
+                {
+                    lodash: {
+                        importName: "map",
+                        replacementModuleSpecifier: "lodash/map",
+                        replaceAsDefault: true,
+                    },
+                },
+            ] as const,
+            errors: [{ messageId: "preferImport" as const }],
+        })),
+
         {
             name: "preserves type-only imports while moving comments",
             code: codeBlock`

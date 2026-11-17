@@ -1,812 +1,399 @@
-import type { CommentedNode } from "../utils/comment-utils";
-import {
-    groupNodesWithComments,
-    printCommentedList,
-    printComments,
-} from "../utils/comment-utils";
 import { RuleName } from "../enums/rule-name";
-import { createRule, tryRule } from "../utils/rule-utils";
-import type { CaseTransformation } from "../utils/string-utils";
+import isEmpty from "lodash/isEmpty";
+import isArray from "lodash/isArray";
+import kebabCase from "lodash/kebabCase";
 import {
-    isPattern,
-    transformCase,
-    CASE_TRANSFORMATIONS,
-} from "../utils/string-utils";
-import {
-    arrify,
-    difference,
-    firstIfOnly,
-    first,
-    flatten,
-    intersection,
-    last,
-} from "../utils/collection-utils";
-import { cloneDeepJson, isEmpty, isString } from "../utils/core-utils";
-import type { TSESTree } from "@typescript-eslint/utils";
-import {
-    getImportSpecifierText,
-    getModuleSpecifier,
-    getName,
     isIdentifier,
+    isImportDeclaration,
     isImportSpecifier,
-    isJsxIdentifier,
-    toDefaultImportDeclaration,
-    toImportDeclaration,
+    isJSXClosingElement,
 } from "../utils/node-utils";
+import type { JSONSchema, TSESTree } from "@typescript-eslint/utils";
 import { minimatch } from "minimatch";
+import { createRule } from "../utils/rule-utils";
 import {
-    hasCommentsInRange,
-    insertTextAfter,
-    insertTextBefore,
-    insertTextBeforeRange,
-    remove,
-    removeImportClause,
-    replaceTextRange,
-} from "../utils/fixer-utils";
-import { getValues, iterate, updateIn } from "../utils/map-utils";
-import type {
-    RuleContext,
-    RuleFix,
-    RuleListener,
-    SourceCode,
-} from "@typescript-eslint/utils/ts-eslint";
-import type { JSONSchema4 } from "@typescript-eslint/utils/json-schema";
+    stringifyComments,
+    stringifyCommentedNodes,
+    groupNodesWithComments,
+} from "../utils/node-comment-utils";
+import type { CommentedNode } from "../utils/node-comment-utils";
 
-interface PreferImportOptions {
-    [moduleSpecifier: string]: ImportRule | ImportRule[];
-}
-
-interface ImportRule {
-    /**
-     * Import name or list of names to match and replace with preferred module imports. Can also be a wildcard ('*') to match any import from the `moduleSpecifier`, or a glob pattern ('Modal*'), using `minimatch` for pattern matching.
-     */
-    importName: string[] | string;
-
-    /**
-     * Import props from a module of the same canonical name, i.e. `import { AlertProps } from '@twilio-paste/core/alert';` instead of from `'@twilio-paste/core/alert-props'`
-     * @default true
-     */
-    importPropsFromSameModule?: boolean;
-
-    /**
-     * Use a default import for replacement instead of a named import.
-     * @default false
-     */
+interface ImportReplacement {
+    importName: string | string[];
     replaceAsDefault?: boolean;
-
-    /**
-     * Destination module to replace imports with. A reference to the matched import name can be used with the variable `{importName}`, e.g. 'lodash/{importName}'
-     */
     replacementModuleSpecifier: string;
-
-    /**
-     * String transformation method to be run on the matched `importName`. Only applicable if `replacementModuleSpecifier` has the replacement variable `{importName}`.
-     */
-    transformImportName?: CaseTransformation;
+    transformImportName?: "kebab-case";
 }
 
-type PreferImportMessageIds =
-    | "bannedGlobalType"
-    | "preferImport"
-    | "preferImportMultiple";
-
-type ErrorMessageReplacementData = Pick<
-    ImportRule,
-    "importName" | "replacementModuleSpecifier"
+type PreferImportOptions = Record<
+    string,
+    ImportReplacement | ImportReplacement[]
 >;
 
-type ImportRuleErrors = Map<
-    TSESTree.ImportDeclaration,
-    Map<ImportRule, TSESTree.ImportSpecifier[]>
->;
+interface ReplacementGroup {
+    items: CommentedNode[];
+    module: string;
+    names: string[];
+    rule: ImportReplacement;
+    specifiers: TSESTree.ImportSpecifier[];
+}
 
-const DEFAULT_IMPORT_RULE = {
-    importPropsFromSameModule: true,
-    replaceAsDefault: false,
-};
-const IMPORT_NAME_VARIABLE = "{importName}";
-const PROGRAM_EXIT = "Program:exit";
-const PROPS = "Props";
-
-const create = (
-    context: RuleContext<PreferImportMessageIds, PreferImportOptions[]>
-): RuleListener => {
-    const options = assignDefaultOptions(first(context.options));
-    const sourceCode = context.sourceCode ?? context.getSourceCode();
-    if (isEmpty(options)) {
-        return {};
-    }
-
-    const importDeclarations: TSESTree.ImportDeclaration[] = [];
-    const identifiers: Array<TSESTree.Identifier | TSESTree.JSXIdentifier> = [];
-    const interfaceDeclarations: TSESTree.TSInterfaceDeclaration[] = [];
-    const typeDeclarations: TSESTree.TSTypeAliasDeclaration[] = [];
-    const variableNames: Set<string> = new Set();
-
-    const errors: ImportRuleErrors = new Map();
-
-    const getImportDeclarationForIdentifier = (
-        identifier: TSESTree.Identifier | string
-    ): TSESTree.ImportDeclaration | undefined => {
-        const name = isString(identifier) ? identifier : identifier.name;
-        return importDeclarations.find((importDeclaration) =>
-            importDeclaration.specifiers
-                .filter(isImportSpecifier)
-                .some((specifier) => specifier.local.name === name)
-        );
-    };
-
-    const checkGlobalTypeReferences = () => {
-        if (!("global" in options)) {
-            return;
-        }
-
-        const rules = arrify(options.global);
-        if (isEmpty(rules)) {
-            return;
-        }
-
-        rules.forEach((rule) => {
-            identifiers.forEach((identifier) => {
-                const { name } = identifier;
-                const importNames = arrify(rule.importName);
-                if (!importNames.includes(name)) {
-                    return;
-                }
-
-                const importDeclaration =
-                    getImportDeclarationForIdentifier(name);
-
-                const typeDeclaration = typeDeclarations.find(
-                    (typeDeclaration) => typeDeclaration.id.name === name
-                );
-                const interfaceDeclaration = interfaceDeclarations.find(
-                    (interfaceDeclaration) =>
-                        interfaceDeclaration.id.name === name
-                );
-
-                if (
-                    importDeclaration !== undefined ||
-                    typeDeclaration !== undefined ||
-                    interfaceDeclaration !== undefined ||
-                    variableNames.has(name)
-                ) {
-                    return;
-                }
-
-                const fixes: RuleFix[] = [];
-
-                const replacementModuleSpecifier =
-                    getReplacementModuleSpecifier(rule);
-
-                const replacementData: ErrorMessageReplacementData = {
-                    importName: name,
-                    replacementModuleSpecifier,
-                };
-
-                const lastImportDeclaration = last(importDeclarations);
-                const replacementImportDeclaration =
-                    getReplacementImportDeclarations([name], rule);
-
-                if (lastImportDeclaration !== undefined) {
-                    fixes.push(
-                        insertTextAfter(
-                            lastImportDeclaration,
-                            `\n${replacementImportDeclaration}`
-                        )
-                    );
-                }
-
-                if (lastImportDeclaration === undefined) {
-                    fixes.push(
-                        insertTextBeforeRange(
-                            [0, 0],
-                            `${replacementImportDeclaration}\n`
-                        )
-                    );
-                }
-
-                context.report({
-                    node: identifier,
-                    messageId: "bannedGlobalType",
-                    data: replacementData,
-                    fix: () => fixes,
-                });
-            });
-        });
-    };
-
-    return {
-        TSClassImplements(node) {
-            if (isIdentifier(node.expression)) {
-                identifiers.push(node.expression);
-            }
-        },
-        TSTypeReference(node) {
-            if (isIdentifier(node.typeName)) {
-                identifiers.push(node.typeName);
-            }
-        },
-        TSInterfaceHeritage(node) {
-            if (isIdentifier(node.expression)) {
-                identifiers.push(node.expression);
-            }
-        },
-        MemberExpression(node) {
-            if (isIdentifier(node.object)) {
-                identifiers.push(node.object);
-            }
-        },
-        JSXOpeningElement(node) {
-            if (isJsxIdentifier(node.name)) {
-                identifiers.push(node.name);
-            }
-        },
-        ImportDeclaration(node) {
-            importDeclarations.push(node);
-        },
-        VariableDeclarator(node) {
-            if (isIdentifier(node.id)) {
-                variableNames.add(node.id.name);
-            }
-        },
-        TSInterfaceDeclaration(node) {
-            interfaceDeclarations.push(node);
-        },
-        TSTypeAliasDeclaration(node) {
-            typeDeclarations.push(node);
-        },
-        [PROGRAM_EXIT]() {
-            tryRule(context, () => {
-                checkGlobalTypeReferences();
-
-                importDeclarations.forEach((importDeclaration) => {
-                    const moduleSpecifier =
-                        getModuleSpecifier(importDeclaration);
-                    if (options[moduleSpecifier] == null) {
-                        return;
-                    }
-
-                    const rules = arrify(options[moduleSpecifier]);
-                    if (isEmpty(rules)) {
-                        return;
-                    }
-
-                    rules.forEach((rule) => {
-                        const importNames = arrify(rule.importName);
-                        const matchingSpecifiers = getMatchingSpecifiers(
-                            importDeclaration,
-                            importNames
-                        );
-
-                        if (isEmpty(matchingSpecifiers)) {
-                            return;
-                        }
-
-                        updateIn(errors, importDeclaration, (errorsByImport) =>
-                            (
-                                errorsByImport ??
-                                new Map<
-                                    ImportRule,
-                                    TSESTree.ImportSpecifier[]
-                                >()
-                            ).set(rule, matchingSpecifiers)
-                        );
-                    });
-                });
-
-                iterate(errors, (importDeclaration, errorsByImport) => {
-                    // Keep track of all of the specifiers that are marked as errors by the import
-                    // Since specifiers can be matched multiple times by wildcard/glob patterns,
-                    // we only want to take the first match (which should be the most specific)
-                    // and remove it from the collection when we rebuild the import list
-                    let specifiersMarkedAsError: TSESTree.ImportSpecifier[] =
-                        flatten(getValues(errorsByImport));
-                    const replacementData: ErrorMessageReplacementData[] = [];
-
-                    const fixes: RuleFix[] = [];
-                    const hasComments = hasCommentsInRange(
-                        sourceCode,
-                        importDeclaration.range
-                    );
-                    const namedSpecifiers =
-                        importDeclaration.specifiers.filter(isImportSpecifier);
-                    const open = sourceCode.getFirstToken(
-                        importDeclaration,
-                        (token) => token.value === "{"
-                    );
-                    const close =
-                        open == null
-                            ? null
-                            : sourceCode.getTokenAfter(
-                                  namedSpecifiers[namedSpecifiers.length - 1] ??
-                                      open,
-                                  (token) => token.value === "}"
-                              );
-                    const listRange: TSESTree.Range =
-                        open == null || close == null
-                            ? importDeclaration.range
-                            : [open.range[1], close.range[0]];
-                    const groups = groupNodesWithComments(
-                        namedSpecifiers,
-                        listRange,
-                        sourceCode
-                    );
-
-                    const shouldRemoveEntireImport =
-                        importDeclaration.specifiers.every((specifier) =>
-                            specifiersMarkedAsError.some(
-                                (marked) => marked === specifier
-                            )
-                        );
-
-                    if (shouldRemoveEntireImport) {
-                        fixes.push(remove(importDeclaration));
-                    }
-
-                    if (hasComments && shouldRemoveEntireImport) {
-                        const outside = sourceCode
-                            .getCommentsInside(importDeclaration)
-                            .filter(
-                                (comment) =>
-                                    comment.range[1] <= listRange[0] ||
-                                    comment.range[0] >= listRange[1]
-                            );
-                        groups[0]?.leading.unshift(
-                            ...outside.filter(
-                                (comment) => comment.range[1] <= listRange[0]
-                            )
-                        );
-                        groups[groups.length - 1]?.trailing.push(
-                            ...outside.filter(
-                                (comment) => comment.range[0] >= listRange[1]
-                            )
-                        );
-                    }
-
-                    if (
-                        hasComments &&
-                        !shouldRemoveEntireImport &&
-                        open != null &&
-                        close != null
-                    ) {
-                        const remaining = groups.filter(
-                            (group) =>
-                                !specifiersMarkedAsError.includes(group.node)
-                        );
-                        if (!isEmpty(remaining)) {
-                            fixes.push(
-                                replaceTextRange(
-                                    listRange,
-                                    printCommentedList(
-                                        remaining,
-                                        sourceCode,
-                                        true,
-                                        listRange
-                                    )
-                                )
-                            );
-                        } else {
-                            const comma = sourceCode.getTokenBefore(open);
-                            if (comma?.value === ",") {
-                                const gap = sourceCode.text.slice(
-                                    comma.range[1],
-                                    open.range[0]
-                                );
-                                fixes.push(
-                                    replaceTextRange(
-                                        [comma.range[0], close.range[1]],
-                                        gap.trim() === "" ? "" : gap
-                                    )
-                                );
-                            }
-                        }
-                    }
-
-                    if (!hasComments && !shouldRemoveEntireImport) {
-                        fixes.push(
-                            ...specifiersMarkedAsError.flatMap(
-                                removeImportClause(sourceCode)
-                            )
-                        );
-                    }
-
-                    iterate(errorsByImport, (rule, specifiersByRule) => {
-                        const {
-                            replaceAsDefault = DEFAULT_IMPORT_RULE.replaceAsDefault,
-                            replacementModuleSpecifier,
-                        } = rule;
-                        const remainingSpecifiersToFix = intersection(
-                            specifiersByRule,
-                            specifiersMarkedAsError
-                        );
-
-                        if (isEmpty(remainingSpecifiersToFix)) {
-                            return;
-                        }
-
-                        const hasPotentiallyMultipleImports =
-                            replaceAsDefault ||
-                            hasImportNameVariable(replacementModuleSpecifier);
-                        if (hasPotentiallyMultipleImports) {
-                            const replacementsByModuleSpecifier = new Map<
-                                string,
-                                string[]
-                            >();
-                            remainingSpecifiersToFix.forEach((specifier) => {
-                                const importName = getName(specifier) ?? "";
-                                const replacementModuleSpecifier =
-                                    getReplacementModuleSpecifier(
-                                        rule,
-                                        specifier
-                                    );
-
-                                const importNames =
-                                    replacementsByModuleSpecifier.get(
-                                        replacementModuleSpecifier
-                                    ) ?? [];
-
-                                if (!importNames.includes(importName)) {
-                                    importNames.push(importName);
-                                }
-                                replacementsByModuleSpecifier.set(
-                                    replacementModuleSpecifier,
-                                    importNames
-                                );
-                            });
-
-                            iterate(
-                                replacementsByModuleSpecifier,
-                                (replacementModuleSpecifier, importNames) =>
-                                    replacementData.push({
-                                        importName: importNames.join(", "),
-                                        replacementModuleSpecifier,
-                                    })
-                            );
-                        }
-
-                        if (!hasPotentiallyMultipleImports) {
-                            replacementData.push({
-                                importName: remainingSpecifiersToFix
-                                    .map(getName)
-                                    .join(", "),
-                                replacementModuleSpecifier:
-                                    getReplacementModuleSpecifier(
-                                        rule,
-                                        firstIfOnly(remainingSpecifiersToFix)
-                                    ),
-                            });
-                        }
-
-                        specifiersMarkedAsError = difference(
-                            specifiersMarkedAsError,
-                            remainingSpecifiersToFix
-                        );
-
-                        fixes.push(
-                            insertTextBefore(
-                                importDeclaration,
-                                hasComments
-                                    ? getCommentedImportDeclarations(
-                                          groups.filter((group) =>
-                                              remainingSpecifiersToFix.includes(
-                                                  group.node
-                                              )
-                                          ),
-                                          rule,
-                                          sourceCode,
-                                          listRange,
-                                          importDeclaration.importKind ===
-                                              "type"
-                                      ) + (shouldRemoveEntireImport ? "" : "\n")
-                                    : getReplacementImportDeclarations(
-                                          remainingSpecifiersToFix,
-                                          rule
-                                      )
-                            )
-                        );
-                    });
-
-                    const hasMultipleErrors = replacementData.length > 1;
-                    context.report({
-                        node: importDeclaration,
-                        messageId: hasMultipleErrors
-                            ? "preferImportMultiple"
-                            : "preferImport",
-                        data: hasMultipleErrors
-                            ? {
-                                  message:
-                                      getMultipleErrorReplacementString(
-                                          replacementData
-                                      ),
-                              }
-                            : firstIfOnly(replacementData),
-                        fix: () => fixes,
-                    });
-                });
-            });
-        },
-    };
-};
-
-const importRuleSchema: JSONSchema4 = {
+const replacementSchema: JSONSchema.JSONSchema4 = {
     type: "object",
     properties: {
         importName: {
-            description:
-                "Import name or list of names to match and replace with preferred module imports. Can also be a wildcard ('*') to match any import from the `moduleSpecifier`, or a glob pattern ('Modal*'), using `minimatch` for pattern matching.",
-            oneOf: [
-                {
-                    type: "string",
-                },
-                {
-                    type: "array",
-                    items: [{ type: "string" }],
-                },
+            anyOf: [
+                { type: "string" },
+                { type: "array", items: { type: "string" } },
             ],
         },
-        importPropsFromSameModule: {
-            description:
-                "Import props from a module of the same canonical name, i.e. `import { AlertProps } from '@twilio-paste/core/alert';` instead of from '@twilio-paste/core/alert-props'",
-            type: "boolean",
-        },
-        replacementModuleSpecifier: {
-            description:
-                "Destination module to replace imports with. A reference to the matched import name can be used with the variable `{importName}`, e.g. 'lodash/{importName}'",
-            type: "string",
-        },
-        replaceAsDefault: {
-            description:
-                "Use a default import for replacement instead of a named import.",
-            type: "boolean",
-        },
-        transformImportName: {
-            description:
-                "String transformation method to be run on the matched `importName`. Only applicable if `replacementModuleSpecifier` has the replacement variable `{importName}`.",
-            enum: CASE_TRANSFORMATIONS,
-            type: "string",
-        },
+        replaceAsDefault: { type: "boolean" },
+        replacementModuleSpecifier: { type: "string" },
+        transformImportName: { type: "string", enum: ["kebab-case"] },
     },
+    required: ["importName", "replacementModuleSpecifier"],
+    additionalProperties: false,
 };
 
-const preferImport = createRule<PreferImportOptions[], PreferImportMessageIds>({
+const preferImport = createRule<
+    [PreferImportOptions],
+    "preferImport" | "preferImportMultiple" | "bannedGlobalType"
+>({
+    name: RuleName.PreferImport,
     meta: {
-        type: "problem",
-        fixable: "code",
+        type: "suggestion",
         docs: {
             description:
-                "Enforces imports from a preferred module over another, such as for tree-shaking purposes or wrapping a library.",
+                "Prefer configured imports over other modules or globals.",
         },
-        messages: {
-            bannedGlobalType:
-                "The type '{{importName}}' is currently being referenced as a global type, but should be imported from '{{replacementModuleSpecifier}}' instead.",
-            preferImport:
-                "Import '{{importName}}' from '{{replacementModuleSpecifier}}' instead.",
-            preferImportMultiple: "{{message}}",
-        },
-        schema: {
-            type: "array",
-            minItems: 1,
-            maxItems: 1,
-            items: [
-                {
-                    type: "object",
-                    description:
-                        "Configuration object where the key is the module specifier and the values are import patterns to replace",
-                    additionalProperties: {
-                        oneOf: [
-                            importRuleSchema,
-                            {
-                                type: "array",
-                                items: [importRuleSchema],
-                                minItems: 1,
-                            },
-                        ],
-                    },
+        fixable: "code",
+        schema: [
+            {
+                type: "object",
+                additionalProperties: {
+                    anyOf: [
+                        replacementSchema,
+                        { type: "array", items: replacementSchema },
+                    ],
                 },
-            ],
+            },
+        ],
+        messages: {
+            preferImport:
+                "Import '{{importName}}' from '{{replacementModuleSpecifier}}'.",
+            preferImportMultiple: "{{message}}",
+            bannedGlobalType:
+                "Import '{{importName}}' from '{{replacementModuleSpecifier}}' instead of using the global.",
         },
     },
-    defaultOptions: [],
-    name: RuleName.PreferImport,
-    create,
-});
+    defaultOptions: [{}],
+    create(context, [options]) {
+        const source = context.sourceCode;
 
-const assignDefaultOptions = (
-    options: PreferImportOptions | undefined
-): PreferImportOptions => {
-    if (options == null) {
-        return {};
-    }
+        const asArray = (
+            rules: ImportReplacement | ImportReplacement[] | undefined
+        ) => (rules == null ? [] : isArray(rules) ? rules : [rules]);
 
-    // Options from ESLint are read-only, so we need to clone this object
-    const updatedOptions = cloneDeepJson(options);
-    Object.keys(updatedOptions).forEach((key) => {
-        updatedOptions[key] = arrify(updatedOptions[key]).map((rule) =>
-            Object.assign({ ...DEFAULT_IMPORT_RULE }, rule)
-        );
-    });
+        const importedName = (specifier: TSESTree.ImportSpecifier) =>
+            isIdentifier(specifier.imported)
+                ? specifier.imported.name
+                : String(specifier.imported.value);
 
-    return updatedOptions;
-};
+        function destination(rule: ImportReplacement, name: string) {
+            // Paste's Props exports live beside their components.
+            const transformed =
+                rule.transformImportName === "kebab-case"
+                    ? kebabCase(name.replace(/Props$/, ""))
+                    : name;
 
-const getMatchingSpecifiers = (
-    importDeclaration: TSESTree.ImportDeclaration,
-    importNames: string[]
-): TSESTree.ImportSpecifier[] => {
-    const specifiers = importDeclaration.specifiers.filter(isImportSpecifier);
-    const matchingSpecifiers = specifiers.filter((specifier) =>
-        importNames.some((importName) => {
-            const name = getName(specifier) ?? "";
-            if (isPattern(importName)) {
-                return minimatch(name, importName);
-            }
-
-            return importName === name;
-        })
-    );
-
-    return matchingSpecifiers;
-};
-
-const getCommentedImportDeclarations = (
-    groups: CommentedNode<TSESTree.ImportSpecifier>[],
-    rule: ImportRule,
-    sourceCode: SourceCode,
-    range: TSESTree.Range,
-    typeOnly: boolean
-): string => {
-    const named = (
-        items: CommentedNode<TSESTree.ImportSpecifier>[],
-        module: string
-    ) =>
-        `import ${typeOnly ? "type " : ""}{${printCommentedList(
-            items,
-            sourceCode,
-            true,
-            range
-        )}} from '${module}';`;
-    if (
-        rule.replaceAsDefault === true ||
-        hasImportNameVariable(rule.replacementModuleSpecifier)
-    ) {
-        return groups
-            .map((group) => {
-                const module = getReplacementModuleSpecifier(rule, group.node);
-                if (rule.replaceAsDefault === true) {
-                    return (
-                        printComments(
-                            [
-                                ...group.leading,
-                                ...sourceCode.getCommentsInside(group.node),
-                            ],
-                            sourceCode
-                        ) +
-                        toDefaultImportDeclaration(
-                            (typeOnly || group.node.importKind === "type"
-                                ? "type "
-                                : "") + group.node.local.name,
-                            module
-                        ) +
-                        (isEmpty(group.trailing)
-                            ? ""
-                            : " " + printComments(group.trailing, sourceCode))
-                    );
-                }
-                return named([group], module);
-            })
-            .join("\n");
-    }
-    return named(groups, getReplacementModuleSpecifier(rule, groups[0]?.node));
-};
-
-const getReplacementImportDeclarations = (
-    specifiers: string[] | TSESTree.ImportSpecifier[],
-    rule: ImportRule
-): string => {
-    const {
-        replaceAsDefault = DEFAULT_IMPORT_RULE.replaceAsDefault,
-        replacementModuleSpecifier,
-    } = rule;
-
-    if (replaceAsDefault || hasImportNameVariable(replacementModuleSpecifier)) {
-        return specifiers
-            .map((specifier) => {
-                const alias = isString(specifier)
-                    ? specifier
-                    : specifier.local.name;
-                // Prefer the alias name if present & replacing as a default import, otherwise
-                // we can produce broken code such as `import isEmpty as lodashIsEmpty from 'lodash/isEmpty'`
-                const useAliasAsName =
-                    !isEmpty(alias) && !isString(specifier) && replaceAsDefault;
-                const name = useAliasAsName
-                    ? alias
-                    : getImportSpecifierText(specifier) ?? "";
-                const moduleSpecifier = getReplacementModuleSpecifier(
-                    rule,
-                    specifier
-                );
-
-                return replaceAsDefault
-                    ? toDefaultImportDeclaration(name, moduleSpecifier)
-                    : toImportDeclaration(name, moduleSpecifier);
-            })
-            .join("\n");
-    }
-
-    const moduleSpecifier = getReplacementModuleSpecifier(
-        rule,
-        firstIfOnly<TSESTree.ImportSpecifier | string>(specifiers)
-    );
-
-    const importNames = specifiers.map(getImportSpecifierText) as string[];
-    return `${toImportDeclaration(importNames, moduleSpecifier)}\n`;
-};
-
-const getReplacementModuleSpecifier = (
-    rule: ImportRule,
-    specifier?: TSESTree.ImportSpecifier | string
-): string => {
-    const {
-        replacementModuleSpecifier,
-        transformImportName,
-        importPropsFromSameModule = DEFAULT_IMPORT_RULE.importPropsFromSameModule,
-    } = rule;
-    let moduleSpecifier = replacementModuleSpecifier;
-
-    if (
-        hasImportNameVariable(replacementModuleSpecifier) &&
-        specifier != null
-    ) {
-        let importName = isString(specifier)
-            ? specifier
-            : getName(specifier) ?? "";
-        const shouldReplaceProps =
-            importName.endsWith(PROPS) && importPropsFromSameModule;
-
-        if (shouldReplaceProps) {
-            importName = importName.slice(0, importName.lastIndexOf(PROPS));
+            return rule.replacementModuleSpecifier.replaceAll(
+                "{importName}",
+                transformed
+            );
         }
 
-        importName = transformCase(importName, transformImportName);
+        function printReplacement(
+            group: ReplacementGroup,
+            declaration: TSESTree.ImportDeclaration
+        ): string[] {
+            const typeOnly = declaration.importKind === "type";
 
-        moduleSpecifier = replacementModuleSpecifier.replace(
-            IMPORT_NAME_VARIABLE,
-            importName
-        );
-    }
-
-    return moduleSpecifier;
-};
-
-/**
- * Constructs the error message for an ImportDeclaration that has multiple imports + module specifiers
- * for replacement, which is too complex for ESLint's variable substitution to do alone.
- */
-const getMultipleErrorReplacementString = (
-    replacementData: ErrorMessageReplacementData[]
-): string =>
-    replacementData
-        .map((data) => {
-            const { importName, replacementModuleSpecifier } = data;
-            const isFirst = data === first(replacementData);
-            const isLast = data === last(replacementData);
-
-            let introText = isFirst ? "Import" : "";
-            if (isLast) {
-                introText = " and";
+            if (group.rule.replaceAsDefault !== true) {
+                return [
+                    `import ${typeOnly ? "type " : ""}${stringifyCommentedNodes(
+                        source,
+                        group.items
+                    )} from '${group.module}';`,
+                ];
             }
 
-            return `${introText} ${arrify(importName)
-                .map((name) => `'${name}'`)
-                .join()} from '${replacementModuleSpecifier}'${
-                isLast ? "." : ","
-            }`;
-        })
-        .join("");
+            return group.specifiers.map((specifier, index) => {
+                const item = group.items[index];
+                const inside = source.getCommentsInside(specifier);
+                const comments = [...item.leading, ...inside];
 
-const hasImportNameVariable = (replacementModuleSpecifier: string) =>
-    replacementModuleSpecifier.includes(IMPORT_NAME_VARIABLE);
+                const prefix = stringifyComments(comments, source);
+
+                const tail = item.trailing
+                    .map((comment) => ` ${source.getText(comment)} `)
+                    .join("");
+
+                return `${prefix}import ${
+                    typeOnly || specifier.importKind === "type" ? "type " : ""
+                }${specifier.local.name} from '${group.module}';${tail}`;
+            });
+        }
+
+        function planReplacements(node: TSESTree.ImportDeclaration) {
+            const rules = asArray(options[String(node.source.value)]);
+            const specifiers = node.specifiers.filter(isImportSpecifier);
+            const items = groupNodesWithComments(
+                source,
+                specifiers,
+                node.range
+            );
+            const moved = new Set<TSESTree.ImportSpecifier>();
+            const groups: ReplacementGroup[] = [];
+
+            // Earlier entries win. Static destinations group their matches;
+            // templates intentionally produce one declaration per match.
+            for (const rule of rules) {
+                let staticGroup: ReplacementGroup | undefined;
+
+                const patterns = isArray(rule.importName)
+                    ? rule.importName
+                    : [rule.importName];
+
+                for (let index = 0; index < specifiers.length; index++) {
+                    const specifier = specifiers[index];
+                    const name = importedName(specifier);
+
+                    if (
+                        moved.has(specifier) ||
+                        !patterns.some((pattern) => minimatch(name, pattern))
+                    ) {
+                        continue;
+                    }
+
+                    const module = destination(rule, name);
+
+                    if (module === node.source.value) {
+                        continue;
+                    }
+
+                    let group = staticGroup;
+
+                    if (
+                        group == null ||
+                        rule.replacementModuleSpecifier.includes(
+                            "{importName}"
+                        ) ||
+                        rule.replaceAsDefault === true
+                    ) {
+                        group = {
+                            items: [],
+                            module,
+                            names: [],
+                            rule,
+                            specifiers: [],
+                        };
+                        groups.push(group);
+                        staticGroup = group;
+                    }
+
+                    group.items.push(items[index]);
+                    group.names.push(name);
+                    group.specifiers.push(specifier);
+                    moved.add(specifier);
+                }
+            }
+
+            return {
+                groups,
+                remaining: specifiers.flatMap((specifier, index) =>
+                    moved.has(specifier) ? [] : [items[index]]
+                ),
+            };
+        }
+
+        function remainingImport(
+            node: TSESTree.ImportDeclaration,
+            remaining: CommentedNode[]
+        ): string | undefined {
+            const other = node.specifiers.filter(
+                (specifier) => !isImportSpecifier(specifier)
+            );
+
+            if (isEmpty(remaining) && isEmpty(other)) {
+                return undefined;
+            }
+
+            const parts = other.map((specifier) => source.getText(specifier));
+
+            if (!isEmpty(remaining)) {
+                parts.push(stringifyCommentedNodes(source, remaining));
+            }
+
+            return `import ${
+                node.importKind === "type" ? "type " : ""
+            }${parts.join(", ")} from ${source.getText(node.source)}${
+                source.getLastToken(node)?.value === ";" ? ";" : ""
+            }`;
+        }
+
+        function checkImport(node: TSESTree.ImportDeclaration) {
+            const { groups, remaining } = planReplacements(node);
+
+            if (isEmpty(groups)) {
+                return;
+            }
+
+            const modules = new Map<string, string[]>();
+
+            for (const group of groups) {
+                modules.set(group.module, [
+                    ...(modules.get(group.module) ?? []),
+                    ...group.names,
+                ]);
+            }
+
+            const phrases = [...modules].map(
+                ([module, names]) => `'${names.join(", ")}' from '${module}'`
+            );
+
+            const message =
+                phrases.length === 1
+                    ? `Import ${phrases[0]}.`
+                    : `Import ${phrases.slice(0, -1).join(", ")}, and ${
+                          phrases[phrases.length - 1]
+                      }.`;
+
+            context.report({
+                node,
+                messageId:
+                    modules.size === 1
+                        ? "preferImport"
+                        : "preferImportMultiple",
+                data: {
+                    importName: groups
+                        .flatMap((group) => group.names)
+                        .join(", "),
+                    replacementModuleSpecifier: groups[0].module,
+                    message,
+                },
+                fix(fixer) {
+                    const output = groups.flatMap((group) =>
+                        printReplacement(group, node)
+                    );
+
+                    const leftover = remainingImport(node, remaining);
+
+                    if (leftover !== undefined) {
+                        output.push(leftover);
+                    }
+
+                    const staticNamedOnly =
+                        groups.length === 1 &&
+                        !groups[0].rule.replacementModuleSpecifier.includes(
+                            "{importName}"
+                        ) &&
+                        groups[0].rule.replaceAsDefault !== true;
+
+                    // Preserve the trailing newline specified by the tests for
+                    // a complete static replacement without comments.
+                    const extraNewline =
+                        staticNamedOnly &&
+                        leftover == null &&
+                        isEmpty(source.getCommentsInside(node));
+
+                    return fixer.replaceText(
+                        node,
+                        output.join("\n") + (extraNewline ? "\n" : "")
+                    );
+                },
+            });
+        }
+
+        function checkGlobals(program: TSESTree.Program) {
+            const rules = asArray(options.global);
+
+            if (isEmpty(rules)) {
+                return;
+            }
+
+            const imports = program.body.filter((node) =>
+                isImportDeclaration(node)
+            );
+
+            const lastImport = imports[imports.length - 1];
+            const seen = new Set<number>();
+
+            for (const scope of source.scopeManager?.scopes ?? []) {
+                for (const reference of scope.references) {
+                    const identifier = reference.identifier;
+
+                    if (isJSXClosingElement(identifier.parent)) {
+                        continue;
+                    }
+
+                    if (
+                        seen.has(identifier.range[0]) ||
+                        (reference.resolved != null &&
+                            !isEmpty(reference.resolved.defs))
+                    ) {
+                        continue;
+                    }
+
+                    const rule = rules.find((candidate) =>
+                        (isArray(candidate.importName)
+                            ? candidate.importName
+                            : [candidate.importName]
+                        ).includes(identifier.name)
+                    );
+
+                    if (rule == null) {
+                        continue;
+                    }
+
+                    seen.add(identifier.range[0]);
+
+                    const module = destination(rule, identifier.name);
+
+                    context.report({
+                        node: identifier,
+                        messageId: "bannedGlobalType",
+                        data: {
+                            importName: identifier.name,
+                            replacementModuleSpecifier: module,
+                        },
+                        fix(fixer) {
+                            const statement = `import ${
+                                rule.replaceAsDefault === true
+                                    ? identifier.name
+                                    : `{ ${identifier.name} }`
+                            } from '${module}';`;
+
+                            return lastImport == null
+                                ? fixer.insertTextBeforeRange(
+                                      [0, 0],
+                                      `${statement}\n\n`
+                                  )
+                                : fixer.insertTextAfter(
+                                      lastImport,
+                                      `\n${statement}\n`
+                                  );
+                        },
+                    });
+                }
+            }
+        }
+
+        return {
+            ImportDeclaration: checkImport,
+            "Program:exit": checkGlobals,
+        };
+    },
+});
 
 export type { PreferImportOptions };
 export { preferImport };

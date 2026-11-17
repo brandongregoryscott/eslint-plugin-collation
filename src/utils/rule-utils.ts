@@ -1,21 +1,8 @@
 import { ESLintUtils } from "@typescript-eslint/utils";
-import { getDocsUrl } from "./string-utils";
-import type { RuleContext } from "@typescript-eslint/utils/ts-eslint";
 
-const createRule = ESLintUtils.RuleCreator(getDocsUrl);
+const createRule = ESLintUtils.RuleCreator(
+    (name) =>
+        `https://github.com/brandongregoryscott/eslint-plugin-collation/blob/main/documentation/docs/rules/${name}.md`
+);
 
-const tryRule = <TMessageIds extends string, TOptions extends unknown[]>(
-    context: RuleContext<TMessageIds, TOptions>,
-    fn: () => void
-) => {
-    try {
-        fn();
-    } catch (error) {
-        const prefix = `collation/${context.id}`;
-        const { filename } = context;
-        // eslint-disable-next-line no-console -- We don't want to silently swallow this error
-        console.error(`${prefix}: Error while linting ${filename}`, error);
-    }
-};
-
-export { createRule, tryRule };
+export { createRule };

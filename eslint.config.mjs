@@ -5,6 +5,11 @@ import importPlugin from "eslint-plugin-import";
 import tsSortKeysPlugin from "eslint-plugin-typescript-sort-keys";
 import stylisticPlugin from "@stylistic/eslint-plugin";
 
+const [, ...lodashImportOptions] =
+    collationPlugin.configs["prefer-import.lodash"].rules[
+        "collation/prefer-import"
+    ];
+
 const config = defineConfig(tsEslint.configs.recommended, {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
@@ -52,6 +57,7 @@ const config = defineConfig(tsEslint.configs.recommended, {
         "collation/group-exports": "error",
         "collation/no-default-export": "error",
         "collation/no-inline-export": "error",
+        "collation/prefer-import": ["error", ...lodashImportOptions],
         "collation/sort-exports": "error",
         curly: "error",
         eqeqeq: [
